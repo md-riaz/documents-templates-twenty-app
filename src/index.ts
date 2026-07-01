@@ -149,9 +149,9 @@ export {
   type SourceRecordAttachmentResult,
 } from './logic/generate-pdf';
 export {
-  createPuppeteerPdfAdapter,
-  puppeteerPdfAdapter,
-} from './adapters/puppeteer-pdf.adapter';
+  createPdfAdapter,
+  pdfAdapter,
+} from './adapters/pdf.adapter';
 export {
   ACCEPTANCE_SCENARIOS,
   renderRtlSmokeFixture,
