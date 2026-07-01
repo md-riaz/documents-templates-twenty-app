@@ -1,6 +1,26 @@
 # Documents & Templates for Twenty CRM
 
-Documents & Templates is a Twenty CRM app for creating reusable HTML/CSS templates, previewing them with CRM data, generating PDFs, saving generated-document history, and sending templated email.
+Documents & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer emails, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, send templated email, and keep a searchable audit trail.
+
+## Why use this app?
+
+- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.
+- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.
+- **Record-first file management:** generated PDFs attach to the originating CRM record so users find them where they already work.
+- **Auditability:** GeneratedDocument records keep template, status, PDF URL, email, error, and workflow history without replacing Twenty's native attachments.
+- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.
+
+## Reusable business scenarios
+
+| Scenario | Example output | Business value |
+| --- | --- | --- |
+| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |
+| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |
+| Customer onboarding | Welcome pack, implementation checklist, kickoff email | Creates repeatable onboarding material from live CRM context. |
+| Renewals and account management | Renewal notice, QBR summary, success-plan email | Helps account teams communicate consistently at scale. |
+| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |
+| Recruiting or partner workflows | Candidate brief, partner agreement, introduction email | Reuses the same template engine for non-sales CRM processes. |
+| Bulk campaigns | One document/email per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |
 
 ## User guide
 
@@ -18,17 +38,37 @@ Documents & Templates is a Twenty CRM app for creating reusable HTML/CSS templat
 ### Template authoring basics
 
 - Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.
+- Add preview JSON that matches the expected CRM context so editors can validate before sending.
 - Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.
 - Use triple-stash only for trusted, sanitized content.
-- Add preview JSON that matches the expected CRM context so editors can validate before sending.
+- Keep templates inactive until preview data, variable coverage, and permissions are reviewed.
 
 ### Common user flows
 
-- **Create a proposal:** select a Company template, preview company/opportunity fields, generate a PDF, attach it to the source record, and save audit history.
-- **Send a follow-up email:** choose an email-ready template, verify recipients and rendered subject, optionally attach the PDF, then send.
-- **Regenerate a document:** open the record history tab, find the previous generated document, and run the template again with current CRM data.
+- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, attach it to the source record, and save audit history.
+- **Send a follow-up email:** choose an email-ready template, verify recipients and rendered subject, optionally attach the generated PDF, then send.
+- **Regenerate a document:** open the record history tab, find a previous generated document, and rerun the template with current CRM data.
+- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its source record.
 
-## Screenshots placeholders
+## Documentation links
+
+- [Admin guide](docs/admin-guide.md)
+- [Workflow examples](docs/workflow-examples.md)
+- [SDK usage examples](examples/sdk-usage.ts)
+- [Release notes](docs/release-notes.md)
+- [CI commands](docs/ci-commands.md)
+- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)
+- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)
+
+## Marketplace readiness
+
+- User guide: this README.
+- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)
+- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)
+- Release notes: [docs/release-notes.md](docs/release-notes.md)
+- CI commands: [docs/ci-commands.md](docs/ci-commands.md)
+
+## Screenshot briefs
 
 Marketplace screenshots are tracked as placeholder briefs until final UI captures are approved:
 
@@ -37,20 +77,6 @@ Marketplace screenshots are tracked as placeholder briefs until final UI capture
 - [Generate document modal](docs/screenshots/03-generate-document-modal.md)
 - [Send email modal](docs/screenshots/04-send-email-modal.md)
 - [Workflow builder](docs/screenshots/05-workflow-builder.md)
-
-## Workflow examples
-
-See [docs/workflow-examples.md](docs/workflow-examples.md) for single-record, bulk iterator, and email/PDF chaining examples.
-
-## SDK examples
-
-See [examples/sdk-usage.ts](examples/sdk-usage.ts) for typed SDK usage, provider registration, template listing, render, PDF, and email calls.
-
-## Marketplace readiness
-
-- Release notes: [docs/release-notes.md](docs/release-notes.md)
-- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)
-- CI commands: [docs/ci-commands.md](docs/ci-commands.md)
 
 ## Verification
 
