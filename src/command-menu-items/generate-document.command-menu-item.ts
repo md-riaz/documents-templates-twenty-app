@@ -1,11 +1,18 @@
-import { GENERATE_DOCUMENT_COMMAND_UNIVERSAL_IDENTIFIER } from 'src/constants/model-identifiers';
+import { defineCommandMenuItem } from 'twenty-sdk/define';
 
-export const generateDocumentCommandMenuItem = {
+import {
+  DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  GENERATE_DOCUMENT_COMMAND_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+const generateDocumentCommandMenuItem = defineCommandMenuItem({
   universalIdentifier: GENERATE_DOCUMENT_COMMAND_UNIVERSAL_IDENTIFIER,
   label: 'Generate Document',
+  shortLabel: 'Generate',
   icon: 'IconFileText',
-  section: 'Documents & Templates',
-  frontComponent: 'document-shell',
-  context: 'record',
-  requiredPermissionScope: 'generateDocuments',
-};
+  availabilityType: 'GLOBAL_OBJECT_CONTEXT',
+  frontComponentUniversalIdentifier: DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+});
+
+export default generateDocumentCommandMenuItem;
+

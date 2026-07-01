@@ -1,10 +1,16 @@
-import { GENERATED_DOCUMENTS_NAVIGATION_UNIVERSAL_IDENTIFIER } from 'src/constants/model-identifiers';
+import { defineNavigationMenuItem, NavigationMenuItemType } from 'twenty-sdk/define';
 
-export const generatedDocumentsNavigationMenuItem = {
+import {
+  GENERATED_DOCUMENTS_NAVIGATION_UNIVERSAL_IDENTIFIER,
+  GENERATED_DOCUMENT_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+export default defineNavigationMenuItem({
   universalIdentifier: GENERATED_DOCUMENTS_NAVIGATION_UNIVERSAL_IDENTIFIER,
-  label: 'Generated Documents',
+  type: NavigationMenuItemType.VIEW,
+  name: 'Generated Documents',
   icon: 'IconFileText',
-  object: 'generatedDocument',
   position: 41,
-  requiredPermissionScope: 'viewGeneratedDocs',
-};
+  viewUniversalIdentifier: GENERATED_DOCUMENT_VIEW_UNIVERSAL_IDENTIFIER,
+});
+

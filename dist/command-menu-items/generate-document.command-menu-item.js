@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateDocumentCommandMenuItem = void 0;
+const define_1 = require("twenty-sdk/define");
 const model_identifiers_1 = require("src/constants/model-identifiers");
-exports.generateDocumentCommandMenuItem = {
+const generateDocumentCommandMenuItem = (0, define_1.defineCommandMenuItem)({
     universalIdentifier: model_identifiers_1.GENERATE_DOCUMENT_COMMAND_UNIVERSAL_IDENTIFIER,
     label: 'Generate Document',
+    shortLabel: 'Generate',
     icon: 'IconFileText',
-    section: 'Documents & Templates',
-    frontComponent: 'document-shell',
-    context: 'record',
-    requiredPermissionScope: 'generateDocuments',
-};
+    availabilityType: 'GLOBAL_OBJECT_CONTEXT',
+    frontComponentUniversalIdentifier: model_identifiers_1.DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+});
+exports.default = generateDocumentCommandMenuItem;

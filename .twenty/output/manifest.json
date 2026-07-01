@@ -1459,18 +1459,286 @@
   "connectionProviders": [],
   "logicFunctions": [],
   "frontComponents": [],
-  "publicAssets": [
+  "publicAssets": [],
+  "views": [
     {
-      "filePath": "public\\icon.svg",
-      "fileName": "icon.svg",
-      "fileType": "svg",
-      "checksum": "c5666cd8165ea60bb698c2fb9909d2e2"
+      "universalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0",
+      "objectUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "name": "Recent Generated Documents",
+      "type": "TABLE",
+      "visibility": "WORKSPACE",
+      "position": 41,
+      "fields": [
+        {
+          "universalIdentifier": "80c72d6c-ee68-45f2-9d89-0ebe07e57d29",
+          "fieldMetadataUniversalIdentifier": "85c2a7ea-7300-4a6a-80fd-6f57dca8914b",
+          "position": 0,
+          "size": 220
+        },
+        {
+          "universalIdentifier": "3b4a6c30-f07d-4189-819e-875f6d032490",
+          "fieldMetadataUniversalIdentifier": "ab859ed3-e237-42d8-942b-0d34e5bba737",
+          "position": 1,
+          "size": 180
+        },
+        {
+          "universalIdentifier": "4b3f4e1a-538b-452f-90c5-7f9d89e8ea94",
+          "fieldMetadataUniversalIdentifier": "84220294-eb6e-4e9b-bc00-fb055908372b",
+          "position": 2,
+          "size": 150
+        },
+        {
+          "universalIdentifier": "ad74f125-6b8b-41fa-9958-3b9b4f0815ac",
+          "fieldMetadataUniversalIdentifier": "b92b494e-d314-4395-b699-c7535f290db6",
+          "position": 3,
+          "size": 130
+        },
+        {
+          "universalIdentifier": "98c353d7-a7e6-4d42-9915-895c372f8576",
+          "fieldMetadataUniversalIdentifier": "9f8ea9f3-3fdd-4aa9-b849-c61dfa5a8e14",
+          "position": 4,
+          "size": 220
+        },
+        {
+          "universalIdentifier": "3be5921a-b0e2-44a5-bb20-434a03bfbf2c",
+          "fieldMetadataUniversalIdentifier": "97edde2e-6f99-4e77-afb2-eb5f59a78195",
+          "position": 5,
+          "size": 160
+        },
+        {
+          "universalIdentifier": "36dafadc-f391-412c-aa4b-9c9dc0f14337",
+          "fieldMetadataUniversalIdentifier": "5697941d-e7a3-4a83-8e33-824e90bd21af",
+          "position": 6,
+          "size": 160
+        }
+      ],
+      "sorts": [
+        {
+          "universalIdentifier": "16826903-a498-4f46-86c1-a1349c515fed",
+          "fieldMetadataUniversalIdentifier": "5697941d-e7a3-4a83-8e33-824e90bd21af",
+          "direction": "DESC"
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a",
+      "objectUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "name": "Active Templates",
+      "type": "TABLE",
+      "visibility": "WORKSPACE",
+      "position": 40,
+      "fields": [
+        {
+          "universalIdentifier": "e3ee63a7-2bf8-42f4-9ba0-6eddbca4f6e1",
+          "fieldMetadataUniversalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
+          "position": 0,
+          "size": 180
+        },
+        {
+          "universalIdentifier": "ae84e8c8-4bdb-4ec7-a4e4-c6c913805ae6",
+          "fieldMetadataUniversalIdentifier": "f3b5080e-aae2-4e4d-bdf2-d0487388814b",
+          "position": 1,
+          "size": 160
+        },
+        {
+          "universalIdentifier": "ac0a7bb6-f9a2-4fa7-9149-d59c6e14f085",
+          "fieldMetadataUniversalIdentifier": "0d115bc2-2d5e-4e82-b933-62732dcba599",
+          "position": 2,
+          "size": 120
+        },
+        {
+          "universalIdentifier": "28e3ff51-df09-4d66-9f2e-bc9a165b9d50",
+          "fieldMetadataUniversalIdentifier": "dc86ed49-c756-4166-9f8e-a117fdfdaf4d",
+          "position": 3,
+          "size": 120
+        },
+        {
+          "universalIdentifier": "9169b0b1-2e9d-4275-a5df-8f278b7c5ea1",
+          "fieldMetadataUniversalIdentifier": "d75a5707-d025-470f-88d4-cabd102781e0",
+          "position": 4,
+          "size": 90
+        },
+        {
+          "universalIdentifier": "3f73329f-17a9-450c-b3f9-8700c721f5e4",
+          "fieldMetadataUniversalIdentifier": "2c006689-28d7-4d03-b37c-8ccf5188fbbb",
+          "position": 5,
+          "size": 100
+        }
+      ],
+      "sorts": [
+        {
+          "universalIdentifier": "95699ab7-f04d-4913-9c89-ec81055423bd",
+          "fieldMetadataUniversalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
+          "direction": "ASC"
+        }
+      ]
     }
   ],
-  "views": [],
   "viewFields": [],
-  "navigationMenuItems": [],
+  "navigationMenuItems": [
+    {
+      "universalIdentifier": "06d955e6-4099-4162-9aa6-e35fb20e6607",
+      "type": "VIEW",
+      "name": "Generated Documents",
+      "icon": "IconFileText",
+      "position": 41,
+      "viewUniversalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0"
+    },
+    {
+      "universalIdentifier": "588cfc4f-41bc-41df-a199-40a998ec5b71",
+      "type": "VIEW",
+      "name": "Documents & Templates",
+      "icon": "IconTemplate",
+      "position": 40,
+      "viewUniversalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a"
+    }
+  ],
   "pageLayouts": [],
-  "pageLayoutTabs": [],
+  "pageLayoutTabs": [
+    {
+      "universalIdentifier": "0951a49e-d410-44d8-8b8b-3c450c665d48",
+      "pageLayoutUniversalIdentifier": "20202020-a103-4003-8003-0aa0b1ca1003",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "45436271-3b58-449f-8f7b-0fb4ca866401",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "0cabbf97-f800-4d3d-b3b3-3cf1f41c26e2",
+      "pageLayoutUniversalIdentifier": "20202020-a104-4004-8004-a0be5a11a004",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "fa34fa4b-42fd-408d-a107-e5aad39dd7eb",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "2b248e42-d90b-4aa1-ad0e-e23a2361811e",
+      "pageLayoutUniversalIdentifier": "20202020-a101-4001-8001-c0aba11c0001",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "f1563bac-ce95-40dc-9239-5f9a6c3f033c",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "596b907d-db12-437e-a76c-6e4a598a34ab",
+      "pageLayoutUniversalIdentifier": "20202020-a102-4002-8002-ae0a1ea11002",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "9dc0b870-8baf-46ab-9bd8-099183f06901",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "c6e58054-e52d-4fb7-8125-bc4aa53b04dd",
+      "pageLayoutUniversalIdentifier": "b9b10e40-9ce2-4704-8ac6-c6e92e2563c1",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "f76c9512-ffb0-477a-b110-db6803dd69c1",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "fd4f49ed-2456-4a73-a21b-bb82b6d8156c",
+      "pageLayoutUniversalIdentifier": "20202020-a105-4005-8005-ba5ca11a1005",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "ab0107fc-d7cc-4109-8331-452f5f4e9d9b",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    }
+  ],
   "commandMenuItems": []
 }

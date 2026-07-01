@@ -4,13 +4,13 @@ export { default as documentTemplateObject } from './objects/document-template.o
 export { default as templateCategoryObject } from './objects/template-category.object';
 export { default as templateVersionObject } from './objects/template-version.object';
 export { default as generatedDocumentObject } from './objects/generated-document.object';
-export { documentTemplateView } from './views/document-template.view';
-export { generatedDocumentView } from './views/generated-document.view';
-export { documentsTemplatesNavigationMenuItem } from './navigation-menu-items/documents-templates.navigation-menu-item';
-export { generatedDocumentsNavigationMenuItem } from './navigation-menu-items/generated-documents.navigation-menu-item';
-export { openTemplateManagementCommandMenuItem } from './command-menu-items/open-template-management.command-menu-item';
-export { generateDocumentCommandMenuItem } from './command-menu-items/generate-document.command-menu-item';
-export { documentShellFrontComponent } from './front-components/document-shell.front-component';
+export { default as documentTemplateView } from './views/document-template.view';
+export { default as generatedDocumentView } from './views/generated-document.view';
+export { default as documentsTemplatesNavigationMenuItem } from './navigation-menu-items/documents-templates.navigation-menu-item';
+export { default as generatedDocumentsNavigationMenuItem } from './navigation-menu-items/generated-documents.navigation-menu-item';
+export { default as openTemplateManagementCommandMenuItem } from './command-menu-items/open-template-management.command-menu-item';
+export { default as generateDocumentCommandMenuItem } from './command-menu-items/generate-document.command-menu-item';
+export { default as documentShellFrontComponent } from './front-components/document-shell.front-component';
 export {
   TemplateEditorController,
   createTemplateEditorState,

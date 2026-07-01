@@ -1,11 +1,28 @@
-import { DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER } from 'src/constants/model-identifiers';
+import { defineView, ViewSortDirection, ViewType, ViewVisibility } from 'twenty-sdk/define';
 
-export const documentTemplateView = {
+import {
+  DOCUMENT_TEMPLATE_FIELDS,
+  DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+  DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+export default defineView({
   universalIdentifier: DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
-  object: 'documentTemplate',
+  objectUniversalIdentifier: DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
   name: 'Active Templates',
-  type: 'table',
-  fields: ['name', 'category', 'status', 'renderer', 'version', 'isActive'],
-  sort: [{ field: 'name', direction: 'asc' }],
-  filters: [{ field: 'isActive', operator: 'eq', value: true }],
-};
+  type: ViewType.TABLE,
+  visibility: ViewVisibility.WORKSPACE,
+  position: 40,
+  fields: [
+    { universalIdentifier: 'e3ee63a7-2bf8-42f4-9ba0-6eddbca4f6e1', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, position: 0, size: 180 },
+    { universalIdentifier: 'ae84e8c8-4bdb-4ec7-a4e4-c6c913805ae6', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.category, position: 1, size: 160 },
+    { universalIdentifier: 'ac0a7bb6-f9a2-4fa7-9149-d59c6e14f085', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.status, position: 2, size: 120 },
+    { universalIdentifier: '28e3ff51-df09-4d66-9f2e-bc9a165b9d50', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.renderer, position: 3, size: 120 },
+    { universalIdentifier: '9169b0b1-2e9d-4275-a5df-8f278b7c5ea1', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.version, position: 4, size: 90 },
+    { universalIdentifier: '3f73329f-17a9-450c-b3f9-8700c721f5e4', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.isActive, position: 5, size: 100 },
+  ],
+  sorts: [
+    { universalIdentifier: '95699ab7-f04d-4913-9c89-ec81055423bd', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, direction: ViewSortDirection.ASC },
+  ],
+});
+

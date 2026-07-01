@@ -1,10 +1,16 @@
-import { DOCUMENTS_TEMPLATES_NAVIGATION_UNIVERSAL_IDENTIFIER } from 'src/constants/model-identifiers';
+import { defineNavigationMenuItem, NavigationMenuItemType } from 'twenty-sdk/define';
 
-export const documentsTemplatesNavigationMenuItem = {
+import {
+  DOCUMENTS_TEMPLATES_NAVIGATION_UNIVERSAL_IDENTIFIER,
+  DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+export default defineNavigationMenuItem({
   universalIdentifier: DOCUMENTS_TEMPLATES_NAVIGATION_UNIVERSAL_IDENTIFIER,
-  label: 'Documents & Templates',
+  type: NavigationMenuItemType.VIEW,
+  name: 'Documents & Templates',
   icon: 'IconTemplate',
-  object: 'documentTemplate',
   position: 40,
-  requiredPermissionScope: 'viewTemplates',
-};
+  viewUniversalIdentifier: DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
+});
+

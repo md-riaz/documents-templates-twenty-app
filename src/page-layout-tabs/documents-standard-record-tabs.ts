@@ -1,19 +1,39 @@
-import { DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS, DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS } from 'src/constants/model-identifiers';
+import { definePageLayoutTab, PageLayoutTabLayoutMode, STANDARD_PAGE_LAYOUT } from 'twenty-sdk/define';
 
-const makeDocumentsPageLayoutTab = (object: keyof typeof DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS) => ({
+import {
+  DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS,
+  DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS,
+  DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+const RECORD_PAGE_LAYOUTS = {
+  company: STANDARD_PAGE_LAYOUT.companyRecordPage.universalIdentifier,
+  person: STANDARD_PAGE_LAYOUT.personRecordPage.universalIdentifier,
+  opportunity: STANDARD_PAGE_LAYOUT.opportunityRecordPage.universalIdentifier,
+  task: STANDARD_PAGE_LAYOUT.taskRecordPage.universalIdentifier,
+  note: STANDARD_PAGE_LAYOUT.noteRecordPage.universalIdentifier,
+  calendarEvent: STANDARD_PAGE_LAYOUT.calendarEventRecordPage.universalIdentifier,
+} as const;
+
+const makeDocumentsPageLayoutTab = (object: keyof typeof DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS) => definePageLayoutTab({
   universalIdentifier: DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS[object],
-  label: 'Documents',
-  object,
+  pageLayoutUniversalIdentifier: RECORD_PAGE_LAYOUTS[object],
+  title: 'Documents',
+  icon: 'IconFileText',
   position: 60,
+  layoutMode: PageLayoutTabLayoutMode.GRID,
   widgets: [
     {
       universalIdentifier: DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS[object],
+      title: 'Generated Documents',
       type: 'front-component',
-      component: 'document-shell',
-      props: { mode: 'record-history', primaryObjectType: object },
+      gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
+      configuration: {
+        configurationType: 'FRONT_COMPONENT',
+        frontComponentUniversalIdentifier: DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+      },
     },
   ],
-  requiredPermissionScope: 'viewGeneratedDocs',
 });
 
 export const companyDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('company');
@@ -31,3 +51,5 @@ export const documentsStandardRecordTabs = [
   noteDocumentsPageLayoutTab,
   calendarEventDocumentsPageLayoutTab,
 ];
+
+export default documentsStandardRecordTabs;

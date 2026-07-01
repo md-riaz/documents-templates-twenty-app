@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.documentsTemplatesNavigationMenuItem = void 0;
+const define_1 = require("twenty-sdk/define");
 const model_identifiers_1 = require("src/constants/model-identifiers");
-exports.documentsTemplatesNavigationMenuItem = {
+exports.default = (0, define_1.defineNavigationMenuItem)({
     universalIdentifier: model_identifiers_1.DOCUMENTS_TEMPLATES_NAVIGATION_UNIVERSAL_IDENTIFIER,
-    label: 'Documents & Templates',
+    type: define_1.NavigationMenuItemType.VIEW,
+    name: 'Documents & Templates',
     icon: 'IconTemplate',
-    object: 'documentTemplate',
     position: 40,
-    requiredPermissionScope: 'viewTemplates',
-};
+    viewUniversalIdentifier: model_identifiers_1.DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
+});
