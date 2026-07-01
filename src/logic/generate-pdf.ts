@@ -92,7 +92,7 @@ export const createPdfStorageKey = (input: { generatedDocumentId?: string; fileN
 
 const defaultPdfAdapter: HtmlToPdfAdapter = {
   async renderHtmlToPdf() {
-    throw new Error('No Playwright/Puppeteer PDF adapter configured for this runtime.');
+    throw new Error('No Puppeteer PDF adapter configured for this runtime. Install puppeteer and configure the adapter in your Twenty server.');
   },
 };
 
