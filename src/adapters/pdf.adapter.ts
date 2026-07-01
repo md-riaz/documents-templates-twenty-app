@@ -18,10 +18,24 @@ const mapFormat = (format: string): string => {
   return mapping[format] ?? 'A4';
 };
 
+const getLaunchOptions = () => {
+  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  return {
+    headless: true as const,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+    ],
+    ...(executablePath ? { executablePath } : {}),
+  };
+};
+
 export const createPdfAdapter = (): HtmlToPdfAdapter => ({
   async renderHtmlToPdf({ html, options }) {
     const puppeteer = await loadPuppeteer();
-    const browser = await puppeteer.launch({ headless: true });
+    const browser = await puppeteer.launch(getLaunchOptions());
 
     try {
       const page = await browser.newPage();

@@ -122,12 +122,54 @@ For custom objects, use the object's page layout universal identifier from the m
 
 ## PDF Generation
 
-PDF generation is **bundled** — the app includes Puppeteer with its own Chromium. No server modifications needed.
+PDF generation uses Puppeteer with Alpine's musl-native Chromium. Requires one Docker setup step.
+
+### Docker setup (one-time)
+
+Add to your `docker-compose.yml` or Dockerfile:
+
+```yaml
+# docker-compose.yml
+services:
+  twenty-server:
+    environment:
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+```
+
+Then install Chromium in the container:
+
+```bash
+docker exec -it twenty-server-1 apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ttf-freefont \
+    font-noto \
+    dbus
+```
+
+Or add to your Dockerfile:
+
+```dockerfile
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ttf-freefont \
+    font-noto \
+    dbus
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+```
 
 ### How it works
 
 1. Templates are rendered to HTML using Handlebars + CRM data
-2. Puppeteer converts HTML to PDF using bundled Chromium
+2. Puppeteer converts HTML to PDF using system Chromium
 3. PDF is stored and attached to the source record
 
 ### Supported formats
