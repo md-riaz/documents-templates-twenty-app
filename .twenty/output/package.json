@@ -24,6 +24,9 @@
     "documents",
     "templates"
   ],
+  "dependencies": {
+    "puppeteer": "^24.43.1"
+  },
   "devDependencies": {
     "@types/node": "^26.0.1",
     "twenty-client-sdk": "2.16.0",

@@ -120,6 +120,84 @@ definePageLayoutTab({
 
 For custom objects, use the object's page layout universal identifier from the metadata API or your object definition.
 
+## PDF Generation
+
+The app uses Puppeteer (headless Chrome) for HTML-to-PDF conversion. The adapter is included in the app.
+
+### VPS/Server Requirements
+
+For PDF generation to work, your Twenty server needs:
+
+1. **Chromium/Chrome installed** — Puppeteer downloads its own Chromium by default, but in Docker containers you need to install system dependencies:
+
+```bash
+# For Docker-based Twenty deployments
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libgdk-pixbuf2.0-0 \
+    libnspr4 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# Tell Puppeteer to use installed Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+```
+
+2. **For self-hosted Twenty (Docker Compose):**
+
+```yaml
+# docker-compose.yml
+services:
+  twenty-server:
+    image: twentycrm/twenty:latest
+    volumes:
+      - chromium-data:/root/.cache/puppeteer
+    environment:
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
+```
+
+3. **For Twenty Cloud:** PDF generation may require a configured storage adapter. Contact Twenty support or use an external PDF API.
+
+### Using the Adapter
+
+```typescript
+import { puppeteerPdfAdapter } from 'documents-templates';
+
+const pdfBytes = await puppeteerPdfAdapter.renderHtmlToPdf({
+  html: '<h1>Invoice</h1><p>...</p>',
+  options: {
+    format: 'A4',
+    landscape: false,
+    printBackground: true,
+    margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },
+    displayHeaderFooter: false,
+    preferCSSPageSize: true,
+  }
+});
+```
+
+### Supported Formats
+
+- A4, A3, A5, Letter, Legal
+- Portrait or landscape orientation
+- Custom margins (CSS units: mm, cm, in, px, pt)
+- Header/footer templates
+- Background graphics printing
+
 ## Verification
 
 Run the release verification command from the app root:
