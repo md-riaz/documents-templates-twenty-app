@@ -11,7 +11,7 @@ Initial internal/marketplace release candidate for the Twenty CRM Documents & Te
 - Context providers for common Twenty record types plus SDK provider registration.
 - Record actions and modals for generating documents and sending templated email.
 - Generated-document history tab filtered by primary object and record ID.
-- PDF settings and HTML-to-PDF adapter boundary.
+- PDF settings and HTML-to-PDF adapter boundary, including source-record attachment support when record context is available.
 - Email settings, recipient validation, text fallback, optional PDF attachment, and send logging.
 - Workflow actions: Render Template, Generate PDF, Send Templated Email, and Save Generated Document.
 - Typed SDK wrappers and usage examples.

@@ -971,8 +971,8 @@
         {
           "universalIdentifier": "445d1e51-e925-4862-9089-c0f5a368535e",
           "type": "TEXT",
-          "name": "createdBy",
-          "label": "Created By",
+          "name": "versionCreatedBy",
+          "label": "Version Created By",
           "description": "User id or display name that created the version",
           "icon": "IconUser",
           "isNullable": true,
@@ -1017,6 +1017,19 @@
           "defaultValue": null,
           "type": "DATE_TIME",
           "universalIdentifier": "29aad57a-9a9d-5b72-aee0-cd928fb70ce3"
+        },
+        {
+          "name": "createdBy",
+          "label": "Created by",
+          "description": "The creator of the record",
+          "icon": "IconCreativeCommonsSa",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "84040a52-1fc8-5db8-bfe2-9e2b7ebd84a4"
         },
         {
           "name": "updatedBy",

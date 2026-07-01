@@ -111,7 +111,7 @@ test('PDF settings UI exposes accessible admin fields and validation', () => {
   assert.match(validationErrors, /Margin top must be a positive CSS length/);
 });
 
-test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, and updates GeneratedDocument', async () => {
+test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to source record, and updates GeneratedDocument', async () => {
   const calls = [];
   const adapter = {
     async renderHtmlToPdf(input) {
@@ -130,7 +130,16 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, and updates Gen
       assert.match(input.fileName, /^generated-document-generated-1-.*\.pdf$/);
       assert.match(input.key, /^generated-documents\/generated-1\/.*\.pdf$/);
       assert.match(input.body.toString('utf8'), /%PDF-1.4/);
-      return { url: `twenty://files/${input.key}` };
+      return { url: `twenty://files/${input.key}`, fileId: 'file-1' };
+    },
+    async attachFileToRecord(input) {
+      calls.push({ type: 'attach', input });
+      assert.equal(input.objectName, 'person');
+      assert.equal(input.recordId, 'person-1');
+      assert.equal(input.fileId, 'file-1');
+      assert.match(input.fileName, /^generated-document-generated-1-.*\.pdf$/);
+      assert.equal(input.contentType, 'application/pdf');
+      return { attachmentId: 'attachment-1' };
     },
   };
   const api = {
@@ -140,6 +149,12 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, and updates Gen
       assert.equal(id, 'generated-1');
       assert.equal(data.status, 'PDF_GENERATED');
       assert.match(data.pdfUrl, /^twenty:\/\/files\/generated-documents\/generated-1\//);
+      assert.deepEqual(data.metadata.sourceAttachment, {
+        objectName: 'person',
+        recordId: 'person-1',
+        fileId: 'file-1',
+        attachmentId: 'attachment-1',
+      });
       return { id, ...data };
     },
   };
@@ -147,6 +162,8 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, and updates Gen
   const output = await generatePdfFromHtmlLogic({
     html: '<!doctype html><html><body><h1>Hello PDF</h1></body></html>',
     generatedDocumentId: 'generated-1',
+    sourceObjectName: 'person',
+    sourceRecordId: 'person-1',
     fileName: 'Generated Document #1.pdf',
     principal: generatorPrincipal,
     adapter,
@@ -159,7 +176,7 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, and updates Gen
   assert.match(output.pdfUrl, /^twenty:\/\/files\/generated-documents\/generated-1\//);
   assert.equal(output.status, 'PDF_GENERATED');
   assert.equal(output.bytes, Buffer.byteLength('%PDF-1.4\nHello PDF\n%%EOF'));
-  assert.deepEqual(calls.map((call) => call.type), ['render', 'upload', 'update']);
+  assert.deepEqual(calls.map((call) => call.type), ['render', 'upload', 'attach', 'update']);
 });
 
 test('generatePdfFromHtmlLogic enforces permissions and reports adapter/storage failures', async () => {

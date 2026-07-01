@@ -78,12 +78,12 @@ export const generatePdfWorkflowAction: DocumentWorkflowActionDefinition<
 > = {
   key: 'documents.generatePdf',
   name: 'Generate PDF',
-  description: 'Generate and store a PDF from rendered HTML produced by a previous workflow step.',
+  description: 'Generate a PDF from rendered HTML, upload it, and attach it to the source record when record context is provided.',
   requiredScopes: ['generateDocuments'],
   triggerPatterns: iteratorTriggerPatterns,
   globalTriggerRequirements: GLOBAL_TRIGGER_REQUIREMENTS,
-  inputs: ['html', 'settings', 'workspaceDefaults', 'generatedDocumentId', 'fileName'],
-  inputsFrom: ['html', 'generatedDocumentId'],
+  inputs: ['html', 'settings', 'workspaceDefaults', 'generatedDocumentId', 'sourceObjectName', 'sourceRecordId', 'fileName'],
+  inputsFrom: ['html', 'generatedDocumentId', 'primaryObjectType', 'primaryRecordId'],
   outputs: ['pdfUrl', 'bytes', 'status', 'options'],
   async run(input) {
     return generatePdfFromHtmlLogic(input);

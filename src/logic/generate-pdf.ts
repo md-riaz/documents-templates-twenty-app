@@ -17,7 +17,16 @@ export type PdfStorageAdapter = {
     body: Uint8Array;
     contentType: 'application/pdf';
     metadata?: Record<string, unknown>;
-  }): Promise<{ url: string }>;
+  }): Promise<{ url: string; fileId?: string }>;
+  attachFileToRecord?(input: {
+    objectName: string;
+    recordId: string;
+    fileId?: string;
+    fileUrl: string;
+    fileName: string;
+    contentType: 'application/pdf';
+    metadata?: Record<string, unknown>;
+  }): Promise<{ attachmentId?: string }>;
 };
 
 export type GeneratedDocumentUpdateApi = {
@@ -29,6 +38,8 @@ export type GeneratePdfFromHtmlInput = {
   settings?: PdfSettingsInput;
   workspaceDefaults?: PdfSettingsInput;
   generatedDocumentId?: string;
+  sourceObjectName?: string;
+  sourceRecordId?: string;
   fileName?: string;
   principal?: PermissionPrincipal;
   adapter?: HtmlToPdfAdapter;
@@ -38,12 +49,20 @@ export type GeneratePdfFromHtmlInput = {
   now?: Date;
 };
 
+export type SourceRecordAttachmentResult = {
+  objectName: string;
+  recordId: string;
+  fileId?: string;
+  attachmentId?: string;
+};
+
 export type GeneratePdfFromHtmlOutput = {
   ok: boolean;
   pdfUrl?: string;
   bytes?: number;
   status: 'PDF_GENERATED' | 'FAILED';
   options: BrowserPdfOptions;
+  sourceAttachment?: SourceRecordAttachmentResult;
   errors: Array<{ code: string; message: string; userMessage: string }>;
 };
 
@@ -93,6 +112,35 @@ const updateGeneratedDocument = async (
   }
 };
 
+const attachPdfToSourceRecord = async (input: {
+  storage: PdfStorageAdapter;
+  sourceObjectName?: string;
+  sourceRecordId?: string;
+  fileId?: string;
+  fileUrl: string;
+  fileName: string;
+  metadata?: Record<string, unknown>;
+}): Promise<{ objectName: string; recordId: string; fileId?: string; attachmentId?: string } | null> => {
+  if (!input.sourceObjectName || !input.sourceRecordId || !input.storage.attachFileToRecord) return null;
+
+  const attached = await input.storage.attachFileToRecord({
+    objectName: input.sourceObjectName,
+    recordId: input.sourceRecordId,
+    fileId: input.fileId,
+    fileUrl: input.fileUrl,
+    fileName: input.fileName,
+    contentType: 'application/pdf',
+    metadata: input.metadata,
+  });
+
+  return {
+    objectName: input.sourceObjectName,
+    recordId: input.sourceRecordId,
+    fileId: input.fileId,
+    attachmentId: attached.attachmentId,
+  };
+};
+
 export const generatePdfFromHtmlLogic = async (input: GeneratePdfFromHtmlInput): Promise<GeneratePdfFromHtmlOutput> => {
   assertPermissionScope(input.principal, 'generateDocuments');
 
@@ -119,10 +167,29 @@ export const generatePdfFromHtmlLogic = async (input: GeneratePdfFromHtmlInput):
       },
     });
 
+    const sourceAttachment = await attachPdfToSourceRecord({
+      storage,
+      sourceObjectName: input.sourceObjectName,
+      sourceRecordId: input.sourceRecordId,
+      fileId: uploaded.fileId,
+      fileUrl: uploaded.url,
+      fileName,
+      metadata: {
+        ...(input.metadata ?? {}),
+        generatedDocumentId: input.generatedDocumentId ?? null,
+      },
+    });
+
     await updateGeneratedDocument(input.api, input.generatedDocumentId, {
       pdfUrl: uploaded.url,
       status: 'PDF_GENERATED',
       errorMessage: null,
+      ...(sourceAttachment ? {
+        metadata: {
+          ...(input.metadata ?? {}),
+          sourceAttachment,
+        },
+      } : {}),
     });
 
     return {
@@ -131,6 +198,7 @@ export const generatePdfFromHtmlLogic = async (input: GeneratePdfFromHtmlInput):
       bytes: body.byteLength,
       status: 'PDF_GENERATED',
       options,
+      sourceAttachment: sourceAttachment ?? undefined,
       errors: [],
     };
   } catch (error) {

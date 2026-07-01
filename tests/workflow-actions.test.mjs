@@ -56,7 +56,9 @@ const createWorkflowFixture = () => {
   const updates = [];
   const emails = [];
   const pdfs = [];
+  const attachments = [];
   return {
+    attachments,
     records,
     updates,
     emails,
@@ -89,7 +91,11 @@ const createWorkflowFixture = () => {
     storage: {
       async uploadFile(input) {
         assert.equal(input.contentType, 'application/pdf');
-        return { url: `twenty://files/${input.fileName}` };
+        return { url: `twenty://files/${input.fileName}`, fileId: 'file-1' };
+      },
+      async attachFileToRecord(input) {
+        attachments.push(input);
+        return { attachmentId: `attachment-${attachments.length}` };
       },
     },
     emailAdapter: {
@@ -116,7 +122,7 @@ test('workflow actions register required names, scopes, outputs, and trigger pat
   assert.deepEqual(renderTemplateWorkflowAction.outputs, ['html', 'context', 'warnings', 'template']);
 
   assert.equal(generatePdfWorkflowAction.key, 'documents.generatePdf');
-  assert.deepEqual(generatePdfWorkflowAction.inputsFrom, ['html', 'generatedDocumentId']);
+  assert.deepEqual(generatePdfWorkflowAction.inputsFrom, ['html', 'generatedDocumentId', 'primaryObjectType', 'primaryRecordId']);
   assert.deepEqual(sendTemplatedEmailWorkflowAction.requiredScopes, ['sendEmails']);
   assert.deepEqual(saveGeneratedDocumentWorkflowAction.outputs, ['generatedDocumentId', 'record']);
 
@@ -155,6 +161,8 @@ test('workflow action runner chains render output into PDF, save, and email acti
   const pdf = await runDocumentWorkflowAction(generatePdfWorkflowAction, {
     html: render.html,
     generatedDocumentId: saved.generatedDocumentId,
+    sourceObjectName: 'person',
+    sourceRecordId: 'person-1',
     fileName: 'Invoice Ada',
     principal,
     api: fixture.api,
@@ -164,6 +172,15 @@ test('workflow action runner chains render output into PDF, save, and email acti
   });
   assert.equal(pdf.ok, true);
   assert.match(pdf.pdfUrl, /generated-document-generated-1-invoice-ada\.pdf$/);
+  assert.deepEqual(fixture.attachments[0], {
+    objectName: 'person',
+    recordId: 'person-1',
+    fileId: 'file-1',
+    fileUrl: pdf.pdfUrl,
+    fileName: 'generated-document-generated-1-invoice-ada.pdf',
+    contentType: 'application/pdf',
+    metadata: { generatedDocumentId: saved.generatedDocumentId },
+  });
   assert.equal(fixture.updates[0].data.status, 'PDF_GENERATED');
 
   const emailed = await runDocumentWorkflowAction(sendTemplatedEmailWorkflowAction, {

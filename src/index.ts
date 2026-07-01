@@ -142,6 +142,7 @@ export {
   type GeneratePdfFromHtmlOutput,
   type HtmlToPdfAdapter,
   type PdfStorageAdapter,
+  type SourceRecordAttachmentResult,
 } from './logic/generate-pdf';
 export {
   DEFAULT_EMAIL_SETTINGS,

@@ -13,6 +13,8 @@ Trigger: record action or workflow on a Company/Opportunity record.
 2. **Generate PDF**
    - `html`: output from Render Template
    - `generatedDocumentId`: optional saved record ID
+   - `sourceObjectName`: trigger object type
+   - `sourceRecordId`: trigger record ID
 3. **Save Generated Document**
    - `templateId`: proposal template ID
    - `primaryObjectType`: trigger object type
@@ -20,7 +22,7 @@ Trigger: record action or workflow on a Company/Opportunity record.
    - `renderedHtml`: rendered HTML
    - `pdfUrl`: PDF output URL
 
-Expected result: the record history tab shows a generated proposal with PDF link.
+Expected result: the proposal PDF is attached to the source CRM record, and the record history tab shows audit details with the PDF link.
 
 ## Example 2: send templated email with PDF attachment
 

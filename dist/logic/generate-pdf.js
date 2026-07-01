@@ -40,6 +40,25 @@ const updateGeneratedDocument = async (api, generatedDocumentId, data) => {
         await api?.updateRecord?.('generatedDocument', generatedDocumentId, data);
     }
 };
+const attachPdfToSourceRecord = async (input) => {
+    if (!input.sourceObjectName || !input.sourceRecordId || !input.storage.attachFileToRecord)
+        return null;
+    const attached = await input.storage.attachFileToRecord({
+        objectName: input.sourceObjectName,
+        recordId: input.sourceRecordId,
+        fileId: input.fileId,
+        fileUrl: input.fileUrl,
+        fileName: input.fileName,
+        contentType: 'application/pdf',
+        metadata: input.metadata,
+    });
+    return {
+        objectName: input.sourceObjectName,
+        recordId: input.sourceRecordId,
+        fileId: input.fileId,
+        attachmentId: attached.attachmentId,
+    };
+};
 const generatePdfFromHtmlLogic = async (input) => {
     (0, permission_guards_1.assertPermissionScope)(input.principal, 'generateDocuments');
     const settings = (0, pdf_settings_1.normalizePdfSettings)({ defaults: input.workspaceDefaults, override: input.settings });
@@ -63,10 +82,28 @@ const generatePdfFromHtmlLogic = async (input) => {
                 generatedDocumentId: input.generatedDocumentId ?? null,
             },
         });
+        const sourceAttachment = await attachPdfToSourceRecord({
+            storage,
+            sourceObjectName: input.sourceObjectName,
+            sourceRecordId: input.sourceRecordId,
+            fileId: uploaded.fileId,
+            fileUrl: uploaded.url,
+            fileName,
+            metadata: {
+                ...(input.metadata ?? {}),
+                generatedDocumentId: input.generatedDocumentId ?? null,
+            },
+        });
         await updateGeneratedDocument(input.api, input.generatedDocumentId, {
             pdfUrl: uploaded.url,
             status: 'PDF_GENERATED',
             errorMessage: null,
+            ...(sourceAttachment ? {
+                metadata: {
+                    ...(input.metadata ?? {}),
+                    sourceAttachment,
+                },
+            } : {}),
         });
         return {
             ok: true,
@@ -74,6 +111,7 @@ const generatePdfFromHtmlLogic = async (input) => {
             bytes: body.byteLength,
             status: 'PDF_GENERATED',
             options,
+            sourceAttachment: sourceAttachment ?? undefined,
             errors: [],
         };
     }

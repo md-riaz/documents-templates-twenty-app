@@ -33,6 +33,6 @@ export default defineObject({
     { universalIdentifier: TEMPLATE_VERSION_FIELDS.htmlSource, type: FieldType.RICH_TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Snapshot of HTML source', icon: 'IconCode' },
     { universalIdentifier: TEMPLATE_VERSION_FIELDS.cssSource, type: FieldType.RICH_TEXT, name: 'cssSource', label: 'CSS Source', description: 'Snapshot of CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
     { universalIdentifier: TEMPLATE_VERSION_FIELDS.diff, type: FieldType.RAW_JSON, name: 'diff', label: 'Diff', description: 'Structured diff metadata', icon: 'IconGitCompare', isNullable: true, defaultValue: null },
-    { universalIdentifier: TEMPLATE_VERSION_FIELDS.createdBy, type: FieldType.TEXT, name: 'createdBy', label: 'Created By', description: 'User id or display name that created the version', icon: 'IconUser', isNullable: true, defaultValue: null },
+    { universalIdentifier: TEMPLATE_VERSION_FIELDS.createdBy, type: FieldType.TEXT, name: 'versionCreatedBy', label: 'Version Created By', description: 'User id or display name that created the version', icon: 'IconUser', isNullable: true, defaultValue: null },
   ],
 });

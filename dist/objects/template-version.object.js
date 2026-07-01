@@ -28,6 +28,6 @@ exports.default = (0, define_1.defineObject)({
         { universalIdentifier: model_identifiers_1.TEMPLATE_VERSION_FIELDS.htmlSource, type: define_1.FieldType.RICH_TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Snapshot of HTML source', icon: 'IconCode' },
         { universalIdentifier: model_identifiers_1.TEMPLATE_VERSION_FIELDS.cssSource, type: define_1.FieldType.RICH_TEXT, name: 'cssSource', label: 'CSS Source', description: 'Snapshot of CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
         { universalIdentifier: model_identifiers_1.TEMPLATE_VERSION_FIELDS.diff, type: define_1.FieldType.RAW_JSON, name: 'diff', label: 'Diff', description: 'Structured diff metadata', icon: 'IconGitCompare', isNullable: true, defaultValue: null },
-        { universalIdentifier: model_identifiers_1.TEMPLATE_VERSION_FIELDS.createdBy, type: define_1.FieldType.TEXT, name: 'createdBy', label: 'Created By', description: 'User id or display name that created the version', icon: 'IconUser', isNullable: true, defaultValue: null },
+        { universalIdentifier: model_identifiers_1.TEMPLATE_VERSION_FIELDS.createdBy, type: define_1.FieldType.TEXT, name: 'versionCreatedBy', label: 'Version Created By', description: 'User id or display name that created the version', icon: 'IconUser', isNullable: true, defaultValue: null },
     ],
 });

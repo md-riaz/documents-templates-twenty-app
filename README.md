@@ -12,7 +12,8 @@ Documents & Templates is a Twenty CRM app for creating reusable HTML/CSS templat
 4. Use the live preview to validate variables before publishing.
 5. From a supported record page, choose **Generate Document** or **Send Templated Email**.
 6. Review the rendered content, optionally generate a PDF, then save or send.
-7. Use the **Documents** record tab to review generated-document history.
+7. Generated PDFs attach to the source CRM record when record context is available.
+8. Use the **Documents** record tab to review generated-document audit/history.
 
 ### Template authoring basics
 
@@ -23,7 +24,7 @@ Documents & Templates is a Twenty CRM app for creating reusable HTML/CSS templat
 
 ### Common user flows
 
-- **Create a proposal:** select a Company template, preview company/opportunity fields, generate a PDF, and save it to history.
+- **Create a proposal:** select a Company template, preview company/opportunity fields, generate a PDF, attach it to the source record, and save audit history.
 - **Send a follow-up email:** choose an email-ready template, verify recipients and rendered subject, optionally attach the PDF, then send.
 - **Regenerate a document:** open the record history tab, find the previous generated document, and run the template again with current CRM data.
 

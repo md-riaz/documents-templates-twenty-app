@@ -31,7 +31,8 @@ UI visibility is convenience only; logic functions enforce permissions server-si
 
 - Keep templates inactive until preview data, permission coverage, and recipients have been reviewed.
 - Prefer escaped Handlebars expressions for user data.
-- Treat generated PDFs and rendered HTML as CRM records subject to retention policy.
+- Treat generated PDFs attached to source CRM records as customer-facing files subject to retention policy.
+- Treat GeneratedDocument records as audit/history metadata, not the primary file location.
 - Audit failed sends and PDF-generation errors from generated-document statuses.
 
 ## Release checklist
