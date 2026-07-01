@@ -325,14 +325,6 @@
           "icon": "IconAbc"
         },
         {
-          "universalIdentifier": "b531c67c-1605-4cbf-99bf-4089a2d0eef8",
-          "type": "TEXT",
-          "name": "slug",
-          "label": "Slug",
-          "description": "Unique template slug",
-          "icon": "IconLink"
-        },
-        {
           "universalIdentifier": "f3b5080e-aae2-4e4d-bdf2-d0487388814b",
           "type": "RELATION",
           "name": "category",
@@ -416,13 +408,70 @@
         },
         {
           "universalIdentifier": "28e03c28-abd5-4854-908f-82180df59c10",
-          "type": "TEXT",
+          "type": "SELECT",
           "name": "provider",
           "label": "Provider",
-          "description": "Context provider override",
+          "description": "Context provider for this template",
           "icon": "IconPlug",
-          "isNullable": true,
-          "defaultValue": null
+          "defaultValue": "'DEFAULT'",
+          "options": [
+            {
+              "value": "DEFAULT",
+              "label": "Default",
+              "position": 0,
+              "color": "gray",
+              "id": "8a534352-1a6e-59c0-8c81-72fe2456ea8f"
+            },
+            {
+              "value": "company",
+              "label": "Company",
+              "position": 1,
+              "color": "blue",
+              "id": "a204dd52-1dfd-570d-9a5f-fca65f7ecf7d"
+            },
+            {
+              "value": "person",
+              "label": "Person",
+              "position": 2,
+              "color": "green",
+              "id": "4931a50e-5a60-5a40-895a-c9297d71072b"
+            },
+            {
+              "value": "opportunity",
+              "label": "Opportunity",
+              "position": 3,
+              "color": "purple",
+              "id": "5209ea67-ce0c-5029-81b8-b584ba38e3e3"
+            },
+            {
+              "value": "task",
+              "label": "Task",
+              "position": 4,
+              "color": "orange",
+              "id": "7aa3b393-6d01-5fb1-8e99-cb2f6d24c4ef"
+            },
+            {
+              "value": "note",
+              "label": "Note",
+              "position": 5,
+              "color": "yellow",
+              "id": "72d02247-ad18-5e09-acc1-3e18089e6e6a"
+            },
+            {
+              "value": "calendarEvent",
+              "label": "Calendar Event",
+              "position": 6,
+              "color": "red",
+              "id": "321a15a4-4743-52f0-b556-0f54aa28d9ed"
+            },
+            {
+              "value": "custom",
+              "label": "Custom",
+              "position": 7,
+              "color": "gray",
+              "id": "a082b49f-0b38-5338-9a1e-3b85d0b41247"
+            }
+          ]
         },
         {
           "universalIdentifier": "59771ff1-ebb9-4b2f-8093-c2476a08fa0d",
@@ -431,7 +480,9 @@
           "label": "Allowed Output Types",
           "description": "Allowed document outputs such as HTML/PDF",
           "icon": "IconFiles",
-          "defaultValue": []
+          "defaultValue": [
+            "PDF"
+          ]
         },
         {
           "universalIdentifier": "0d115bc2-2d5e-4e82-b933-62732dcba599",
@@ -464,15 +515,6 @@
               "id": "76b59fc9-e453-53fa-8889-59fae7284fd4"
             }
           ]
-        },
-        {
-          "universalIdentifier": "2c006689-28d7-4d03-b37c-8ccf5188fbbb",
-          "type": "BOOLEAN",
-          "name": "isActive",
-          "label": "Active",
-          "description": "Whether this template can be used for generation",
-          "icon": "IconCircleCheck",
-          "defaultValue": true
         },
         {
           "universalIdentifier": "d75a5707-d025-470f-88d4-cabd102781e0",
@@ -1512,10 +1554,10 @@
           "size": 90
         },
         {
-          "universalIdentifier": "3f73329f-17a9-450c-b3f9-8700c721f5e4",
-          "fieldMetadataUniversalIdentifier": "2c006689-28d7-4d03-b37c-8ccf5188fbbb",
+          "universalIdentifier": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "fieldMetadataUniversalIdentifier": "28e03c28-abd5-4854-908f-82180df59c10",
           "position": 5,
-          "size": 100
+          "size": 120
         }
       ],
       "sorts": [
@@ -1540,7 +1582,7 @@
     {
       "universalIdentifier": "588cfc4f-41bc-41df-a199-40a998ec5b71",
       "type": "VIEW",
-      "name": "Documents & Templates",
+      "name": "Templates",
       "icon": "IconTemplate",
       "position": 40,
       "viewUniversalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a"

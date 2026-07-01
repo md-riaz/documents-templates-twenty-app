@@ -13,4 +13,3 @@ export default defineNavigationMenuItem({
   position: 41,
   viewUniversalIdentifier: GENERATED_DOCUMENT_VIEW_UNIVERSAL_IDENTIFIER,
 });
-
