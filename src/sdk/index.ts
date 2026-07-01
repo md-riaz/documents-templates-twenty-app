@@ -38,6 +38,8 @@ export const generatePdfFromHtml = (input: GeneratePdfFromHtmlSdkInput, runtime:
     ...input,
     principal: resolved.principal,
     api: resolved.api,
+    adapter: resolved.pdfAdapter,
+    storage: resolved.storageAdapter,
   });
 };
 

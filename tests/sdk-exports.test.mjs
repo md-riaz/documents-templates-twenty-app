@@ -93,10 +93,27 @@ const createApi = () => {
 
 test('SDK wrappers render templates and generate PDFs through typed runtime adapters', async () => {
   const api = createApi();
-  const sdk = createDocumentsTemplatesSdk({ principal, api });
+  const sdk = createDocumentsTemplatesSdk({
+    principal,
+    api,
+    pdfAdapter: {
+      async renderHtmlToPdf(input) {
+        assert.match(input.html, /Ada/);
+        return new Uint8Array([37, 80, 68, 70]);
+      },
+    },
+    storageAdapter: {
+      async uploadFile(input) {
+        assert.equal(input.contentType, 'application/pdf');
+        return { url: `twenty://files/${input.fileName}` };
+      },
+    },
+  });
 
   const rendered = await sdk.renderTemplate({
     templateId: 'template-1',
+    primaryObjectType: 'person',
+    primaryRecordId: 'ada-1',
     contextOverrides: { person: { name: 'Ada' } },
   });
   assert.equal(rendered.ok, true);
@@ -106,18 +123,6 @@ test('SDK wrappers render templates and generate PDFs through typed runtime adap
     html: rendered.html,
     generatedDocumentId: 'generated-1',
     fileName: 'Invoice Ada',
-    adapter: {
-      async renderHtmlToPdf(input) {
-        assert.match(input.html, /Ada/);
-        return new Uint8Array([37, 80, 68, 70]);
-      },
-    },
-    storage: {
-      async uploadFile(input) {
-        assert.equal(input.contentType, 'application/pdf');
-        return { url: `twenty://files/${input.fileName}` };
-      },
-    },
   });
   assert.equal(pdf.ok, true);
   assert.match(pdf.pdfUrl, /invoice-ada\.pdf$/);
@@ -146,9 +151,12 @@ test('SDK listTemplates filters template summaries and top-level wrappers accept
 
   const pdf = await generatePdfFromHtml({
     html: '<p>Standalone</p>',
-    adapter: { async renderHtmlToPdf() { return new Uint8Array([1, 2, 3]); } },
-    storage: { async uploadFile() { return { url: 'twenty://files/standalone.pdf' }; } },
-  }, { principal, api });
+  }, {
+    principal,
+    api,
+    pdfAdapter: { async renderHtmlToPdf() { return new Uint8Array([1, 2, 3]); } },
+    storageAdapter: { async uploadFile() { return { url: 'twenty://files/standalone.pdf' }; } },
+  });
   assert.equal(pdf.pdfUrl, 'twenty://files/standalone.pdf');
 });
 

@@ -153,6 +153,9 @@ export {
   pdfAdapter,
 } from './adapters/pdf.adapter';
 export {
+  createTwentyStorageAdapter,
+} from './adapters/twenty-storage.adapter';
+export {
   ACCEPTANCE_SCENARIOS,
   renderRtlSmokeFixture,
   runAcceptanceScenario,

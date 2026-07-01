@@ -1,5 +1,5 @@
 import type { ContextProviderApi, ContextProviderRegistry } from '../logic/context/provider-registry';
-import type { GeneratedDocumentUpdateApi, GeneratePdfFromHtmlInput, GeneratePdfFromHtmlOutput } from '../logic/generate-pdf';
+import type { GeneratedDocumentUpdateApi, GeneratePdfFromHtmlInput, GeneratePdfFromHtmlOutput, HtmlToPdfAdapter, PdfStorageAdapter } from '../logic/generate-pdf';
 import type { RenderTemplateLogicInput, RenderTemplateLogicOutput, TemplateRepositoryApi } from '../logic/render-template';
 import type { PermissionPrincipal } from '../permissions/permission-guards';
 
@@ -9,6 +9,8 @@ export type DocumentsTemplatesSdkRuntime = {
   registry?: ContextProviderRegistry;
   currentUser?: Record<string, unknown>;
   workspace?: Record<string, unknown>;
+  pdfAdapter?: HtmlToPdfAdapter;
+  storageAdapter?: PdfStorageAdapter;
 };
 
 export type DocumentsTemplatesSdkApi = TemplateRepositoryApi & GeneratedDocumentUpdateApi & ContextProviderApi & {
@@ -16,7 +18,7 @@ export type DocumentsTemplatesSdkApi = TemplateRepositoryApi & GeneratedDocument
 };
 
 export type RenderTemplateSdkInput = Omit<RenderTemplateLogicInput, 'principal' | 'api' | 'registry' | 'currentUser' | 'workspace'>;
-export type GeneratePdfFromHtmlSdkInput = Omit<GeneratePdfFromHtmlInput, 'principal' | 'api'>;
+export type GeneratePdfFromHtmlSdkInput = Omit<GeneratePdfFromHtmlInput, 'principal' | 'api' | 'adapter' | 'storage'>;
 
 export type ListTemplatesInput = {
   activeOnly?: boolean;
