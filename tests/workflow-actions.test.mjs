@@ -110,7 +110,7 @@ test('workflow actions register required names, scopes, outputs, and trigger pat
 
   assert.equal(generatePdfWorkflowAction.key, 'documents.generatePdf');
   assert.deepEqual(generatePdfWorkflowAction.inputsFrom, ['html', 'generatedDocumentId', 'primaryObjectType', 'primaryRecordId']);
-  assert.deepEqual(saveGeneratedDocumentWorkflowAction.outputs, ['generatedDocumentId', 'record']);
+  assert.deepEqual(saveGeneratedDocumentWorkflowAction.outputs, ['generatedDocumentId', 'record', 'pdfUrl']);
 
   assert.match(GLOBAL_TRIGGER_REQUIREMENTS, /Global triggers do not provide a primary record/);
   assert.match(GLOBAL_TRIGGER_REQUIREMENTS, /templateId/);

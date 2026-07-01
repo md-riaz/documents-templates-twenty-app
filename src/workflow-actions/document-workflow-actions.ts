@@ -68,30 +68,35 @@ export const renderTemplateWorkflowAction: DocumentWorkflowActionDefinition<
 
 export const generatePdfWorkflowAction: DocumentWorkflowActionDefinition<
   GeneratePdfFromHtmlInput,
-  GeneratePdfFromHtmlOutput & { html?: string }
+  GeneratePdfFromHtmlOutput & { html?: string; attachmentId?: string }
 > = {
   key: 'documents.generatePdf',
   name: 'Generate PDF',
-  description: 'Generate a PDF from rendered HTML, upload it, and attach it to the source record when record context is provided.',
+  description: 'Generate a PDF from rendered HTML, upload it, and attach it to any source record. Output pdfUrl and attachmentId for chaining.',
   requiredScopes: ['generateDocuments'],
   triggerPatterns: iteratorTriggerPatterns,
   globalTriggerRequirements: GLOBAL_TRIGGER_REQUIREMENTS,
   inputs: ['html', 'settings', 'workspaceDefaults', 'generatedDocumentId', 'sourceObjectName', 'sourceRecordId', 'fileName'],
   inputsFrom: ['html', 'generatedDocumentId', 'primaryObjectType', 'primaryRecordId'],
-  outputs: ['pdfUrl', 'bytes', 'status', 'options'],
+  outputs: ['pdfUrl', 'bytes', 'status', 'options', 'attachmentId', 'sourceAttachment'],
   async run(input) {
-    return generatePdfFromHtmlLogic(input);
+    const result = await generatePdfFromHtmlLogic(input);
+    return {
+      ...result,
+      html: input.html,
+      attachmentId: result.sourceAttachment?.attachmentId,
+    };
   },
 };
 
 
 export const saveGeneratedDocumentWorkflowAction: DocumentWorkflowActionDefinition<
   SaveGeneratedDocumentInput,
-  SaveGeneratedDocumentOutput & { generatedDocumentId?: string }
+  SaveGeneratedDocumentOutput & { generatedDocumentId?: string; pdfUrl?: string }
 > = {
   key: 'documents.saveGeneratedDocument',
   name: 'Save Generated Document',
-  description: 'Persist rendered workflow output as a GeneratedDocument record.',
+  description: 'Persist rendered workflow output as a GeneratedDocument record with PDF URL.',
   requiredScopes: ['generateDocuments'],
   triggerPatterns: iteratorTriggerPatterns,
   globalTriggerRequirements: GLOBAL_TRIGGER_REQUIREMENTS,
@@ -105,12 +110,13 @@ export const saveGeneratedDocumentWorkflowAction: DocumentWorkflowActionDefiniti
     'metadata',
   ],
   inputsFrom: ['html', 'pdfUrl', 'warnings'],
-  outputs: ['generatedDocumentId', 'record'],
+  outputs: ['generatedDocumentId', 'record', 'pdfUrl'],
   async run(input) {
     const saved = await saveGeneratedDocumentLogic(input);
     return {
       ...saved,
       generatedDocumentId: saved.id,
+      pdfUrl: input.pdfUrl ?? undefined,
     };
   },
 };
