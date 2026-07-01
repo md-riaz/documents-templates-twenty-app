@@ -122,48 +122,59 @@ For custom objects, use the object's page layout universal identifier from the m
 
 ## PDF Generation
 
-PDF generation uses Puppeteer with Alpine's musl-native Chromium. Requires one Docker setup step.
+PDF generation uses Puppeteer with Chromium. Requires Chromium installed on the server.
 
-### Docker setup (one-time)
+### Docker deployment (recommended)
 
-Add to your `docker-compose.yml` or Dockerfile:
-
-```yaml
-# docker-compose.yml
-services:
-  twenty-server:
-    environment:
-      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-```
-
-Then install Chromium in the container:
+Use the provided Dockerfile that extends Twenty with Chromium:
 
 ```bash
-docker exec -it twenty-server-1 apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ttf-freefont \
-    font-noto \
-    dbus
+# Clone and build
+git clone https://github.com/md-riaz/documents-templates-twenty-app.git
+cd documents-templates-twenty-app/docker
+
+# Create .env file
+cp .env.example .env
+# Edit .env with your settings
+
+# Build and start
+docker compose up -d
 ```
 
-Or add to your Dockerfile:
+The Dockerfile installs Alpine's musl-native Chromium automatically. See `docker/Dockerfile`.
 
-```dockerfile
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ttf-freefont \
-    font-noto \
-    dbus
+### VPS deployment (non-Docker)
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+On Ubuntu/Debian:
+
+```bash
+# Install Chromium
+sudo apt update
+sudo apt install -y chromium-browser
+
+# Set environment variables
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Or add to /etc/environment for persistence
+echo 'PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true' | sudo tee -a /etc/environment
+echo 'PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser' | sudo tee -a /etc/environment
+```
+
+On Alpine (if running Twenty without Docker):
+
+```bash
+apk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto dbus
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+```
+
+On RHEL/CentOS/Fedora:
+
+```bash
+sudo dnf install -y chromium
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ```
 
 ### How it works
