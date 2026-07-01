@@ -10,7 +10,6 @@ import {
 enum GeneratedDocumentStatus {
   RENDERED = 'RENDERED',
   PDF_GENERATED = 'PDF_GENERATED',
-  EMAIL_SENT = 'EMAIL_SENT',
   FAILED = 'FAILED',
 }
 
@@ -42,8 +41,6 @@ export default defineObject({
     { universalIdentifier: GENERATED_DOCUMENT_FIELDS.primaryRecordId, type: FieldType.TEXT, name: 'primaryRecordId', label: 'Primary Record ID', description: 'Source record identifier', icon: 'IconId', isNullable: true, defaultValue: null },
     { universalIdentifier: GENERATED_DOCUMENT_FIELDS.renderedHtml, type: FieldType.RICH_TEXT, name: 'renderedHtml', label: 'Rendered HTML', description: 'Rendered HTML snapshot', icon: 'IconCode', isNullable: true, defaultValue: null },
     { universalIdentifier: GENERATED_DOCUMENT_FIELDS.pdfUrl, type: FieldType.TEXT, name: 'pdfUrl', label: 'PDF URL', description: 'Stored PDF URL', icon: 'IconFileTypePdf', isNullable: true, defaultValue: null },
-    { universalIdentifier: GENERATED_DOCUMENT_FIELDS.emailSentAt, type: FieldType.DATE_TIME, name: 'emailSentAt', label: 'Email Sent At', description: 'Timestamp when email was sent', icon: 'IconMailCheck', isNullable: true, defaultValue: null },
-    { universalIdentifier: GENERATED_DOCUMENT_FIELDS.emailMessageId, type: FieldType.TEXT, name: 'emailMessageId', label: 'Email Message ID', description: 'Provider message identifier', icon: 'IconMail', isNullable: true, defaultValue: null },
     {
       universalIdentifier: GENERATED_DOCUMENT_FIELDS.status,
       type: FieldType.SELECT,
@@ -55,7 +52,6 @@ export default defineObject({
       options: [
         { value: GeneratedDocumentStatus.RENDERED, label: 'Rendered', position: 0, color: 'blue' },
         { value: GeneratedDocumentStatus.PDF_GENERATED, label: 'PDF Generated', position: 1, color: 'green' },
-        { value: GeneratedDocumentStatus.EMAIL_SENT, label: 'Email Sent', position: 2, color: 'green' },
         { value: GeneratedDocumentStatus.FAILED, label: 'Failed', position: 3, color: 'red' },
       ],
     },

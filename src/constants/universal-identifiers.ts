@@ -3,7 +3,7 @@ export const DEFAULT_ROLE_UNIVERSAL_IDENTIFIER = 'a2f3882b-4d9a-5b87-9f9d-0d0c70
 
 export const APP_DISPLAY_NAME = 'Documents & Templates';
 export const APP_DESCRIPTION =
-  'Document template management for proposals, invoices, onboarding packs, PDFs, emails, attachments, and audit history.';
+  'Reusable document template management for proposals, invoices, onboarding packs, PDFs, record attachments, and audit history.';
 
 export const MARKETPLACE_METADATA = {
   category: 'Productivity',

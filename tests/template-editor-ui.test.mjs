@@ -78,7 +78,6 @@ const fixtureTemplate = {
   previewData: { person: { name: { firstName: 'Ada' } } },
   variables: [{ path: 'person.name.firstName', label: 'First name', required: true }],
   renderer: 'HANDLEBARS',
-  defaultSubject: 'Welcome {{person.name.firstName}}',
   provider: 'person',
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',

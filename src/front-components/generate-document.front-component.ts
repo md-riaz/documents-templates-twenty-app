@@ -3,7 +3,6 @@ import { hasPermissionScope, type PermissionPrincipal } from '../permissions/per
 export type GenerateDocumentTemplate = {
   id: string;
   name: string;
-  isActive?: boolean | null;
   status?: string | null;
   allowedOutputTypes?: string[];
 };
@@ -17,7 +16,6 @@ export type GeneratedDocumentHistoryRecord = {
   generatedAt?: string | null;
   generatedBy?: string | null;
   pdfUrl?: string | null;
-  emailSentAt?: string | null;
 };
 
 export type GenerateDocumentState = {
@@ -81,7 +79,7 @@ const escapeHtml = (value: unknown): string =>
     .replaceAll('"', '&quot;');
 
 const isTemplateSelectable = (template: GenerateDocumentTemplate): boolean =>
-  template.isActive === true || String(template.status ?? '').toUpperCase() === 'ACTIVE';
+  String(template.status ?? '').toUpperCase() === 'ACTIVE';
 
 const firstSelectableTemplateId = (templates: GenerateDocumentTemplate[]): string =>
   templates.find(isTemplateSelectable)?.id ?? '';
@@ -137,7 +135,7 @@ export const renderGeneratedDocumentHistoryMarkup = (input: {
 <section aria-label="Generated document history">
   <h2>Generated Documents</h2>
   <table>
-    <thead><tr><th>Template</th><th>Status</th><th>Generated</th><th>PDF</th><th>Email</th></tr></thead>
+    <thead><tr><th>Template</th><th>Status</th><th>Generated</th><th>PDF</th></tr></thead>
     <tbody>
       ${records.map((record) => `
         <tr data-generated-document-id="${escapeHtml(record.id)}">
@@ -145,7 +143,6 @@ export const renderGeneratedDocumentHistoryMarkup = (input: {
           <td>${escapeHtml(record.status ?? 'RENDERED')}</td>
           <td>${escapeHtml(record.generatedAt ?? '')}</td>
           <td>${record.pdfUrl ? `<a href="${escapeHtml(record.pdfUrl)}">Open PDF</a>` : '—'}</td>
-          <td>${escapeHtml(record.emailSentAt ?? 'Not sent')}</td>
         </tr>`).join('')}
     </tbody>
   </table>

@@ -19,7 +19,7 @@ const api: DocumentsTemplatesSdkApi = {
 };
 
 const sdk = createDocumentsTemplatesSdk({
-  principal: { permissionScopes: ['viewTemplates', 'generateDocuments', 'sendEmails'] },
+  principal: { permissionScopes: ['viewTemplates', 'generateDocuments', 'sendDocuments'] },
   api,
   currentUser: { id: 'user-1' },
 });
@@ -57,13 +57,13 @@ const pdf = await sdk.generatePdfFromHtml({
   },
 });
 
-await sdk.sendTemplatedEmail({
+await sdk.generateDocuments({
   renderedHtml: rendered.html,
   recipients: ['buyer@example.com'],
   subjectOverride: 'Your generated document',
   generatedDocumentId: 'generated-42',
   adapter: {
-    async sendEmail() {
+    async sendDocuments() {
       return { messageId: 'message-42' };
     },
   },

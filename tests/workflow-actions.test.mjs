@@ -21,7 +21,6 @@ test('document workflow actions module exists and is publicly exported', () => {
     'documentWorkflowActions',
     'renderTemplateWorkflowAction',
     'generatePdfWorkflowAction',
-    'sendTemplatedEmailWorkflowAction',
     'saveGeneratedDocumentWorkflowAction',
     'runDocumentWorkflowAction',
     'GLOBAL_TRIGGER_REQUIREMENTS',
@@ -34,18 +33,16 @@ const {
   documentWorkflowActions,
   renderTemplateWorkflowAction,
   generatePdfWorkflowAction,
-  sendTemplatedEmailWorkflowAction,
   saveGeneratedDocumentWorkflowAction,
   runDocumentWorkflowAction,
   GLOBAL_TRIGGER_REQUIREMENTS,
 } = await import('../dist/workflow-actions/document-workflow-actions.js');
 
-const principal = { permissionScopes: ['generateDocuments', 'sendEmails'] };
+const principal = { permissionScopes: ['generateDocuments'] };
 const templateRecord = {
   id: 'template-1',
   name: 'Invoice',
   htmlSource: '<h1>Invoice for {{person.name}}</h1><p>Total {{amount}}</p>',
-  defaultSubject: 'Invoice for {{person.name}}',
   status: 'ACTIVE',
   isActive: true,
   renderer: 'HANDLEBARS',
@@ -54,14 +51,12 @@ const templateRecord = {
 const createWorkflowFixture = () => {
   const records = [];
   const updates = [];
-  const emails = [];
   const pdfs = [];
   const attachments = [];
   return {
     attachments,
     records,
     updates,
-    emails,
     pdfs,
     api: {
       async getRecord(objectName, id) {
@@ -98,13 +93,6 @@ const createWorkflowFixture = () => {
         return { attachmentId: `attachment-${attachments.length}` };
       },
     },
-    emailAdapter: {
-      async sendEmail(input) {
-        emails.push(input);
-        assert.deepEqual(input.to, ['buyer@example.com']);
-        return { messageId: `msg-${emails.length}` };
-      },
-    },
   };
 };
 
@@ -112,7 +100,6 @@ test('workflow actions register required names, scopes, outputs, and trigger pat
   assert.deepEqual(documentWorkflowActions.map((action) => action.name), [
     'Render Template',
     'Generate PDF',
-    'Send Templated Email',
     'Save Generated Document',
   ]);
 
@@ -123,7 +110,6 @@ test('workflow actions register required names, scopes, outputs, and trigger pat
 
   assert.equal(generatePdfWorkflowAction.key, 'documents.generatePdf');
   assert.deepEqual(generatePdfWorkflowAction.inputsFrom, ['html', 'generatedDocumentId', 'primaryObjectType', 'primaryRecordId']);
-  assert.deepEqual(sendTemplatedEmailWorkflowAction.requiredScopes, ['sendEmails']);
   assert.deepEqual(saveGeneratedDocumentWorkflowAction.outputs, ['generatedDocumentId', 'record']);
 
   assert.match(GLOBAL_TRIGGER_REQUIREMENTS, /Global triggers do not provide a primary record/);
@@ -131,7 +117,7 @@ test('workflow actions register required names, scopes, outputs, and trigger pat
   assert.match(GLOBAL_TRIGGER_REQUIREMENTS, /contextOverrides or previewData/);
 });
 
-test('workflow action runner chains render output into PDF, save, and email actions', async () => {
+test('workflow action runner chains render output into saved PDF document actions', async () => {
   const fixture = createWorkflowFixture();
 
   const render = await runDocumentWorkflowAction(renderTemplateWorkflowAction, {
@@ -182,22 +168,6 @@ test('workflow action runner chains render output into PDF, save, and email acti
     metadata: { generatedDocumentId: saved.generatedDocumentId },
   });
   assert.equal(fixture.updates[0].data.status, 'PDF_GENERATED');
-
-  const emailed = await runDocumentWorkflowAction(sendTemplatedEmailWorkflowAction, {
-    renderedHtml: render.html,
-    recipients: ['buyer@example.com'],
-    subjectOverride: 'Invoice for {{person.name}}',
-    contextOverrides: render.context,
-    generatedDocumentId: saved.generatedDocumentId,
-    principal,
-    api: fixture.api,
-    adapter: fixture.emailAdapter,
-    now: new Date('2026-04-05T06:08:09Z'),
-  });
-  assert.equal(emailed.ok, true);
-  assert.equal(emailed.messageId, 'msg-1');
-  assert.equal(fixture.emails[0].subject, 'Invoice for Ada');
-  assert.equal(fixture.updates.at(-1).data.status, 'EMAIL_SENT');
 });
 
 test('workflow action runner supports iterator-friendly bulk records without shared mutable output', async () => {

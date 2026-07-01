@@ -23,7 +23,7 @@ test('custom objects and relations are defined for document lifecycle records', 
   }
 
   const template = read('src/objects/document-template.object.ts');
-  for (const field of ['htmlSource', 'cssSource', 'previewData', 'variables', 'renderer', 'defaultSubject', 'isActive', 'version']) {
+  for (const field of ['htmlSource', 'cssSource', 'previewData', 'variables', 'renderer', 'isActive', 'version']) {
     assert.match(template, new RegExp(field), `DocumentTemplate should define ${field}`);
   }
   assert.match(template, /TemplateCategory/);
@@ -31,21 +31,18 @@ test('custom objects and relations are defined for document lifecycle records', 
   assert.match(template, /GeneratedDocument/);
 
   const generated = read('src/objects/generated-document.object.ts');
-  for (const field of ['primaryObjectType', 'primaryRecordId', 'renderedHtml', 'pdfUrl', 'emailSentAt', 'status', 'generatedAt']) {
+  for (const field of ['primaryObjectType', 'primaryRecordId', 'renderedHtml', 'pdfUrl', 'status', 'generatedAt']) {
     assert.match(generated, new RegExp(field), `GeneratedDocument should define ${field}`);
   }
 });
 
 test('navigation saved views command menu and page tab shells are registered', () => {
   for (const path of [
-    'src/views/document-template.view.ts',
-    'src/views/generated-document.view.ts',
-    'src/navigation-menu-items/documents-templates.navigation-menu-item.ts',
-    'src/navigation-menu-items/generated-documents.navigation-menu-item.ts',
-    'src/command-menu-items/open-template-management.command-menu-item.ts',
-    'src/command-menu-items/generate-document.command-menu-item.ts',
+    'src/menu/document-template.view.ts',
+    'src/menu/generated-document.view.ts',
+    'src/menu/documents-templates.navigation-menu-item.ts',
+    'src/menu/generated-documents.navigation-menu-item.ts',
     'src/page-layout-tabs/documents-standard-record-tabs.ts',
-    'src/front-components/document-shell.front-component.tsx',
   ]) {
     assert.ok(existsSync(join(root, path)), `${path} should exist`);
   }
@@ -60,8 +57,6 @@ test('navigation saved views command menu and page tab shells are registered', (
     'generatedDocumentView',
     'documentsTemplatesNavigationMenuItem',
     'generatedDocumentsNavigationMenuItem',
-    'openTemplateManagementCommandMenuItem',
-    'generateDocumentCommandMenuItem',
     'companyDocumentsPageLayoutTab',
     'personDocumentsPageLayoutTab',
   ]) {

@@ -3,7 +3,7 @@ import {
   type PermissionPrincipal,
 } from '../permissions/permission-guards';
 
-export type GeneratedDocumentStatus = 'RENDERED' | 'PDF_GENERATED' | 'EMAIL_SENT' | 'FAILED';
+export type GeneratedDocumentStatus = 'RENDERED' | 'PDF_GENERATED' | 'FAILED';
 
 export type GeneratedDocumentRepositoryApi = {
   createRecord?: (objectName: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>;
@@ -15,8 +15,6 @@ export type SaveGeneratedDocumentInput = {
   primaryRecordId?: string;
   renderedHtml: string;
   pdfUrl?: string | null;
-  emailSentAt?: string | null;
-  emailMessageId?: string | null;
   status?: GeneratedDocumentStatus;
   errorMessage?: string | null;
   generatedAt?: string;
@@ -74,8 +72,6 @@ export const buildGeneratedDocumentRecord = (input: SaveGeneratedDocumentInput):
     primaryRecordId: input.primaryRecordId ?? null,
     renderedHtml: input.renderedHtml,
     pdfUrl: input.pdfUrl ?? null,
-    emailSentAt: input.emailSentAt ?? null,
-    emailMessageId: input.emailMessageId ?? null,
     status: input.status ?? 'RENDERED',
     errorMessage: input.errorMessage ?? null,
     generatedBy: generatedByFromInput(input),

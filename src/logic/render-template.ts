@@ -62,7 +62,6 @@ export type RenderTemplateLogicOutput = {
   template?: {
     id: string;
     name?: string;
-    defaultSubject?: string;
     renderer?: string;
   };
 };
@@ -72,7 +71,6 @@ type DocumentTemplateRecord = {
   name?: string;
   htmlSource?: string;
   cssSource?: string | null;
-  defaultSubject?: string | null;
   provider?: string | null;
   renderer?: string | null;
   status?: string | null;
@@ -169,7 +167,6 @@ export const renderTemplateLogic = async (input: RenderTemplateLogicInput): Prom
   const templateSummary = {
     id: template.id ?? input.templateId,
     name: template.name,
-    defaultSubject: template.defaultSubject ?? undefined,
     renderer: template.renderer ?? undefined,
   };
 

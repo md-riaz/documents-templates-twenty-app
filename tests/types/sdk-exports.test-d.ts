@@ -4,7 +4,6 @@ import type {
   GeneratePdfFromHtmlSdkInput,
   ListTemplatesInput,
   RenderTemplateSdkInput,
-  SendTemplatedEmailSdkInput,
   TemplateSummary,
 } from '../../src/sdk';
 import {
@@ -13,7 +12,6 @@ import {
   listTemplates,
   registerContextProvider,
   renderTemplate,
-  sendTemplatedEmail,
 } from '../../src/sdk';
 
 const api: DocumentsTemplatesSdkApi = {
@@ -29,7 +27,7 @@ const api: DocumentsTemplatesSdkApi = {
 };
 
 const sdk: DocumentsTemplatesSdk = createDocumentsTemplatesSdk({
-  principal: { permissionScopes: ['viewTemplates', 'generateDocuments', 'sendEmails'] },
+  principal: { permissionScopes: ['viewTemplates', 'generateDocuments'] },
   api,
 });
 
@@ -48,14 +46,6 @@ const pdfInput: GeneratePdfFromHtmlSdkInput = {
 const pdf = await generatePdfFromHtml(pdfInput, sdk.runtime);
 pdf.pdfUrl satisfies string | undefined;
 
-const emailInput: SendTemplatedEmailSdkInput = {
-  renderedHtml: rendered.html,
-  recipients: ['ada@example.com'],
-  adapter: { async sendEmail() { return { messageId: 'msg-1' }; } },
-};
-const email = await sendTemplatedEmail(emailInput, sdk.runtime);
-email.messageId satisfies string | undefined;
-
 const listInput: ListTemplatesInput = { activeOnly: true, search: 'template' };
 const templates: TemplateSummary[] = await listTemplates(listInput, sdk.runtime);
 templates[0]?.name satisfies string | undefined;
@@ -67,5 +57,4 @@ registerContextProvider('hostBill', async ({ primaryRecordId }) => ({
 
 await sdk.renderTemplate(renderInput);
 await sdk.generatePdfFromHtml(pdfInput);
-await sdk.sendTemplatedEmail(emailInput);
 await sdk.listTemplates(listInput);

@@ -9,11 +9,11 @@ Initial internal/marketplace release candidate for the Twenty CRM Documents & Te
 - Template library and editor for HTML, CSS, preview JSON, variable browsing, and version creation.
 - Handlebars rendering core with helpers, CSS combination, escaping, validation, and error mapping.
 - Context providers for common Twenty record types plus SDK provider registration.
-- Record actions and modals for generating documents and sending templated email.
+- Record actions and modals for generating documents and sending templated documents.
 - Generated-document history tab filtered by primary object and record ID.
 - PDF settings and HTML-to-PDF adapter boundary, including source-record attachment support when record context is available.
-- Email settings, recipient validation, text fallback, optional PDF attachment, and send logging.
-- Workflow actions: Render Template, Generate PDF, Send Templated Email, and Save Generated Document.
+- Documents settings, recipient validation, text fallback, optional PDF attachment, and send logging.
+- Workflow actions: Render Template, Generate PDF, Generate Documents, and Save Generated Document.
 - Typed SDK wrappers and usage examples.
 - Acceptance, accessibility, i18n, security, and audit-trail tests.
 
@@ -21,7 +21,7 @@ Initial internal/marketplace release candidate for the Twenty CRM Documents & Te
 
 - `yarn twenty dev --once --dry-run` requires a local Twenty server and CLI support; if unavailable, document the blocker rather than treating it as an app failure.
 - Marketplace screenshots are placeholders until product-approved captures are available.
-- PDF and email implementations depend on configured runtime adapters in the target Twenty environment.
+- PDF and documents implementations depend on configured runtime adapters in the target Twenty environment.
 
 ### Verification
 

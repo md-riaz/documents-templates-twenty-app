@@ -9,17 +9,14 @@ export type TemplateEditorVariable = {
 export type TemplateEditorTemplate = {
   id?: string;
   name: string;
-  slug: string;
   htmlSource: string;
   cssSource?: string;
   previewData?: Record<string, unknown>;
   variables?: TemplateEditorVariable[];
   renderer?: string;
-  defaultSubject?: string;
   provider?: string;
   allowedOutputTypes?: string[];
   status?: string;
-  isActive?: boolean;
   version?: number;
 };
 
@@ -46,17 +43,14 @@ export type TemplateEditorApi = {
 
 const defaultTemplate: TemplateEditorTemplate = {
   name: '',
-  slug: '',
   htmlSource: '',
   cssSource: '',
   previewData: {},
   variables: [],
   renderer: 'HANDLEBARS',
-  defaultSubject: '',
-  provider: '',
-  allowedOutputTypes: ['HTML'],
-  status: 'DRAFT',
-  isActive: false,
+  provider: 'DEFAULT',
+  allowedOutputTypes: ['HTML', 'PDF'],
+  status: 'ACTIVE',
   version: 0,
 };
 
@@ -69,18 +63,15 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
   return {
     id: template.id,
     name: template.name,
-    slug: template.slug,
     htmlSource: template.htmlSource,
     cssSource: template.cssSource ?? '',
     previewData,
     previewJson: JSON.stringify(previewData, null, 2),
     variables: template.variables ?? [],
     renderer: template.renderer ?? 'HANDLEBARS',
-    defaultSubject: template.defaultSubject ?? '',
-    provider: template.provider ?? '',
+    provider: template.provider ?? 'DEFAULT',
     allowedOutputTypes: template.allowedOutputTypes ?? ['HTML'],
     status: template.status ?? 'DRAFT',
-    isActive: template.isActive ?? false,
     version: template.version ?? 0,
     activeTab: 'html',
     previewHtml: '',
@@ -210,17 +201,14 @@ export class TemplateEditorController {
     const template = await this.api.saveTemplate({
       id: this.state.id,
       name: this.state.name,
-      slug: this.state.slug,
       htmlSource: this.state.htmlSource,
       cssSource: this.state.cssSource,
       previewData,
       variables: this.state.variables,
       renderer: this.state.renderer,
-      defaultSubject: this.state.defaultSubject,
       provider: this.state.provider,
       allowedOutputTypes: this.state.allowedOutputTypes,
       status: this.state.status,
-      isActive: this.state.isActive,
       version: nextVersion,
     });
 

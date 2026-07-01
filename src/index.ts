@@ -4,12 +4,10 @@ export { default as documentTemplateObject } from './objects/document-template.o
 export { default as templateCategoryObject } from './objects/template-category.object';
 export { default as templateVersionObject } from './objects/template-version.object';
 export { default as generatedDocumentObject } from './objects/generated-document.object';
-export { default as documentTemplateView } from './views/document-template.view';
-export { default as generatedDocumentView } from './views/generated-document.view';
-export { default as documentsTemplatesNavigationMenuItem } from './navigation-menu-items/documents-templates.navigation-menu-item';
-export { default as generatedDocumentsNavigationMenuItem } from './navigation-menu-items/generated-documents.navigation-menu-item';
-export { default as openTemplateManagementCommandMenuItem } from './command-menu-items/open-template-management.command-menu-item';
-export { default as generateDocumentCommandMenuItem } from './command-menu-items/generate-document.command-menu-item';
+export { default as documentTemplateView } from './menu/document-template.view';
+export { default as generatedDocumentView } from './menu/generated-document.view';
+export { default as documentsTemplatesNavigationMenuItem } from './menu/documents-templates.navigation-menu-item';
+export { default as generatedDocumentsNavigationMenuItem } from './menu/generated-documents.navigation-menu-item';
 export { default as documentShellFrontComponent } from './front-components/document-shell.front-component';
 export {
   TemplateEditorController,
@@ -118,6 +116,16 @@ export {
   type TemplateRepositoryApi,
 } from './logic/render-template';
 export {
+  validateTemplateLogic,
+  type ValidateTemplateInput,
+  type ValidateTemplateOutput,
+} from './logic/validate-template';
+export {
+  listTemplateVariablesLogic,
+  type ListTemplateVariablesInput,
+  type TemplateVariableInfo,
+} from './logic/list-template-variables';
+export {
   buildGeneratedDocumentRecord,
   saveGeneratedDocumentLogic,
   type GeneratedDocumentRepositoryApi,
@@ -145,26 +153,6 @@ export {
   type SourceRecordAttachmentResult,
 } from './logic/generate-pdf';
 export {
-  DEFAULT_EMAIL_SETTINGS,
-  htmlToTextFallback,
-  normalizeEmailSettings,
-  normalizeRecipient,
-  parseRecipientsText,
-  renderEmailSubject,
-  validateRecipients,
-  type EmailAdapterKind,
-  type EmailSettings,
-  type EmailSettingsInput,
-} from './logic/settings/email-settings';
-export {
-  sendTemplatedEmailLogic,
-  type EmailAttachment,
-  type GeneratedDocumentEmailLogApi,
-  type SendTemplatedEmailInput,
-  type SendTemplatedEmailOutput,
-  type TemplatedEmailAdapter,
-} from './logic/send-templated-email';
-export {
   ACCEPTANCE_SCENARIOS,
   renderRtlSmokeFixture,
   runAcceptanceScenario,
@@ -175,23 +163,12 @@ export {
   type AcceptanceScenarioId,
 } from './logic/acceptance-hardening';
 export {
-  SendEmailController,
-  createSendEmailState,
-  renderSendEmailModalMarkup,
-  sendEmailFrontComponent,
-  validateSendEmailState,
-  type SendEmailControllerApi,
-  type SendEmailState,
-  type SendEmailTemplateOption,
-} from './front-components/send-email.front-component';
-export {
   GLOBAL_TRIGGER_REQUIREMENTS,
   documentWorkflowActions,
   generatePdfWorkflowAction,
   renderTemplateWorkflowAction,
   runDocumentWorkflowAction,
   saveGeneratedDocumentWorkflowAction,
-  sendTemplatedEmailWorkflowAction,
   type DocumentWorkflowAction,
   type DocumentWorkflowActionDefinition,
   type DocumentWorkflowActionOutput,
@@ -203,13 +180,11 @@ export {
   listTemplates,
   registerContextProvider as registerSdkContextProvider,
   renderTemplate,
-  sendTemplatedEmail,
   type DocumentsTemplatesSdk,
   type DocumentsTemplatesSdkApi,
   type DocumentsTemplatesSdkRuntime,
   type GeneratePdfFromHtmlSdkInput,
   type ListTemplatesInput,
   type RenderTemplateSdkInput,
-  type SendTemplatedEmailSdkInput,
   type TemplateSummary,
 } from './sdk';

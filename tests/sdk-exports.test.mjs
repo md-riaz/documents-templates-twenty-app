@@ -24,7 +24,6 @@ test('public SDK modules, usage example, and declaration tests exist and are exp
     'createDocumentsTemplatesSdk',
     'renderTemplate',
     'generatePdfFromHtml',
-    'sendTemplatedEmail',
     'registerContextProvider',
     'listTemplates',
   ]) {
@@ -35,8 +34,7 @@ test('public SDK modules, usage example, and declaration tests exist and are exp
   assert.match(example, /createDocumentsTemplatesSdk/);
   assert.match(example, /renderTemplate/);
   assert.match(example, /generatePdfFromHtml/);
-  assert.match(example, /sendTemplatedEmail/);
-  assert.match(example, /registerContextProvider/);
+    assert.match(example, /registerContextProvider/);
   assert.match(example, /listTemplates/);
 });
 
@@ -44,12 +42,11 @@ const {
   createDocumentsTemplatesSdk,
   renderTemplate,
   generatePdfFromHtml,
-  sendTemplatedEmail,
   registerContextProvider,
   listTemplates,
 } = await import('../dist/sdk/index.js');
 
-const principal = { permissionScopes: ['viewTemplates', 'generateDocuments', 'sendEmails'] };
+const principal = { permissionScopes: ['viewTemplates', 'generateDocuments'] };
 const templateRecords = [
   {
     id: 'template-1',
@@ -58,7 +55,6 @@ const templateRecords = [
     status: 'ACTIVE',
     isActive: true,
     htmlSource: '<h1>Invoice for {{person.name}}</h1>',
-    defaultSubject: 'Invoice {{person.name}}',
     renderer: 'HANDLEBARS',
     category: 'Sales',
     version: 3,
@@ -95,7 +91,7 @@ const createApi = () => {
   };
 };
 
-test('SDK wrappers render templates, generate PDFs, and send email through typed runtime adapters', async () => {
+test('SDK wrappers render templates and generate PDFs through typed runtime adapters', async () => {
   const api = createApi();
   const sdk = createDocumentsTemplatesSdk({ principal, api });
 
@@ -125,24 +121,6 @@ test('SDK wrappers render templates, generate PDFs, and send email through typed
   });
   assert.equal(pdf.ok, true);
   assert.match(pdf.pdfUrl, /invoice-ada\.pdf$/);
-
-  const emailed = await sdk.sendTemplatedEmail({
-    renderedHtml: rendered.html,
-    recipients: ['buyer@example.com'],
-    subjectOverride: 'Invoice for {{person.name}}',
-    contextOverrides: rendered.context,
-    generatedDocumentId: 'generated-1',
-    adapter: {
-      async sendEmail(input) {
-        assert.deepEqual(input.to, ['buyer@example.com']);
-        assert.equal(input.subject, 'Invoice for Ada');
-        return { messageId: 'msg-1' };
-      },
-    },
-  });
-  assert.equal(emailed.ok, true);
-  assert.equal(emailed.messageId, 'msg-1');
-  assert.equal(api.updates.at(-1).data.status, 'EMAIL_SENT');
 });
 
 test('SDK listTemplates filters template summaries and top-level wrappers accept explicit runtime', async () => {
@@ -156,7 +134,6 @@ test('SDK listTemplates filters template summaries and top-level wrappers accept
     status: 'ACTIVE',
     isActive: true,
     renderer: 'HANDLEBARS',
-    defaultSubject: 'Invoice {{person.name}}',
     category: 'Sales',
     version: 3,
   }]);
@@ -173,14 +150,6 @@ test('SDK listTemplates filters template summaries and top-level wrappers accept
     storage: { async uploadFile() { return { url: 'twenty://files/standalone.pdf' }; } },
   }, { principal, api });
   assert.equal(pdf.pdfUrl, 'twenty://files/standalone.pdf');
-
-  const emailed = await sendTemplatedEmail({
-    renderedHtml: '<p>Hello</p>',
-    recipients: ['ops@example.com'],
-    subjectOverride: 'Hello',
-    adapter: { async sendEmail() { return { messageId: 'msg-2' }; } },
-  }, { principal, api });
-  assert.equal(emailed.messageId, 'msg-2');
 });
 
 test('SDK provider registration is namespaced to the SDK registry by default', async () => {

@@ -24,19 +24,19 @@ Trigger: record action or workflow on a Company/Opportunity record.
 
 Expected result: the proposal PDF is attached to the source CRM record, and the record history tab shows audit details with the PDF link.
 
-## Example 2: send templated email with PDF attachment
+## Example 2: send templated documents with PDF attachment
 
 Trigger: manual workflow from a Person or Opportunity record.
 
 1. **Render Template** for preview and subject data.
 2. **Generate PDF** if the template allows PDF output.
-3. **Send Templated Email**
-   - `templateId`: email-ready template
-   - `recipients`: validated email addresses
+3. **Generate Documents**
+   - `templateId`: documents-ready template
+   - `recipients`: validated documents addresses
    - `subjectOverride`: optional Handlebars subject
    - `attachPdf`: `true`
    - `pdfUrl`: generated PDF URL
-4. **Save Generated Document** with status `sent` or error status from the email action.
+4. **Save Generated Document** with status `sent` or error status from the documents action.
 
 Expected result: recipient receives escaped text fallback plus HTML body, and the GeneratedDocument audit fields record send status.
 
@@ -46,7 +46,7 @@ Trigger: scheduled workflow or filtered list iterator.
 
 1. Use a **BulkIterator** over expiring contracts/opportunities.
 2. For each item, run **Render Template** with the iterator record ID.
-3. Run **Send Templated Email** per item.
+3. Run **Generate Documents** per item.
 4. Run **Save Generated Document** per item with the returned status and message ID.
 
 Bulk guidance:

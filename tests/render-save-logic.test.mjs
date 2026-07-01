@@ -46,7 +46,6 @@ const createFixtureApi = () => {
           status: 'ACTIVE',
           htmlSource: '<h1>Hello {{person.name.firstName}}</h1><p>{{uppercase company.name}}</p>',
           cssSource: 'h1 { color: rebeccapurple; }',
-          defaultSubject: 'Welcome {{person.name.firstName}}',
           renderer: 'HANDLEBARS',
         };
       }
@@ -172,8 +171,6 @@ test('saveGeneratedDocumentLogic persists generatedDocument records through the 
     primaryRecordId: 'person-1',
     renderedHtml: '<h1>Hello Ada</h1>',
     pdfUrl: 'https://files.example/generated-1.pdf',
-    emailSentAt: null,
-    emailMessageId: null,
     status: 'PDF_GENERATED',
     errorMessage: null,
     generatedBy: 'user-1',

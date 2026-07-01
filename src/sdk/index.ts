@@ -5,7 +5,6 @@ import {
 } from '../logic/context/provider-registry';
 import { generatePdfFromHtmlLogic } from '../logic/generate-pdf';
 import { renderTemplateLogic } from '../logic/render-template';
-import { sendTemplatedEmailLogic } from '../logic/send-templated-email';
 import { assertAnyPermissionScope } from '../permissions/permission-guards';
 import type {
   DocumentsTemplatesSdk,
@@ -13,7 +12,6 @@ import type {
   GeneratePdfFromHtmlSdkInput,
   ListTemplatesInput,
   RenderTemplateSdkInput,
-  SendTemplatedEmailSdkInput,
   TemplateSummary,
 } from './types';
 
@@ -43,15 +41,6 @@ export const generatePdfFromHtml = (input: GeneratePdfFromHtmlSdkInput, runtime:
   });
 };
 
-export const sendTemplatedEmail = (input: SendTemplatedEmailSdkInput, runtime: DocumentsTemplatesSdkRuntime = {}) => {
-  const resolved = withRuntimeDefaults(runtime);
-  return sendTemplatedEmailLogic({
-    ...input,
-    principal: resolved.principal,
-    api: resolved.api,
-    currentUser: resolved.currentUser,
-  });
-};
 
 const stringOrUndefined = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
 const booleanOrUndefined = (value: unknown): boolean | undefined => typeof value === 'boolean' ? value : undefined;
@@ -64,7 +53,6 @@ const toTemplateSummary = (record: Record<string, unknown>): TemplateSummary => 
   status: stringOrUndefined(record.status),
   isActive: booleanOrUndefined(record.isActive),
   renderer: stringOrUndefined(record.renderer),
-  defaultSubject: stringOrUndefined(record.defaultSubject),
   category: record.category,
   version: numberOrUndefined(record.version),
 });
@@ -117,9 +105,6 @@ export const createDocumentsTemplatesSdk = (runtime: DocumentsTemplatesSdkRuntim
     generatePdfFromHtml(input) {
       return generatePdfFromHtml(input, resolved);
     },
-    sendTemplatedEmail(input) {
-      return sendTemplatedEmail(input, resolved);
-    },
     listTemplates(input) {
       return listTemplates(input, resolved);
     },
@@ -133,6 +118,5 @@ export type {
   GeneratePdfFromHtmlSdkInput,
   ListTemplatesInput,
   RenderTemplateSdkInput,
-  SendTemplatedEmailSdkInput,
   TemplateSummary,
 } from './types';

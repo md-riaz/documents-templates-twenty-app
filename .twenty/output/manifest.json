@@ -3,13 +3,13 @@
     "universalIdentifier": "6eaaf6ac-81f8-5c40-8f27-0d0c70b17500",
     "defaultRoleUniversalIdentifier": "a2f3882b-4d9a-5b87-9f9d-0d0c70b17501",
     "displayName": "Documents & Templates",
-    "description": "Document template management for proposals, invoices, onboarding packs, PDFs, emails, attachments, and audit history.",
+    "description": "Reusable document template management for proposals, invoices, onboarding packs, PDFs, record attachments, and audit history.",
     "category": "Productivity",
     "author": "Documents & Templates",
     "websiteUrl": "https://github.com/md-riaz/documents-templates-twenty-app#readme",
     "issueReportUrl": "https://github.com/md-riaz/documents-templates-twenty-app/issues",
     "screenshots": [],
-    "aboutDescription": "# Documents & Templates for Twenty CRM\n\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer emails, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, send templated email, and keep a searchable audit trail.\n\n## Why use this app?\n\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\n- **Record-first file management:** generated PDFs attach to the originating CRM record so users find them where they already work.\n- **Auditability:** GeneratedDocument records keep template, status, PDF URL, email, error, and workflow history without replacing Twenty's native attachments.\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\n\n## Reusable business scenarios\n\n| Scenario | Example output | Business value |\n| --- | --- | --- |\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\n| Customer onboarding | Welcome pack, implementation checklist, kickoff email | Creates repeatable onboarding material from live CRM context. |\n| Renewals and account management | Renewal notice, QBR summary, success-plan email | Helps account teams communicate consistently at scale. |\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction email | Reuses the same template engine for non-sales CRM processes. |\n| Bulk campaigns | One document/email per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\n\n## User guide\n\n### Quick start\n\n1. Open **Documents & Templates** from the Twenty navigation menu.\n2. Create or select a template in the template library.\n3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.\n4. Use the live preview to validate variables before publishing.\n5. From a supported record page, choose **Generate Document** or **Send Templated Email**.\n6. Review the rendered content, optionally generate a PDF, then save or send.\n7. Generated PDFs attach to the source CRM record when record context is available.\n8. Use the **Documents** record tab to review generated-document audit/history.\n\n### Template authoring basics\n\n- Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.\n- Add preview JSON that matches the expected CRM context so editors can validate before sending.\n- Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.\n- Use triple-stash only for trusted, sanitized content.\n- Keep templates inactive until preview data, variable coverage, and permissions are reviewed.\n\n### Common user flows\n\n- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, attach it to the source record, and save audit history.\n- **Send a follow-up email:** choose an email-ready template, verify recipients and rendered subject, optionally attach the generated PDF, then send.\n- **Regenerate a document:** open the record history tab, find a previous generated document, and rerun the template with current CRM data.\n- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its source record.\n\n## Documentation links\n\n- [Admin guide](docs/admin-guide.md)\n- [Workflow examples](docs/workflow-examples.md)\n- [SDK usage examples](examples/sdk-usage.ts)\n- [Release notes](docs/release-notes.md)\n- [CI commands](docs/ci-commands.md)\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\n\n## Marketplace readiness\n\n- User guide: this README.\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\n\n## Screenshot briefs\n\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\n\n- [Template library](docs/screenshots/01-template-library.md)\n- [Template editor](docs/screenshots/02-template-editor.md)\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\n- [Send email modal](docs/screenshots/04-send-email-modal.md)\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\n\n## Verification\n\nRun the release verification command from the app root:\n\n```bash\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\n```\n\nIf a local Twenty server and CLI script are available, also run:\n\n```bash\nyarn twenty dev --once --dry-run\n```\n",
+    "aboutDescription": "# Documents & Templates for Twenty CRM\n\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, send templated documents, and keep a searchable audit trail.\n\n## Why use this app?\n\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\n- **Record-first file management:** generated PDFs attach to the originating CRM record so users find them where they already work.\n- **Auditability:** GeneratedDocument records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\n\n## Reusable business scenarios\n\n| Scenario | Example output | Business value |\n| --- | --- | --- |\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\n| Customer onboarding | Welcome pack, implementation checklist, kickoff documents | Creates repeatable onboarding material from live CRM context. |\n| Renewals and account management | Renewal notice, QBR summary, success-plan documents | Helps account teams communicate consistently at scale. |\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction documents | Reuses the same template engine for non-sales CRM processes. |\n| Bulk campaigns | One document/documents per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\n\n## User guide\n\n### Quick start\n\n1. Open **Documents & Templates** from the Twenty navigation menu.\n2. Create or select a template in the template library.\n3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.\n4. Use the live preview to validate variables before publishing.\n5. From a supported record page, choose **Generate Document** or **Generate Documents**.\n6. Review the rendered content, optionally generate a PDF, then save or send.\n7. Generated PDFs attach to the source CRM record when record context is available.\n8. Use the **Documents** record tab to review generated-document audit/history.\n\n### Template authoring basics\n\n- Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.\n- Add preview JSON that matches the expected CRM context so editors can validate before sending.\n- Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.\n- Use triple-stash only for trusted, sanitized content.\n- Keep templates inactive until preview data, variable coverage, and permissions are reviewed.\n\n### Common user flows\n\n- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, attach it to the source record, and save audit history.\n- **Send a follow-up documents:** choose an documents-ready template, verify recipients and rendered subject, optionally attach the generated PDF, then send.\n- **Regenerate a document:** open the record history tab, find a previous generated document, and rerun the template with current CRM data.\n- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its source record.\n\n## Documentation links\n\n- [Admin guide](docs/admin-guide.md)\n- [Workflow examples](docs/workflow-examples.md)\n- [SDK usage examples](examples/sdk-usage.ts)\n- [Release notes](docs/release-notes.md)\n- [CI commands](docs/ci-commands.md)\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\n\n## Marketplace readiness\n\n- User guide: this README.\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\n\n## Screenshot briefs\n\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\n\n- [Template library](docs/screenshots/01-template-library.md)\n- [Template editor](docs/screenshots/02-template-editor.md)\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\n\n## Verification\n\nRun the release verification command from the app root:\n\n```bash\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\n```\n\nIf a local Twenty server and CLI script are available, also run:\n\n```bash\nyarn twenty dev --once --dry-run\n```\n",
     "yarnLockChecksum": "611108b7e80a86cbf7a92b4e2b75ab0d",
     "packageJsonChecksum": "cfbd86ac4aff1f30723d48c577dc7e6f"
   },
@@ -90,26 +90,6 @@
           "defaultValue": null
         },
         {
-          "universalIdentifier": "97edde2e-6f99-4e77-afb2-eb5f59a78195",
-          "type": "DATE_TIME",
-          "name": "emailSentAt",
-          "label": "Email Sent At",
-          "description": "Timestamp when email was sent",
-          "icon": "IconMailCheck",
-          "isNullable": true,
-          "defaultValue": null
-        },
-        {
-          "universalIdentifier": "75f8ca12-0966-4dd4-9f39-02569003f365",
-          "type": "TEXT",
-          "name": "emailMessageId",
-          "label": "Email Message ID",
-          "description": "Provider message identifier",
-          "icon": "IconMail",
-          "isNullable": true,
-          "defaultValue": null
-        },
-        {
           "universalIdentifier": "b92b494e-d314-4395-b699-c7535f290db6",
           "type": "SELECT",
           "name": "status",
@@ -131,13 +111,6 @@
               "position": 1,
               "color": "green",
               "id": "d0cfb5d4-fb94-57b0-b1d5-e106d931a88b"
-            },
-            {
-              "value": "EMAIL_SENT",
-              "label": "Email Sent",
-              "position": 2,
-              "color": "green",
-              "id": "66753e6c-9cd7-51ed-bb40-51eb94436117"
             },
             {
               "value": "FAILED",
@@ -442,16 +415,6 @@
           ]
         },
         {
-          "universalIdentifier": "f43fae4e-d4c6-4678-a02c-68f162defcd9",
-          "type": "TEXT",
-          "name": "defaultSubject",
-          "label": "Default Subject",
-          "description": "Default email subject",
-          "icon": "IconMail",
-          "isNullable": true,
-          "defaultValue": null
-        },
-        {
           "universalIdentifier": "28e03c28-abd5-4854-908f-82180df59c10",
           "type": "TEXT",
           "name": "provider",
@@ -466,7 +429,7 @@
           "type": "ARRAY",
           "name": "allowedOutputTypes",
           "label": "Allowed Output Types",
-          "description": "Allowed outputs such as HTML/PDF/email",
+          "description": "Allowed document outputs such as HTML/PDF",
           "icon": "IconFiles",
           "defaultValue": []
         },
@@ -477,21 +440,21 @@
           "label": "Status",
           "description": "Template lifecycle status",
           "icon": "IconStatusChange",
-          "defaultValue": "'DRAFT'",
+          "defaultValue": "'ACTIVE'",
           "options": [
-            {
-              "value": "DRAFT",
-              "label": "Draft",
-              "position": 0,
-              "color": "gray",
-              "id": "24f66fc5-af78-50f9-9327-d8e422c0efb4"
-            },
             {
               "value": "ACTIVE",
               "label": "Active",
-              "position": 1,
+              "position": 0,
               "color": "green",
               "id": "f7398c57-9ed7-57a7-be7f-289d37c17484"
+            },
+            {
+              "value": "DRAFT",
+              "label": "Draft",
+              "position": 1,
+              "color": "gray",
+              "id": "24f66fc5-af78-50f9-9327-d8e422c0efb4"
             },
             {
               "value": "ARCHIVED",
@@ -509,7 +472,7 @@
           "label": "Active",
           "description": "Whether this template can be used for generation",
           "icon": "IconCircleCheck",
-          "defaultValue": false
+          "defaultValue": true
         },
         {
           "universalIdentifier": "d75a5707-d025-470f-88d4-cabd102781e0",
@@ -1435,10 +1398,6 @@
           "value": true
         },
         {
-          "flag": "sendEmails",
-          "value": true
-        },
-        {
           "flag": "viewGeneratedDocs",
           "value": true
         },
@@ -1500,15 +1459,9 @@
           "size": 220
         },
         {
-          "universalIdentifier": "3be5921a-b0e2-44a5-bb20-434a03bfbf2c",
-          "fieldMetadataUniversalIdentifier": "97edde2e-6f99-4e77-afb2-eb5f59a78195",
-          "position": 5,
-          "size": 160
-        },
-        {
           "universalIdentifier": "36dafadc-f391-412c-aa4b-9c9dc0f14337",
           "fieldMetadataUniversalIdentifier": "5697941d-e7a3-4a83-8e33-824e90bd21af",
-          "position": 6,
+          "position": 5,
           "size": 160
         }
       ],

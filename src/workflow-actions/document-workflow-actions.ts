@@ -13,11 +13,6 @@ import {
   type SaveGeneratedDocumentInput,
   type SaveGeneratedDocumentOutput,
 } from '../logic/save-generated-document';
-import {
-  sendTemplatedEmailLogic,
-  type SendTemplatedEmailInput,
-  type SendTemplatedEmailOutput,
-} from '../logic/send-templated-email';
 import type { DocumentsTemplatesPermissionScope } from '../permissions/scopes';
 
 export type WorkflowTriggerPattern = 'Single' | 'BulkIterator';
@@ -25,8 +20,7 @@ export type WorkflowTriggerPattern = 'Single' | 'BulkIterator';
 export type DocumentWorkflowActionOutput =
   | RenderTemplateLogicOutput
   | (GeneratePdfFromHtmlOutput & { html?: string })
-  | (SaveGeneratedDocumentOutput & { generatedDocumentId?: string })
-  | SendTemplatedEmailOutput;
+  | (SaveGeneratedDocumentOutput & { generatedDocumentId?: string });
 
 export type DocumentWorkflowActionDefinition<TInput, TOutput extends DocumentWorkflowActionOutput> = {
   key: string;
@@ -43,7 +37,7 @@ export type DocumentWorkflowActionDefinition<TInput, TOutput extends DocumentWor
 
 export const GLOBAL_TRIGGER_REQUIREMENTS = [
   'Global triggers do not provide a primary record automatically.',
-  'Provide templateId explicitly for Render Template, Send Templated Email, and Save Generated Document actions.',
+  'Provide templateId explicitly for Render Template and Save Generated Document actions.',
   'Provide contextOverrides or previewData when no Single-record trigger context is available.',
   'For Bulk workflows, use the Twenty workflow iterator/list-selection step and run these actions once per record.',
 ].join(' ');
@@ -90,29 +84,6 @@ export const generatePdfWorkflowAction: DocumentWorkflowActionDefinition<
   },
 };
 
-export const sendTemplatedEmailWorkflowAction: DocumentWorkflowActionDefinition<
-  SendTemplatedEmailInput,
-  SendTemplatedEmailOutput
-> = {
-  key: 'documents.sendTemplatedEmail',
-  name: 'Send Templated Email',
-  description: 'Send rendered HTML or render a template and email it through the configured Twenty/SMTP adapter.',
-  requiredScopes: ['sendEmails'],
-  triggerPatterns: iteratorTriggerPatterns,
-  globalTriggerRequirements: GLOBAL_TRIGGER_REQUIREMENTS,
-  inputs: [
-    'templateId',
-    'renderedHtml',
-    'recipients',
-    'subjectOverride',
-    'contextOverrides',
-    'attachPdf',
-    'generatedDocumentId',
-  ],
-  inputsFrom: ['html', 'context', 'generatedDocumentId', 'pdfUrl'],
-  outputs: ['messageId', 'status', 'subject', 'html', 'text', 'pdfUrl'],
-  run: sendTemplatedEmailLogic,
-};
 
 export const saveGeneratedDocumentWorkflowAction: DocumentWorkflowActionDefinition<
   SaveGeneratedDocumentInput,
@@ -147,7 +118,6 @@ export const saveGeneratedDocumentWorkflowAction: DocumentWorkflowActionDefiniti
 export const documentWorkflowActions = [
   renderTemplateWorkflowAction,
   generatePdfWorkflowAction,
-  sendTemplatedEmailWorkflowAction,
   saveGeneratedDocumentWorkflowAction,
 ] as const;
 

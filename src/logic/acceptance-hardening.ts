@@ -5,10 +5,9 @@ export type AcceptanceScenarioId =
   | 'general-objects-permissions-settings'
   | 'template-management-create-edit-preview-list-delete'
   | 'document-generation-single-pdf-save-bulk'
-  | 'email-sending-attachment-logging-permission'
   | 'workflow-registration-context-error-handling'
   | 'ui-accessibility-responsiveness-feedback'
-  | 'security-injection-attachment-email-policy';
+  | 'security-injection-attachment-policy';
 
 export type AcceptanceScenario = {
   id: AcceptanceScenarioId;
@@ -26,7 +25,6 @@ export type AcceptanceContext = {
   generatedDocumentSaved?: boolean;
   pdfGenerated?: boolean;
   bulkResultsSaved?: number;
-  emailSent?: boolean;
   workflowActionsRegistered?: string[];
   uiAccessible?: boolean;
   securityEscapingOk?: boolean;
@@ -57,12 +55,6 @@ export const ACCEPTANCE_SCENARIOS: AcceptanceScenario[] = [
     requiredSignals: ['generatedDocumentSaved', 'pdfGenerated', 'bulkResultsSaved'],
   },
   {
-    id: 'email-sending-attachment-logging-permission',
-    title: 'Templated email sends attachments and logs message IDs',
-    requiredPermissions: ['sendEmails'],
-    requiredSignals: ['emailSent'],
-  },
-  {
     id: 'workflow-registration-context-error-handling',
     title: 'Workflow actions register and chain with record context',
     requiredSignals: ['workflowActionsRegistered'],
@@ -73,9 +65,9 @@ export const ACCEPTANCE_SCENARIOS: AcceptanceScenario[] = [
     requiredSignals: ['uiAccessible'],
   },
   {
-    id: 'security-injection-attachment-email-policy',
-    title: 'Escaping, storage attachment protection, and email policy boundaries hold',
-    requiredPermissions: ['sendEmails', 'generateDocuments'],
+    id: 'security-injection-attachment-policy',
+    title: 'Escaping, storage attachment protection, and file attachment boundaries hold',
+    requiredPermissions: ['generateDocuments'],
     requiredSignals: ['securityEscapingOk'],
   },
 ];
@@ -120,7 +112,7 @@ export const runAcceptanceScenario = async (
 
     if (signal === 'workflowActionsRegistered') {
       const actions = new Set(context.workflowActionsRegistered ?? []);
-      const required = ['Render Template', 'Generate PDF', 'Send Templated Email'];
+      const required = ['Render Template', 'Generate PDF', 'Save Generated Document'];
       const absent = required.filter((actionName) => !actions.has(actionName));
       if (absent.length) missing.push(`workflow actions not registered: ${absent.join(', ')}`);
       else evidence.push('workflow actions registered');

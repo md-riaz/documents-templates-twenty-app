@@ -21,6 +21,17 @@ enum DocumentTemplateStatus {
   ARCHIVED = 'ARCHIVED',
 }
 
+enum DocumentTemplateProvider {
+  DEFAULT = 'DEFAULT',
+  COMPANY = 'company',
+  PERSON = 'person',
+  OPPORTUNITY = 'opportunity',
+  TASK = 'task',
+  NOTE = 'note',
+  CALENDAR_EVENT = 'calendarEvent',
+  CUSTOM = 'custom',
+}
+
 export default defineObject({
   universalIdentifier: DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'documentTemplate',
@@ -33,7 +44,6 @@ export default defineObject({
   labelIdentifierFieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name,
   fields: [
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, type: FieldType.TEXT, name: 'name', label: 'Name', description: 'Template name', icon: 'IconAbc' },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.slug, type: FieldType.TEXT, name: 'slug', label: 'Slug', description: 'Unique template slug', icon: 'IconLink' },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.category,
       type: FieldType.RELATION,
@@ -61,9 +71,26 @@ export default defineObject({
       defaultValue: `'${DocumentTemplateRenderer.HANDLEBARS}'`,
       options: [{ value: DocumentTemplateRenderer.HANDLEBARS, label: 'Handlebars', position: 0, color: 'blue' }],
     },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.defaultSubject, type: FieldType.TEXT, name: 'defaultSubject', label: 'Default Subject', description: 'Default email subject', icon: 'IconMail', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.provider, type: FieldType.TEXT, name: 'provider', label: 'Provider', description: 'Context provider override', icon: 'IconPlug', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed outputs such as HTML/PDF/email', icon: 'IconFiles', defaultValue: [] },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.provider,
+      type: FieldType.SELECT,
+      name: 'provider',
+      label: 'Provider',
+      description: 'Context provider for this template',
+      icon: 'IconPlug',
+      defaultValue: `'${DocumentTemplateProvider.DEFAULT}'`,
+      options: [
+        { value: DocumentTemplateProvider.DEFAULT, label: 'Default', position: 0, color: 'gray' },
+        { value: DocumentTemplateProvider.COMPANY, label: 'Company', position: 1, color: 'blue' },
+        { value: DocumentTemplateProvider.PERSON, label: 'Person', position: 2, color: 'green' },
+        { value: DocumentTemplateProvider.OPPORTUNITY, label: 'Opportunity', position: 3, color: 'purple' },
+        { value: DocumentTemplateProvider.TASK, label: 'Task', position: 4, color: 'orange' },
+        { value: DocumentTemplateProvider.NOTE, label: 'Note', position: 5, color: 'yellow' },
+        { value: DocumentTemplateProvider.CALENDAR_EVENT, label: 'Calendar Event', position: 6, color: 'red' },
+        { value: DocumentTemplateProvider.CUSTOM, label: 'Custom', position: 7, color: 'gray' },
+      ],
+    },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: [] },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.status,
       type: FieldType.SELECT,
@@ -71,14 +98,13 @@ export default defineObject({
       label: 'Status',
       description: 'Template lifecycle status',
       icon: 'IconStatusChange',
-      defaultValue: `'${DocumentTemplateStatus.DRAFT}'`,
+      defaultValue: `'${DocumentTemplateStatus.ACTIVE}'`,
       options: [
-        { value: DocumentTemplateStatus.DRAFT, label: 'Draft', position: 0, color: 'gray' },
-        { value: DocumentTemplateStatus.ACTIVE, label: 'Active', position: 1, color: 'green' },
+        { value: DocumentTemplateStatus.ACTIVE, label: 'Active', position: 0, color: 'green' },
+        { value: DocumentTemplateStatus.DRAFT, label: 'Draft', position: 1, color: 'gray' },
         { value: DocumentTemplateStatus.ARCHIVED, label: 'Archived', position: 2, color: 'yellow' },
       ],
     },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.isActive, type: FieldType.BOOLEAN, name: 'isActive', label: 'Active', description: 'Whether this template can be used for generation', icon: 'IconCircleCheck', defaultValue: false },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.version, type: FieldType.NUMBER, name: 'version', label: 'Version', description: 'Current template version number', icon: 'IconVersions', defaultValue: 1 },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.versions,
