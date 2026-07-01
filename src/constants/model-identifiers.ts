@@ -62,16 +62,10 @@ export const DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS = {
   company: '2b248e42-d90b-4aa1-ad0e-e23a2361811e',
   person: '596b907d-db12-437e-a76c-6e4a598a34ab',
   opportunity: '0951a49e-d410-44d8-8b8b-3c450c665d48',
-  task: 'fd4f49ed-2456-4a73-a21b-bb82b6d8156c',
-  note: '0cabbf97-f800-4d3d-b3b3-3cf1f41c26e2',
-  calendarEvent: 'c6e58054-e52d-4fb7-8125-bc4aa53b04dd',
 } as const;
 
 export const DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS = {
   company: 'f1563bac-ce95-40dc-9239-5f9a6c3f033c',
   person: '9dc0b870-8baf-46ab-9bd8-099183f06901',
   opportunity: '45436271-3b58-449f-8f7b-0fb4ca866401',
-  task: 'ab0107fc-d7cc-4109-8331-452f5f4e9d9b',
-  note: 'fa34fa4b-42fd-408d-a107-e5aad39dd7eb',
-  calendarEvent: 'f76c9512-ffb0-477a-b110-db6803dd69c1',
 } as const;

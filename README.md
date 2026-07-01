@@ -77,6 +77,49 @@ Marketplace screenshots are tracked as placeholder briefs until final UI capture
 - [Generate document modal](docs/screenshots/03-generate-document-modal.md)
 - [Workflow builder](docs/screenshots/05-workflow-builder.md)
 
+## Adding Documents tab to any record page
+
+The app ships with a Documents tab on Company, Person, and Opportunity records. To add a filtered Documents tab to any other record (custom objects, Tasks, Notes, etc.):
+
+### Via Twenty UI
+
+1. Open the record page for the object (e.g., Task, custom "Proposal" object)
+2. Click the **+** tab button or go to **Settings → Data Model → [Object] → Page Layout**
+3. Add a new tab, name it "Documents"
+4. Add a **Front Component** widget
+5. Select the **Documents Shell** front component from this app
+6. Save the layout
+
+The widget automatically filters generated documents by the current record's type and ID.
+
+### Via code (for app developers)
+
+```typescript
+import { definePageLayoutTab, PageLayoutTabLayoutMode, STANDARD_PAGE_LAYOUT } from 'twenty-sdk/define';
+
+// For a standard object (e.g., customTask):
+definePageLayoutTab({
+  universalIdentifier: '<your-unique-uuid>',
+  pageLayoutUniversalIdentifier: STANDARD_PAGE_LAYOUT.customTaskRecordPage.universalIdentifier,
+  title: 'Documents',
+  icon: 'IconFileText',
+  position: 60,
+  layoutMode: PageLayoutTabLayoutMode.GRID,
+  widgets: [{
+    universalIdentifier: '<widget-uuid>',
+    title: 'Generated Documents',
+    type: 'front-component',
+    gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
+    configuration: {
+      configurationType: 'FRONT_COMPONENT',
+      frontComponentUniversalIdentifier: '<DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER>',
+    },
+  }],
+});
+```
+
+For custom objects, use the object's page layout universal identifier from the metadata API or your object definition.
+
 ## Verification
 
 Run the release verification command from the app root:

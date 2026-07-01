@@ -43,13 +43,10 @@ export {
   type PdfSettingsState,
 } from './front-components/pdf-settings.front-component';
 export {
-  calendarEventDocumentsPageLayoutTab,
   companyDocumentsPageLayoutTab,
   documentsStandardRecordTabs,
-  noteDocumentsPageLayoutTab,
   opportunityDocumentsPageLayoutTab,
   personDocumentsPageLayoutTab,
-  taskDocumentsPageLayoutTab,
 } from './page-layout-tabs/documents-standard-record-tabs';
 export {
   ContextProviderRegistry,

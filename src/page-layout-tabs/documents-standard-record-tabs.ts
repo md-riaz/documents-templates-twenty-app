@@ -10,9 +10,6 @@ const RECORD_PAGE_LAYOUTS = {
   company: STANDARD_PAGE_LAYOUT.companyRecordPage.universalIdentifier,
   person: STANDARD_PAGE_LAYOUT.personRecordPage.universalIdentifier,
   opportunity: STANDARD_PAGE_LAYOUT.opportunityRecordPage.universalIdentifier,
-  task: STANDARD_PAGE_LAYOUT.taskRecordPage.universalIdentifier,
-  note: STANDARD_PAGE_LAYOUT.noteRecordPage.universalIdentifier,
-  calendarEvent: STANDARD_PAGE_LAYOUT.calendarEventRecordPage.universalIdentifier,
 } as const;
 
 const makeDocumentsPageLayoutTab = (object: keyof typeof DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS) => definePageLayoutTab({
@@ -39,17 +36,11 @@ const makeDocumentsPageLayoutTab = (object: keyof typeof DOCUMENTS_TAB_UNIVERSAL
 export const companyDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('company');
 export const personDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('person');
 export const opportunityDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('opportunity');
-export const taskDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('task');
-export const noteDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('note');
-export const calendarEventDocumentsPageLayoutTab = makeDocumentsPageLayoutTab('calendarEvent');
 
 export const documentsStandardRecordTabs = [
   companyDocumentsPageLayoutTab,
   personDocumentsPageLayoutTab,
   opportunityDocumentsPageLayoutTab,
-  taskDocumentsPageLayoutTab,
-  noteDocumentsPageLayoutTab,
-  calendarEventDocumentsPageLayoutTab,
 ];
 
 export default documentsStandardRecordTabs;
