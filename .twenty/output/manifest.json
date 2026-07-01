@@ -1572,14 +1572,6 @@
   "viewFields": [],
   "navigationMenuItems": [
     {
-      "universalIdentifier": "06d955e6-4099-4162-9aa6-e35fb20e6607",
-      "type": "VIEW",
-      "name": "Generated Documents",
-      "icon": "IconFileText",
-      "position": 41,
-      "viewUniversalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0"
-    },
-    {
       "universalIdentifier": "588cfc4f-41bc-41df-a199-40a998ec5b71",
       "type": "VIEW",
       "name": "Templates",

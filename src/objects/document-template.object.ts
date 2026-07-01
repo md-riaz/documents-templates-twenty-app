@@ -90,7 +90,7 @@ export default defineObject({
         { value: DocumentTemplateProvider.CUSTOM, label: 'Custom', position: 7, color: 'gray' },
       ],
     },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: "['PDF']" },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: ['PDF'] as string[] },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.status,
       type: FieldType.SELECT,

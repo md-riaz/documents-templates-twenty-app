@@ -41,7 +41,6 @@ test('navigation saved views command menu and page tab shells are registered', (
     'src/menu/document-template.view.ts',
     'src/menu/generated-document.view.ts',
     'src/menu/documents-templates.navigation-menu-item.ts',
-    'src/menu/generated-documents.navigation-menu-item.ts',
     'src/page-layout-tabs/documents-standard-record-tabs.ts',
   ]) {
     assert.ok(existsSync(join(root, path)), `${path} should exist`);
@@ -56,7 +55,6 @@ test('navigation saved views command menu and page tab shells are registered', (
     'documentTemplateView',
     'generatedDocumentView',
     'documentsTemplatesNavigationMenuItem',
-    'generatedDocumentsNavigationMenuItem',
     'companyDocumentsPageLayoutTab',
     'personDocumentsPageLayoutTab',
   ]) {

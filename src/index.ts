@@ -7,7 +7,6 @@ export { default as generatedDocumentObject } from './objects/generated-document
 export { default as documentTemplateView } from './menu/document-template.view';
 export { default as generatedDocumentView } from './menu/generated-document.view';
 export { default as documentsTemplatesNavigationMenuItem } from './menu/documents-templates.navigation-menu-item';
-export { default as generatedDocumentsNavigationMenuItem } from './menu/generated-documents.navigation-menu-item';
 export { default as documentShellFrontComponent } from './front-components/document-shell.front-component';
 export {
   TemplateEditorController,
