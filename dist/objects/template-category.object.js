@@ -1,0 +1,66 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const define_1 = require("twenty-sdk/define");
+const model_identifiers_1 = require("src/constants/model-identifiers");
+exports.default = (0, define_1.defineObject)({
+    universalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
+    nameSingular: 'templateCategory',
+    namePlural: 'templateCategories',
+    labelSingular: 'TemplateCategory',
+    labelPlural: 'Template Categories',
+    description: 'Category used to organize document templates.',
+    icon: 'IconFolder',
+    labelIdentifierFieldMetadataUniversalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_FIELDS.name,
+    fields: [
+        {
+            universalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_FIELDS.name,
+            type: define_1.FieldType.TEXT,
+            name: 'name',
+            label: 'Name',
+            description: 'Category name',
+            icon: 'IconAbc',
+        },
+        {
+            universalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_FIELDS.color,
+            type: define_1.FieldType.TEXT,
+            name: 'color',
+            label: 'Color',
+            description: 'Display color token',
+            icon: 'IconPalette',
+            isNullable: true,
+            defaultValue: null,
+        },
+        {
+            universalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_FIELDS.icon,
+            type: define_1.FieldType.TEXT,
+            name: 'icon',
+            label: 'Icon',
+            description: 'Display icon name',
+            icon: 'IconIcons',
+            isNullable: true,
+            defaultValue: null,
+        },
+        {
+            universalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_FIELDS.description,
+            type: define_1.FieldType.RICH_TEXT,
+            name: 'description',
+            label: 'Description',
+            description: 'Category description',
+            icon: 'IconNotes',
+            isNullable: true,
+            defaultValue: null,
+        },
+        {
+            universalIdentifier: model_identifiers_1.TEMPLATE_CATEGORY_FIELDS.templates,
+            type: define_1.FieldType.RELATION,
+            name: 'templates',
+            label: 'Templates',
+            description: 'DocumentTemplate records in this category',
+            icon: 'IconTemplate',
+            isNullable: true,
+            relationTargetFieldMetadataUniversalIdentifier: model_identifiers_1.DOCUMENT_TEMPLATE_FIELDS.category,
+            relationTargetObjectMetadataUniversalIdentifier: model_identifiers_1.DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+            universalSettings: { relationType: define_1.RelationType.ONE_TO_MANY },
+        },
+    ],
+});

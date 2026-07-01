@@ -1,0 +1,108 @@
+import { defineObject, FieldType, OnDeleteAction, RelationType } from 'twenty-sdk/define';
+
+import {
+  DOCUMENT_TEMPLATE_FIELDS,
+  DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+  GENERATED_DOCUMENT_FIELDS,
+  GENERATED_DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  TEMPLATE_CATEGORY_FIELDS,
+  TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
+  TEMPLATE_VERSION_FIELDS,
+  TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+enum DocumentTemplateRenderer {
+  HANDLEBARS = 'HANDLEBARS',
+}
+
+enum DocumentTemplateStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export default defineObject({
+  universalIdentifier: DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+  nameSingular: 'documentTemplate',
+  namePlural: 'documentTemplates',
+  labelSingular: 'DocumentTemplate',
+  labelPlural: 'Document Templates',
+  description: 'Code-first HTML/CSS template for document generation.',
+  icon: 'IconTemplate',
+  isSearchable: true,
+  labelIdentifierFieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name,
+  fields: [
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, type: FieldType.TEXT, name: 'name', label: 'Name', description: 'Template name', icon: 'IconAbc' },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.slug, type: FieldType.TEXT, name: 'slug', label: 'Slug', description: 'Unique template slug', icon: 'IconLink' },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.category,
+      type: FieldType.RELATION,
+      name: 'category',
+      label: 'TemplateCategory',
+      description: 'Category for this DocumentTemplate',
+      icon: 'IconFolder',
+      isNullable: true,
+      relationTargetFieldMetadataUniversalIdentifier: TEMPLATE_CATEGORY_FIELDS.templates,
+      relationTargetObjectMetadataUniversalIdentifier: TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
+      universalSettings: { relationType: RelationType.MANY_TO_ONE, onDelete: OnDeleteAction.SET_NULL, joinColumnName: 'categoryId' },
+    },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.description, type: FieldType.RICH_TEXT, name: 'description', label: 'Description', description: 'Template description', icon: 'IconNotes', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.RICH_TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.cssSource, type: FieldType.RICH_TEXT, name: 'cssSource', label: 'CSS Source', description: 'Template CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.variables, type: FieldType.RAW_JSON, name: 'variables', label: 'Variables', description: 'Variable schema as JSON', icon: 'IconBraces', isNullable: true, defaultValue: null },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.renderer,
+      type: FieldType.SELECT,
+      name: 'renderer',
+      label: 'Renderer',
+      description: 'Template rendering engine',
+      icon: 'IconEngine',
+      defaultValue: `'${DocumentTemplateRenderer.HANDLEBARS}'`,
+      options: [{ value: DocumentTemplateRenderer.HANDLEBARS, label: 'Handlebars', position: 0, color: 'blue' }],
+    },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.defaultSubject, type: FieldType.TEXT, name: 'defaultSubject', label: 'Default Subject', description: 'Default email subject', icon: 'IconMail', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.provider, type: FieldType.TEXT, name: 'provider', label: 'Provider', description: 'Context provider override', icon: 'IconPlug', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed outputs such as HTML/PDF/email', icon: 'IconFiles', defaultValue: [] },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.status,
+      type: FieldType.SELECT,
+      name: 'status',
+      label: 'Status',
+      description: 'Template lifecycle status',
+      icon: 'IconStatusChange',
+      defaultValue: `'${DocumentTemplateStatus.DRAFT}'`,
+      options: [
+        { value: DocumentTemplateStatus.DRAFT, label: 'Draft', position: 0, color: 'gray' },
+        { value: DocumentTemplateStatus.ACTIVE, label: 'Active', position: 1, color: 'green' },
+        { value: DocumentTemplateStatus.ARCHIVED, label: 'Archived', position: 2, color: 'yellow' },
+      ],
+    },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.isActive, type: FieldType.BOOLEAN, name: 'isActive', label: 'Active', description: 'Whether this template can be used for generation', icon: 'IconCircleCheck', defaultValue: false },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.version, type: FieldType.NUMBER, name: 'version', label: 'Version', description: 'Current template version number', icon: 'IconVersions', defaultValue: 1 },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.versions,
+      type: FieldType.RELATION,
+      name: 'versions',
+      label: 'TemplateVersion records',
+      description: 'TemplateVersion history for this DocumentTemplate',
+      icon: 'IconHistory',
+      isNullable: true,
+      relationTargetFieldMetadataUniversalIdentifier: TEMPLATE_VERSION_FIELDS.template,
+      relationTargetObjectMetadataUniversalIdentifier: TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
+      universalSettings: { relationType: RelationType.ONE_TO_MANY },
+    },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.generatedDocuments,
+      type: FieldType.RELATION,
+      name: 'generatedDocuments',
+      label: 'GeneratedDocument records',
+      description: 'GeneratedDocument history from this DocumentTemplate',
+      icon: 'IconFileText',
+      isNullable: true,
+      relationTargetFieldMetadataUniversalIdentifier: GENERATED_DOCUMENT_FIELDS.template,
+      relationTargetObjectMetadataUniversalIdentifier: GENERATED_DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+      universalSettings: { relationType: RelationType.ONE_TO_MANY },
+    },
+  ],
+});

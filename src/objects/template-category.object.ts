@@ -1,0 +1,71 @@
+import { defineObject, FieldType, RelationType } from 'twenty-sdk/define';
+
+import {
+  DOCUMENT_TEMPLATE_FIELDS,
+  DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+  TEMPLATE_CATEGORY_FIELDS,
+  TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
+} from 'src/constants/model-identifiers';
+
+export default defineObject({
+  universalIdentifier: TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
+  nameSingular: 'templateCategory',
+  namePlural: 'templateCategories',
+  labelSingular: 'TemplateCategory',
+  labelPlural: 'Template Categories',
+  description: 'Category used to organize document templates.',
+  icon: 'IconFolder',
+  labelIdentifierFieldMetadataUniversalIdentifier: TEMPLATE_CATEGORY_FIELDS.name,
+  fields: [
+    {
+      universalIdentifier: TEMPLATE_CATEGORY_FIELDS.name,
+      type: FieldType.TEXT,
+      name: 'name',
+      label: 'Name',
+      description: 'Category name',
+      icon: 'IconAbc',
+    },
+    {
+      universalIdentifier: TEMPLATE_CATEGORY_FIELDS.color,
+      type: FieldType.TEXT,
+      name: 'color',
+      label: 'Color',
+      description: 'Display color token',
+      icon: 'IconPalette',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: TEMPLATE_CATEGORY_FIELDS.icon,
+      type: FieldType.TEXT,
+      name: 'icon',
+      label: 'Icon',
+      description: 'Display icon name',
+      icon: 'IconIcons',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: TEMPLATE_CATEGORY_FIELDS.description,
+      type: FieldType.RICH_TEXT,
+      name: 'description',
+      label: 'Description',
+      description: 'Category description',
+      icon: 'IconNotes',
+      isNullable: true,
+      defaultValue: null,
+    },
+    {
+      universalIdentifier: TEMPLATE_CATEGORY_FIELDS.templates,
+      type: FieldType.RELATION,
+      name: 'templates',
+      label: 'Templates',
+      description: 'DocumentTemplate records in this category',
+      icon: 'IconTemplate',
+      isNullable: true,
+      relationTargetFieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.category,
+      relationTargetObjectMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
+      universalSettings: { relationType: RelationType.ONE_TO_MANY },
+    },
+  ],
+});

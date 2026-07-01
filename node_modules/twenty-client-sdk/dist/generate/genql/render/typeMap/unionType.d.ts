@@ -1,0 +1,4 @@
+import { GraphQLUnionType } from 'graphql';
+import { RenderContext } from '../common/RenderContext';
+import { FieldMap } from '../../runtime/types';
+export declare const unionType: (type: GraphQLUnionType, _: RenderContext) => FieldMap<string>;

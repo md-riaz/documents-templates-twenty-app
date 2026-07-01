@@ -1,0 +1,3 @@
+import { GraphQLNamedType } from 'graphql';
+import { RenderContext } from '../common/RenderContext';
+export declare const getTypeMappedAlias: (type: GraphQLNamedType, ctx: RenderContext) => string;
