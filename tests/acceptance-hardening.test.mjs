@@ -57,7 +57,6 @@ const fixtureTemplate = {
   isActive: true,
   status: 'ACTIVE',
   htmlSource: '<main><h1>Bonjour {{person.name}}</h1><p>{{company.name}} — {{message}}</p><p>{{unsafe}}</p></main>',
-  renderer: 'HANDLEBARS',
 };
 
 const createFixtureApi = () => ({
@@ -111,7 +110,6 @@ test('modal and editor controls expose keyboard-friendly labels, dialog roles, l
   const editorMarkup = renderTemplateEditorMarkup(createTemplateEditorState({
     template: {
       name: 'Accessible',
-      slug: 'accessible',
       htmlSource: '<h1>{{person.name}}</h1>',
       variables: [{ path: 'person.name', label: 'Person name', required: true }],
     },

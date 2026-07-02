@@ -45,7 +45,6 @@ const createFixtureApi = () => {
           isActive: true,
           status: 'ACTIVE',
           htmlSource: '<h1>Hello {{person.name.firstName}}</h1><p>{{uppercase company.name}}</p>',
-          renderer: 'HANDLEBARS',
         };
       }
       if (objectName === 'documentTemplate' && id === 'inactive-template') {
@@ -57,7 +56,6 @@ const createFixtureApi = () => {
           name: 'Opportunity Brief',
           isActive: true,
           status: 'ACTIVE',
-          renderer: 'HANDLEBARS',
           boundObjectName: 'opportunity',
           htmlSource: '<h1>{{opportunity.name}}</h1>',
         };

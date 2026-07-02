@@ -18,7 +18,6 @@ export const DOCUMENT_TEMPLATE_FIELDS = {
   htmlSource: 'a45b67ab-a09e-42e4-b288-5cc34b9339a2',
   previewData: '4f516d80-001b-4000-827c-a6c3811ac55f',
   variables: 'dffbba91-28f1-456d-9496-9d5df3021701',
-  renderer: 'dc86ed49-c756-4166-9f8e-a117fdfdaf4d',
   boundObjectName: '3012ab43-b335-4e0a-b3e5-1739b6d08800',
   allowedOutputTypes: '59771ff1-ebb9-4b2f-8093-c2476a08fa0d',
   status: '0d115bc2-2d5e-4e82-b933-62732dcba599',

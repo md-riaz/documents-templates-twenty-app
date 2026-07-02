@@ -45,11 +45,10 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 **In the UI (primary path):**
 
 1. Go to **Documents & Templates → Templates** and click **+ Add New** — Twenty creates
-   the record immediately with defaults (`status: Active`, `renderer: Handlebars`).
+   the record immediately with defaults (`status: Active`).
 2. Open the new row. Its record page has two tabs:
    - **Fields** — Twenty's native field editor at the top (General/System groups) for
-     **Name**, **Category**, **Renderer**, **Bound object**, **Status**, **Allowed output
-     types**, etc. Below the standard fields, a dedicated large **HTML Source** editing
+     **Name**, **Category**, **Bound object**, **Status**, **Allowed output types**, etc. Below the standard fields, a dedicated large **HTML Source** editing
      area (same pattern Twenty's Task object uses for its body field) lets you write
      Handlebars markup directly.
    - **Editor** — the rich template editor for the parts a native field can't handle:
@@ -78,7 +77,6 @@ await client.mutation({
       data: {
         name: 'Corporate Proposal',
         htmlSource: '<h1>Proposal for {{company.name}}</h1>',
-        renderer: 'HANDLEBARS',
         boundObjectName: 'company',
         status: 'ACTIVE',
       },

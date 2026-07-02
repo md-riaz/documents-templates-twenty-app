@@ -11,10 +11,6 @@ import {
   TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
 } from '../constants/model-identifiers';
 
-enum DocumentTemplateRenderer {
-  HANDLEBARS = 'HANDLEBARS',
-}
-
 enum DocumentTemplateStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
@@ -49,16 +45,6 @@ export default defineObject({
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.variables, type: FieldType.RAW_JSON, name: 'variables', label: 'Variables', description: 'Variable schema as JSON', icon: 'IconBraces', isNullable: true, defaultValue: null },
-    {
-      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.renderer,
-      type: FieldType.SELECT,
-      name: 'renderer',
-      label: 'Renderer',
-      description: 'Template rendering engine',
-      icon: 'IconEngine',
-      defaultValue: `'${DocumentTemplateRenderer.HANDLEBARS}'`,
-      options: [{ value: DocumentTemplateRenderer.HANDLEBARS, label: 'Handlebars', position: 0, color: 'blue' }],
-    },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName,
       type: FieldType.TEXT,

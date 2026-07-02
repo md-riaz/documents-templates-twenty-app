@@ -23,7 +23,6 @@ export type TemplateEditorTemplate = {
   htmlSource: string;
   previewData?: Record<string, unknown>;
   variables?: TemplateEditorVariable[];
-  renderer?: string;
   boundObjectName?: string;
   allowedOutputTypes?: string[];
   status?: string;
@@ -69,7 +68,6 @@ const defaultTemplate: TemplateEditorTemplate = {
   htmlSource: '',
   previewData: {},
   variables: [],
-  renderer: 'HANDLEBARS',
   boundObjectName: '',
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',
@@ -89,7 +87,6 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
     previewData,
     previewJson: JSON.stringify(previewData, null, 2),
     variables: template.variables ?? [],
-    renderer: template.renderer ?? 'HANDLEBARS',
     boundObjectName: template.boundObjectName ?? '',
     allowedOutputTypes: template.allowedOutputTypes ?? ['HTML'],
     status: template.status ?? 'DRAFT',
@@ -237,7 +234,6 @@ export class TemplateEditorController {
       htmlSource: this.state.htmlSource,
       previewData,
       variables: this.state.variables,
-      renderer: this.state.renderer,
       boundObjectName: this.state.boundObjectName,
       allowedOutputTypes: this.state.allowedOutputTypes,
       status: this.state.status,
@@ -308,7 +304,6 @@ const DOCUMENT_TEMPLATE_SELECTION = {
   htmlSource: true,
   previewData: true,
   variables: true,
-  renderer: true,
   boundObjectName: true,
   allowedOutputTypes: true,
   status: true,
@@ -342,7 +337,6 @@ export const fetchDocumentTemplate = async (
     htmlSource: (record.htmlSource as string) ?? '',
     previewData: coerceJson(record.previewData, {}),
     variables: coerceJson(record.variables, []),
-    renderer: (record.renderer as string) ?? 'HANDLEBARS',
     boundObjectName: (record.boundObjectName as string) ?? '',
     allowedOutputTypes: (record.allowedOutputTypes as string[]) ?? ['HTML', 'PDF'],
     status: (record.status as string) ?? 'DRAFT',
@@ -391,7 +385,6 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
               data: {
                 ...editorOwnedData,
                 name: input.name,
-                renderer: input.renderer ?? 'HANDLEBARS',
                 boundObjectName: input.boundObjectName || null,
                 allowedOutputTypes: input.allowedOutputTypes ?? ['HTML', 'PDF'],
                 status: input.status ?? 'ACTIVE',

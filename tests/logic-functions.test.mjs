@@ -38,7 +38,6 @@ const templateRecord = {
   htmlSource: '<h1>Invoice for {{person.name}}</h1><p>Total {{amount}}</p>',
   status: 'ACTIVE',
   isActive: true,
-  renderer: 'HANDLEBARS',
 };
 
 // Fake genql-style CoreApiClient so we exercise the CoreApiClient -> repository bridge.

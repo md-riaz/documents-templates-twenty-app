@@ -39,6 +39,24 @@
   `CoreApiClient`/`RestApiClient`) in the README, plus a `DocumentTemplate` field reference in the
   admin guide.
 
+## 0.2.5
+
+### Removed
+
+- **Deleted the `renderer` field entirely.** `DocumentTemplate.renderer` is removed from the
+  object definition, constants, rendering pipeline, front component, SDK types, saved view,
+  tests, and docs. Handlebars is the only renderer and is hardcoded — storing it as a field
+  added noise with no value.
+- **Cleaned up dead SDK references.** `TemplateSummary.slug`, `TemplateSummary.isActive`,
+  `TemplateSummary.renderer`, and `ListTemplatesInput.provider` were remnants of fields
+  removed in v0.2.0 (`slug`, `isActive`, `provider`). All removed. The `activeOnly` filter
+  now checks `status === 'ACTIVE'` directly instead of the deleted `isActive` boolean.
+
+### Fixed
+
+- **Preview tab widget title said "Template Editor".** Changed to "Template Preview" to
+  match the tab's actual purpose (read-only rendered preview of the template).
+
 ## 0.2.4
 
 ### Removed

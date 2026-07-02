@@ -88,12 +88,9 @@ const createApi = () => {
 const fixtureTemplate = {
   id: 'template-1',
   name: 'Welcome Letter',
-  slug: 'welcome-letter',
   htmlSource: '<h1>Hello {{person.name.firstName}}</h1>',
   previewData: { person: { name: { firstName: 'Ada' } } },
   variables: [{ path: 'person.name.firstName', label: 'First name', required: true }],
-  renderer: 'HANDLEBARS',
-  provider: 'person',
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',
   isActive: true,
@@ -171,7 +168,6 @@ test('template editor save creates or updates templates and records versions whe
     debounceMs: 1,
   });
   createController.updateField('name', 'New Template');
-  createController.updateField('slug', 'new-template');
   createController.updateField('htmlSource', '<p>Hello</p>');
   createController.updateField('previewJson', '{}');
   const created = await createController.save();
@@ -211,7 +207,6 @@ test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTempl
           htmlSource: '<h1>{{company.name}}</h1>',
           previewData: '{"company":{"name":"Acme"}}',
           variables: '[]',
-          renderer: 'HANDLEBARS',
           boundObjectName: 'company',
           allowedOutputTypes: ['HTML', 'PDF'],
           status: 'ACTIVE',
@@ -276,7 +271,7 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
   assert.deepEqual(
     Object.keys(updateData).sort(),
     ['htmlSource', 'previewData', 'variables'],
-    'updating an existing template must not touch name/renderer/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
+    'updating an existing template must not touch name/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
   );
 
   const created = await api.saveTemplate({ name: 'New', htmlSource: '<p>x</p>', status: 'ACTIVE' });
