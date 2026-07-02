@@ -225,9 +225,20 @@ test('render -> save -> generate PDF chains through the logic function handlers'
   assert.equal(pdf.status, 'PDF_GENERATED');
   assert.match(pdf.pdfUrl, /generated-document-generated-1-invoice-ada\.pdf$/);
   assert.equal(pdf.attachmentId, 'attachment-1');
-  assert.deepEqual(pdfFixture.attachments[0], {
+  assert.equal(pdf.documentAttachmentId, 'attachment-2');
+  assert.equal(pdfFixture.attachments.length, 2);
+  assert.deepEqual(pdfFixture.attachments.find((a) => a.objectName === 'person'), {
     objectName: 'person',
     recordId: 'person-1',
+    fileId: 'file-1',
+    fileUrl: pdf.pdfUrl,
+    fileName: 'generated-document-generated-1-invoice-ada.pdf',
+    contentType: 'application/pdf',
+    metadata: { generatedDocumentId: saved.generatedDocumentId },
+  });
+  assert.deepEqual(pdfFixture.attachments.find((a) => a.objectName === 'generatedDocument'), {
+    objectName: 'generatedDocument',
+    recordId: 'generated-1',
     fileId: 'file-1',
     fileUrl: pdf.pdfUrl,
     fileName: 'generated-document-generated-1-invoice-ada.pdf',

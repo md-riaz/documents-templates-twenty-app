@@ -231,6 +231,11 @@ export class GenerateDocumentController {
   }
 
   async generate(options: { save?: boolean; generatePdf?: boolean } = {}): Promise<{ ok: boolean; generatedDocumentId?: string; pdfUrl?: string; errors?: string[] }> {
+    if (this.state.isGenerating) {
+      const errors = ['Document generation is already in progress.'];
+      return { ok: false, errors };
+    }
+
     if (!this.state.selectedTemplateId) {
       const errors = ['Select a template before generating a document.'];
       this.state = { ...this.state, errors };
@@ -397,7 +402,9 @@ export const GenerateDocumentComponent = ({
   const canGenerate = !state.isGenerating && Boolean(state.selectedTemplateId) && Boolean(primaryRecordId);
 
   const onGenerate = async (): Promise<void> => {
-    const result = await controller.generate({ save: state.shouldSave, generatePdf });
+    const generation = controller.generate({ save: state.shouldSave, generatePdf });
+    sync();
+    const result = await generation;
     sync();
     if (result.ok) {
       void enqueueSnackbar({ message: controller.state.statusMessage || 'Document generated.', variant: 'success' });

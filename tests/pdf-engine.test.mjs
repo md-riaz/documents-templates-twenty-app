@@ -144,12 +144,12 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to 
     },
     async attachFileToRecord(input) {
       calls.push({ type: 'attach', input });
-      assert.equal(input.objectName, 'person');
-      assert.equal(input.recordId, 'person-1');
+      assert.ok(['person', 'generatedDocument'].includes(input.objectName));
+      assert.equal(input.recordId, input.objectName === 'person' ? 'person-1' : 'generated-1');
       assert.equal(input.fileId, 'file-1');
       assert.match(input.fileName, /^generated-document-generated-1-.*\.pdf$/);
       assert.equal(input.contentType, 'application/pdf');
-      return { attachmentId: 'attachment-1' };
+      return { attachmentId: input.objectName === 'person' ? 'attachment-1' : 'attachment-2' };
     },
   };
   const api = {
@@ -164,6 +164,12 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to 
         recordId: 'person-1',
         fileId: 'file-1',
         attachmentId: 'attachment-1',
+      });
+      assert.deepEqual(data.metadata.documentAttachment, {
+        objectName: 'generatedDocument',
+        recordId: 'generated-1',
+        fileId: 'file-1',
+        attachmentId: 'attachment-2',
       });
       return { id, ...data };
     },
@@ -186,7 +192,19 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to 
   assert.match(output.pdfUrl, /^twenty:\/\/files\/generated-documents\/generated-1\//);
   assert.equal(output.status, 'PDF_GENERATED');
   assert.equal(output.bytes, Buffer.byteLength('%PDF-1.4\nHello PDF\n%%EOF'));
-  assert.deepEqual(calls.map((call) => call.type), ['render', 'upload', 'attach', 'update']);
+  assert.deepEqual(output.sourceAttachment, {
+    objectName: 'person', recordId: 'person-1', fileId: 'file-1', attachmentId: 'attachment-1',
+  });
+  assert.deepEqual(output.documentAttachment, {
+    objectName: 'generatedDocument', recordId: 'generated-1', fileId: 'file-1', attachmentId: 'attachment-2',
+  });
+  const callTypes = calls.map((call) => call.type);
+  assert.equal(callTypes[0], 'render');
+  assert.equal(callTypes.at(-1), 'update');
+  // One upload per attach target (source + generatedDocument) — a single
+  // uploaded file cannot back two Attachments, so each target gets its own.
+  assert.equal(callTypes.filter((type) => type === 'upload').length, 2);
+  assert.equal(callTypes.filter((type) => type === 'attach').length, 2);
 });
 
 test('generatePdfFromHtmlLogic enforces permissions and reports adapter/storage failures', async () => {

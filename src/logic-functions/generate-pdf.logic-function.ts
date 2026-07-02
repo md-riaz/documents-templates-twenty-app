@@ -29,8 +29,12 @@ export type GeneratePdfActionInput = {
 };
 
 export type GeneratePdfActionOutput = {
+  /** Best-effort cache of a signed download URL that expires (~24h) — prefer documentAttachmentId for durable retrieval. */
   pdfUrl?: string;
+  /** Attachment on the source record (e.g. the Company the document was generated from). */
   attachmentId?: string;
+  /** Attachment on the GeneratedDocument record itself; fetch via its Files tab/`attachments` relation using only a generatedDocumentId. */
+  documentAttachmentId?: string;
   status: 'PDF_GENERATED' | 'FAILED';
 };
 
@@ -60,6 +64,7 @@ const outputSchema = jsonSchemaToInputSchema({
   properties: {
     pdfUrl: { type: 'string', label: 'PDF URL' },
     attachmentId: { type: 'string', label: 'Attachment ID' },
+    documentAttachmentId: { type: 'string', label: 'Document Attachment ID' },
     status: { type: 'string', label: 'Status' },
   },
 });
@@ -94,6 +99,7 @@ export const runGeneratePdf = async (
   return {
     pdfUrl: result.pdfUrl,
     attachmentId: result.sourceAttachment?.attachmentId,
+    documentAttachmentId: result.documentAttachment?.attachmentId,
     status: result.status,
   };
 };
@@ -104,7 +110,7 @@ export const runGeneratePdf = async (
 export default defineLogicFunction({
   universalIdentifier: GENERATE_PDF_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
   name: 'Generate PDF',
-  description: 'Render HTML into a PDF, upload it to Twenty file storage, and optionally attach it to a source record.',
+  description: 'Render HTML into a PDF, upload it to Twenty file storage, and attach it to the source record and/or the GeneratedDocument record.',
   workflowActionTriggerSettings: {
     label: 'Generate PDF',
     icon: 'IconFilePdf',

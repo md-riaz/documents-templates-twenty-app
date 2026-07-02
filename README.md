@@ -32,7 +32,10 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 4. Use the live preview to validate variables before publishing.
 5. From a supported record page, choose **Generate Document**.
 6. Review the rendered content, optionally generate a PDF, then save.
-7. Generated PDFs attach to the source CRM record when record context is available.
+7. Generated PDFs attach to the source CRM record when record context is available, and
+   separately to the GeneratedDocument audit record itself — so the PDF can always be
+   retrieved later from that record's own Files tab using only its ID, even after the
+   cached `pdfUrl` (a signed link that expires) goes stale.
 8. Use the **Documents** record tab to review generated-document audit/history.
 
 ### Template authoring basics

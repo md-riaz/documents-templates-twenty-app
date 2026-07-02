@@ -105,22 +105,19 @@ export const createCoreRecordApi = (client: CoreApiClient): CoreRecordApi => {
  *     label }` (NOT `{ url, name, id }`, which is also a fictional shape from the
  *     same unverified adapter).
  */
-const RECORD_TYPE_FIELD_MAP: Record<string, string> = {
-  company: 'targetCompanyId',
-  person: 'targetPersonId',
-  opportunity: 'targetOpportunityId',
-  task: 'targetTaskId',
-  note: 'targetNoteId',
-  calendarEvent: 'targetCalendarEventId',
-  generatedDocument: 'targetGeneratedDocumentId',
-  documentTemplate: 'targetDocumentTemplateId',
-  workflow: 'targetWorkflowId',
-  workflowVersion: 'targetWorkflowVersionId',
-  workflowRun: 'targetWorkflowRunId',
-  dashboard: 'targetDashboardId',
-};
-
-const getAttachmentField = (objectName: string): string | undefined => RECORD_TYPE_FIELD_MAP[objectName.toLowerCase()];
+/**
+ * Twenty's `AttachmentCreateInput` exposes a `target<ObjectName>Id: ID` field for
+ * every object that can be an Attachment target — confirmed live against the real
+ * schema to follow `target${PascalCase(nameSingular)}Id` uniformly, including our
+ * own custom objects never explicitly enumerated anywhere (`targetTemplateCategoryId`,
+ * `targetTemplateVersionId`). A previous version of this file kept a static map keyed
+ * by camelCase object names but looked it up with a lower-cased key (always a miss,
+ * silently producing a target-less, orphaned Attachment) and — even if the casing bug
+ * were fixed — would still fail for any custom object not manually added to the list,
+ * defeating this app's "works with any object" goal. Deriving the field name instead
+ * of enumerating it removes both problems.
+ */
+const getAttachmentField = (objectName: string): string => `target${capitalize(objectName)}Id`;
 
 export type MetadataUploadClientLike = {
   uploadFile: (
@@ -149,12 +146,11 @@ export const createCoreStorageAdapter = (
     },
 
     async attachFileToRecord({ objectName, recordId, fileId, fileName }) {
-      const attachmentField = getAttachmentField(objectName);
       if (!fileId) throw new Error('attachFileToRecord requires a fileId from a prior uploadFile call.');
       const attachmentData: Record<string, unknown> = {
         name: fileName,
         file: [{ fileId, label: fileName }],
-        ...(attachmentField ? { [attachmentField]: recordId } : {}),
+        [getAttachmentField(objectName)]: recordId,
       };
 
       const result = await genql.mutation({

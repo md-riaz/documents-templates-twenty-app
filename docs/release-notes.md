@@ -27,14 +27,35 @@ only used mocked API clients, not the real Twenty GraphQL schema.
   real PDF renders, uploads, and attaches to a real CRM record.
 - Removed `src/adapters/puppeteer-pdf.adapter.ts` — an unused, unwired duplicate of
   `pdf.adapter.ts` missing the container-safe `--no-sandbox` launch flags.
+- **`getAttachmentField` normalized its lookup key but not the map it looked up.** The
+  attachment-target map used camelCase keys (`generatedDocument`, `calendarEvent`, ...) while the
+  lookup lower-cased the input, so every multi-word object name missed the map and created an
+  Attachment with no target relation at all (not even an error — a silently orphaned file).
+  Replaced the static map with `` `target${PascalCase(objectName)}Id` `` — confirmed live to be
+  Twenty's actual, uniform naming convention across every object, including custom ones the old
+  map never listed — which also finishes the "works with any object" goal for attachments.
+- **Generated PDFs now also attach to the `GeneratedDocument` record itself**, in addition to the
+  source CRM record, so a workflow holding only a `generatedDocumentId` can retrieve the file via
+  that record's own Files tab/`attachments` relation — durable even after the cached `pdfUrl`
+  (a signed link) expires. This required uploading the PDF bytes once per attachment target: Twenty
+  permanently binds an uploaded file to the first Attachment it's used in and rejects reusing the
+  same `fileId` for a second one ("File ... is already associated with a permanent files field",
+  confirmed live) — so "upload once, attach twice" isn't possible; `generatePdfFromHtmlLogic` now
+  uploads independently per configured target. `runGeneratePdf`'s output gained
+  `documentAttachmentId` alongside `attachmentId`.
+- **Fixed a double-submit race in the Generate Document dialog.** `controller.generate()` set
+  `isGenerating` on its internal state, but the button's `disabled` prop reads React state that
+  only updates after the surrounding `await` resolves, leaving a window where a second click could
+  queue a duplicate save/PDF request. `generate()` now guards itself at entry, and the button
+  handler syncs state immediately after starting the request instead of only after it finishes.
 
 ### Known limitation
 
 The uploaded file's `url` is a signed download link that expires in 24 hours (a JWT `exp` claim),
 so persisting it long-term in `GeneratedDocument.pdfUrl` is not durable — treat that field as a
-best-effort cache, not a permanent reference. Fetching the file via the `Attachment` relation
-(re-signed on every query) is the durable path; see the open discussion about also attaching
-generated PDFs to the `GeneratedDocument` record's own Files tab for retrieval by document ID.
+best-effort cache, not a permanent reference. Fetching the file via the `GeneratedDocument`'s own
+`Attachment` (re-signed on every query) is the durable path — see "Generated PDFs now also attach
+to the `GeneratedDocument` record itself" above.
 
 ## 0.2.0
 
