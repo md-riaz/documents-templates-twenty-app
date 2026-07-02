@@ -17,8 +17,10 @@ export {
 export {
   TemplateEditorComponent,
   TemplateEditorController,
+  VariablePicker,
   createLocalPreviewTemplateEditorApi,
   createTemplateEditorState,
+  groupVariablesForPicker,
   insertVariableExpression,
   mergeTemplateVariables,
   renderTemplateEditorMarkup,
@@ -30,6 +32,8 @@ export {
   type TemplateEditorTab,
   type TemplateEditorTemplate,
   type TemplateEditorVariable,
+  type VariableGroup,
+  type VariablePickerProps,
 } from './front-components/template-editor.front-component';
 export {
   GenerateDocumentComponent,
@@ -112,7 +116,6 @@ export {
   type TemplateContext,
   type TemplateHelper,
 } from './logic/rendering/helper-registry';
-export { combineCssWithHtml } from './logic/rendering/css-combiner';
 export {
   extractReferencedVariables,
   validateHandlebarsTemplate,
@@ -202,6 +205,15 @@ export {
   type SaveDocumentActionInput,
   type SaveDocumentActionOutput,
 } from './logic-functions/save-document.logic-function';
+export {
+  runSeedStarterTemplates,
+  type SeedStarterTemplatesInput,
+  type SeedStarterTemplatesOutput,
+} from './logic-functions/seed-starter-templates.logic-function';
+export {
+  starterTemplates,
+  type StarterTemplateDefinition,
+} from './seed/starter-templates';
 export {
   WORKFLOW_ACTION_PRINCIPAL,
   createCoreRecordApi,

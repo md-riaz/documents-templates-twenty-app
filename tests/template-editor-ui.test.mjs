@@ -22,6 +22,8 @@ test('template editor front component exists and is publicly exported', () => {
     'createTemplateEditorState',
     'renderTemplateEditorMarkup',
     'TemplateEditorController',
+    'VariablePicker',
+    'groupVariablesForPicker',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
@@ -34,6 +36,7 @@ const {
   validateTemplateEditorState,
   insertVariableExpression,
   mergeTemplateVariables,
+  groupVariablesForPicker,
   fetchDocumentTemplate,
   createCoreTemplateEditorApi,
 } = await import('../dist/front-components/template-editor.front-component.js');
@@ -66,7 +69,7 @@ const createApi = () => {
       }
       return {
         ok: true,
-        html: `<style>${input.cssSource}</style>${input.htmlSource.replace('{{person.name.firstName}}', input.previewData.person.name.firstName)}`,
+        html: `${input.htmlSource.replace('{{person.name.firstName}}', input.previewData.person.name.firstName)}`,
         warnings: input.previewData.warning ? ['Fixture warning'] : [],
         errors: [],
       };
@@ -88,35 +91,21 @@ const createApi = () => {
 const fixtureTemplate = {
   id: 'template-1',
   name: 'Welcome Letter',
-  slug: 'welcome-letter',
   htmlSource: '<h1>Hello {{person.name.firstName}}</h1>',
-  cssSource: 'h1 { color: purple; }',
   previewData: { person: { name: { firstName: 'Ada' } } },
   variables: [{ path: 'person.name.firstName', label: 'First name', required: true }],
-  renderer: 'HANDLEBARS',
-  provider: 'person',
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',
   isActive: true,
   version: 3,
 };
 
-test('template editor renders accessible HTML/CSS/preview tabs and variable browser', () => {
+test('renderTemplateEditorMarkup returns a preview placeholder', () => {
   const state = createTemplateEditorState({ template: fixtureTemplate });
   const markup = renderTemplateEditorMarkup(state);
 
-  assert.match(markup, /role="tablist"/);
-  assert.match(markup, /aria-label="Template editor tabs"/);
-  for (const tab of ['HTML', 'CSS', 'Preview JSON']) {
-    assert.match(markup, new RegExp(`role="tab"[^>]*>${tab}`));
-  }
-  assert.doesNotMatch(markup, /role="tab"[^>]*>Settings/, 'Name/Renderer/Status/Bound object are edited via the native Fields tab now');
-  assert.match(markup, /aria-label="HTML template source"/);
-  assert.match(markup, /aria-label="CSS template source"/);
-  assert.match(markup, /aria-label="Preview JSON data"/);
-  assert.match(markup, /role="listbox"[^>]*aria-label="Available template variables"/);
-  assert.match(markup, /data-variable="person\.name\.firstName"/);
-  assert.match(markup, /aria-live="polite"/);
+  assert.match(markup, /aria-label="Template preview"/);
+  assert.match(markup, /Loading preview/);
 });
 
 test('template editor debounces live preview and updates preview result', async () => {
@@ -182,7 +171,6 @@ test('template editor save creates or updates templates and records versions whe
     debounceMs: 1,
   });
   createController.updateField('name', 'New Template');
-  createController.updateField('slug', 'new-template');
   createController.updateField('htmlSource', '<p>Hello</p>');
   createController.updateField('previewJson', '{}');
   const created = await createController.save();
@@ -194,7 +182,7 @@ test('template editor save creates or updates templates and records versions whe
 test('template editor supports keyboard tab navigation and variable insertion', () => {
   let state = createTemplateEditorState({ template: fixtureTemplate });
   state = TemplateEditorController.reduceKey(state, { key: 'ArrowRight', target: 'tabs' });
-  assert.equal(state.activeTab, 'css');
+  assert.equal(state.activeTab, 'preview');
   state = TemplateEditorController.reduceKey(state, { key: 'End', target: 'tabs' });
   assert.equal(state.activeTab, 'preview');
   state = TemplateEditorController.reduceKey(state, { key: 'Home', target: 'tabs' });
@@ -220,10 +208,8 @@ test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTempl
           id: 'template-9',
           name: 'Proposal',
           htmlSource: '<h1>{{company.name}}</h1>',
-          cssSource: 'h1 { color: red; }',
           previewData: '{"company":{"name":"Acme"}}',
           variables: '[]',
-          renderer: 'HANDLEBARS',
           boundObjectName: 'company',
           allowedOutputTypes: ['HTML', 'PDF'],
           status: 'ACTIVE',
@@ -276,7 +262,7 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
 
   const api = createCoreTemplateEditorApi(fakeClient, fakeMetadataApi);
 
-  const preview = await api.renderPreview({ htmlSource: '<h1>{{name}}</h1>', cssSource: '', previewData: { name: 'Ada' } });
+  const preview = await api.renderPreview({ htmlSource: '<h1>{{name}}</h1>', previewData: { name: 'Ada' } });
   assert.equal(preview.ok, true);
   assert.match(preview.html, /Ada/);
   assert.equal(mutations.length, 0, 'preview must be fully local, no network call');
@@ -287,8 +273,8 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
   const updateData = mutations.find((m) => m.updateDocumentTemplate).updateDocumentTemplate.__args.data;
   assert.deepEqual(
     Object.keys(updateData).sort(),
-    ['cssSource', 'htmlSource', 'previewData', 'variables'],
-    'updating an existing template must not touch name/renderer/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
+    ['htmlSource', 'previewData', 'variables'],
+    'updating an existing template must not touch name/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
   );
 
   const created = await api.saveTemplate({ name: 'New', htmlSource: '<p>x</p>', status: 'ACTIVE' });
@@ -327,4 +313,40 @@ test('TemplateEditorController.save rejects an invalid boundObjectName before pe
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /not a valid Twenty object name/);
   assert.equal(saveTemplateCalls.length, 0, 'save must not persist when boundObjectName is invalid');
+});
+
+test('groupVariablesForPicker groups variables by object prefix and marks referenced ones', () => {
+  const available = [
+    { path: 'opportunity.name', label: 'opportunity.name' },
+    { path: 'opportunity.stage', label: 'opportunity.stage' },
+    { path: 'opportunity.closeDate', label: 'opportunity.closeDate' },
+    { path: 'opportunity.company.name', label: 'opportunity.company.name' },
+    { path: 'opportunity.company.domainName', label: 'opportunity.company.domainName' },
+    { path: 'opportunity.pointOfContact.name.firstName', label: 'opportunity.pointOfContact.name.firstName' },
+  ];
+  const referenced = new Set(['opportunity.name', 'opportunity.company.name']);
+
+  const groups = groupVariablesForPicker(available, referenced);
+
+  assert.ok(groups.length >= 2, 'should produce multiple groups');
+
+  const oppGroup = groups.find((g) => g.label === 'opportunity');
+  assert.ok(oppGroup, 'should have an "opportunity" group');
+  assert.ok(oppGroup.variables.some((v) => v.path === 'opportunity.name' && v.referenced === true));
+  assert.ok(oppGroup.variables.some((v) => v.path === 'opportunity.stage' && v.referenced === false));
+
+  const companyGroup = groups.find((g) => g.label === 'opportunity.company');
+  assert.ok(companyGroup, 'should have an "opportunity.company" group');
+  assert.ok(companyGroup.variables.some((v) => v.path === 'opportunity.company.name' && v.referenced === true));
+  assert.ok(companyGroup.variables.some((v) => v.path === 'opportunity.company.domainName' && v.referenced === false));
+});
+
+test('groupVariablesForPicker handles single-segment variables', () => {
+  const available = [
+    { path: 'today', label: 'today' },
+    { path: 'company.name', label: 'company.name' },
+  ];
+  const groups = groupVariablesForPicker(available, new Set());
+  assert.ok(groups.some((g) => g.label === 'today'), 'single-segment variable should create its own group');
+  assert.ok(groups.some((g) => g.label === 'company'), 'dotted variable should group by prefix');
 });

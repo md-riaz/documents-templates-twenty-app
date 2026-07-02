@@ -19,7 +19,6 @@ import {
 export type LogicErrorCode =
   | 'TEMPLATE_NOT_FOUND'
   | 'TEMPLATE_INACTIVE'
-  | 'UNSUPPORTED_RENDERER'
   | 'CONTEXT_REQUIRED'
   | 'TEMPLATE_RENDER_ERROR'
   | string;
@@ -63,7 +62,6 @@ export type RenderTemplateLogicOutput = {
   template?: {
     id: string;
     name?: string;
-    renderer?: string;
   };
 };
 
@@ -71,9 +69,7 @@ type DocumentTemplateRecord = {
   id?: string;
   name?: string;
   htmlSource?: string;
-  cssSource?: string | null;
   boundObjectName?: string | null;
-  renderer?: string | null;
   status?: string | null;
   isActive?: boolean | null;
 };
@@ -91,8 +87,6 @@ const logicError = (code: LogicErrorCode, message: string, userMessage = message
   message,
   userMessage,
 });
-
-const normalizeRenderer = (renderer: unknown): string => String(renderer ?? 'HANDLEBARS').toUpperCase();
 
 const isTemplateActive = (template: DocumentTemplateRecord): boolean =>
   template.isActive === true || String(template.status ?? '').toUpperCase() === 'ACTIVE';
@@ -181,7 +175,6 @@ export const renderTemplateLogic = async (input: RenderTemplateLogicInput): Prom
   const templateSummary = {
     id: template.id ?? input.templateId,
     name: template.name,
-    renderer: template.renderer ?? undefined,
   };
 
   if (!isTemplateActive(template)) {
@@ -206,21 +199,9 @@ export const renderTemplateLogic = async (input: RenderTemplateLogicInput): Prom
     };
   }
 
-  if (normalizeRenderer(template.renderer) !== 'HANDLEBARS') {
-    return {
-      ...errorOutput(logicError(
-        'UNSUPPORTED_RENDERER',
-        `Unsupported renderer: ${String(template.renderer)}`,
-        'The selected document template uses a renderer that is not supported by this app version.',
-      )),
-      template: templateSummary,
-    };
-  }
-
   const loadedContext = await buildContext(input, template);
   const rendered = renderHandlebarsTemplate({
     htmlSource: template.htmlSource,
-    cssSource: template.cssSource ?? undefined,
     context: loadedContext.context,
     strictMissingVariables: input.strictMissingVariables,
   });

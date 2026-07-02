@@ -51,22 +51,16 @@ const templateRecords = [
   {
     id: 'template-1',
     name: 'Invoice',
-    slug: 'invoice',
     status: 'ACTIVE',
-    isActive: true,
     htmlSource: '<h1>Invoice for {{person.name}}</h1>',
-    renderer: 'HANDLEBARS',
     category: 'Sales',
     version: 3,
   },
   {
     id: 'template-2',
     name: 'Archived quote',
-    slug: 'archived-quote',
     status: 'ARCHIVED',
-    isActive: false,
     htmlSource: '<p>Archived</p>',
-    renderer: 'HANDLEBARS',
   },
 ];
 
@@ -82,7 +76,7 @@ const createApi = () => {
       assert.equal(objectName, 'documentTemplate');
       assert.equal(options?.activeOnly, true);
       assert.equal(options?.search, 'inv');
-      return templateRecords.filter((template) => template.isActive);
+      return templateRecords.filter((template) => template.status === 'ACTIVE');
     },
     async updateRecord(objectName, id, data) {
       updates.push({ objectName, id, data });
@@ -138,10 +132,7 @@ test('SDK listTemplates filters template summaries and top-level wrappers accept
   assert.deepEqual(templates, [{
     id: 'template-1',
     name: 'Invoice',
-    slug: 'invoice',
     status: 'ACTIVE',
-    isActive: true,
-    renderer: 'HANDLEBARS',
     category: 'Sales',
     version: 3,
   }]);

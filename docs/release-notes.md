@@ -39,6 +39,58 @@
   `CoreApiClient`/`RestApiClient`) in the README, plus a `DocumentTemplate` field reference in the
   admin guide.
 
+## 0.3.0
+
+### Added
+
+- **Variable picker sidebar in the Preview tab.** The template preview now shows a
+  collapsible sidebar listing every available field from the bound object's schema, grouped
+  by object/relation. Clicking a variable copies its Handlebars expression to the clipboard.
+  Already-referenced variables are marked with a blue dot. Includes a search/filter input.
+- **Starter template gallery.** Five ready-to-use templates ship with the app and can be
+  seeded into any workspace via the `Seed Starter Templates` logic function: Sales Proposal
+  (opportunity), Company Invoice (company), Welcome Letter (person), Meeting Summary
+  (calendarEvent), and Task Handover (task). Each demonstrates different Handlebars
+  features and has realistic preview data.
+
+## 0.2.5
+
+### Removed
+
+- **Deleted the `renderer` field entirely.** `DocumentTemplate.renderer` is removed from the
+  object definition, constants, rendering pipeline, front component, SDK types, saved view,
+  tests, and docs. Handlebars is the only renderer and is hardcoded — storing it as a field
+  added noise with no value.
+- **Cleaned up dead SDK references.** `TemplateSummary.slug`, `TemplateSummary.isActive`,
+  `TemplateSummary.renderer`, and `ListTemplatesInput.provider` were remnants of fields
+  removed in v0.2.0 (`slug`, `isActive`, `provider`). All removed. The `activeOnly` filter
+  now checks `status === 'ACTIVE'` directly instead of the deleted `isActive` boolean.
+
+### Fixed
+
+- **Preview tab widget title said "Template Editor".** Changed to "Template Preview" to
+  match the tab's actual purpose (read-only rendered preview of the template).
+
+## 0.2.4
+
+### Removed
+
+- **Deleted the `cssSource` field entirely.** `DocumentTemplate.cssSource` and
+  `TemplateVersion.cssSource` are removed from the object definitions, constants,
+  rendering pipeline, front component (the "CSS" tab in the editor), tests, and docs.
+  Templates should embed `<style>` tags directly in `htmlSource` instead of using a
+  separate CSS field. The `combineCssWithHtml` utility (`css-combiner.ts`) is deleted.
+
+### Added
+
+- **Pre-installed "Opportunity Proposal" template.** A professional, ready-to-use
+  Handlebars template bound to the `opportunity` object, demonstrating deal value,
+  pipeline stage, company, and point-of-contact fields with a polished PDF-ready layout.
+  Created on the live workspace for immediate preview.
+- **Default Opportunity PDF workflow example** in the workflow documentation: a concrete,
+  step-by-step walkthrough of chaining Render Template, Save Document, and Generate PDF
+  in Twenty's workflow builder to produce a proposal PDF from any Opportunity record.
+
 ## 0.2.2
 
 ### Changed
@@ -73,7 +125,7 @@ Found and fixed by deploying the app to a real Twenty workspace and exercising r
 generation end-to-end for the first time — these bugs were invisible to unit tests because they
 only used mocked API clients, not the real Twenty GraphQL schema.
 
-- **`htmlSource`/`cssSource`/`renderedHtml`/`errorMessage` were `RICH_TEXT`, not `TEXT`.**
+- **`htmlSource`/`renderedHtml`/`errorMessage` were `RICH_TEXT`, not `TEXT`.**
   `RICH_TEXT` is a composite `{ blocknote, markdown }` type in Twenty's schema — genql's
   `__scalar: true` (used by the generic record-repository bridge) silently omits composite
   fields, so `DocumentTemplate.htmlSource` was never actually retrievable at runtime and every

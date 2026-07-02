@@ -9,7 +9,7 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 const exists = (path) => existsSync(join(root, path));
 
 const requiredDocs = [
-  ['README.md', ['Documents & Templates', 'User guide', 'Quick start', 'Marketplace readiness']],
+  ['README.md', ['Documents & Templates', 'User guide', 'Create a template', 'Generate a document', 'Marketplace readiness']],
   ['docs/admin-guide.md', ['Admin guide', 'Permissions', 'Configuration', 'Release checklist']],
   ['docs/workflow-examples.md', ['Workflow examples', 'Render Template', 'Generate PDF', 'Save Document', 'BulkIterator']],
   ['docs/release-notes.md', ['Release notes', '0.1.0', 'Known limitations', 'Verification']],

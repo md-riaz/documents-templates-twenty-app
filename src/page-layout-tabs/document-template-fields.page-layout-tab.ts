@@ -8,12 +8,6 @@ import {
   DOCUMENT_TEMPLATE_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER,
 } from '../constants/model-identifiers';
 
-/**
- * "Fields" tab on the DocumentTemplate record page, combining Twenty's native
- * field editor (General/System groups) with a dedicated large editing area for
- * HTML Source below it — matching the pattern Task/Note use for their body
- * field (FIELDS widget + a dedicated field widget on the same tab).
- */
 export default definePageLayoutTab({
   universalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_FIELDS_TAB_UNIVERSAL_IDENTIFIER,
   pageLayoutUniversalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER,

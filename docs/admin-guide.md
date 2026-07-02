@@ -27,13 +27,24 @@ For admins/integrators authoring templates programmatically (see the README's
 | --- | --- | --- | --- |
 | `name` | TEXT | Yes | Display name shown in template pickers. |
 | `htmlSource` | TEXT | Yes | Handlebars markup. |
-| `cssSource` | TEXT | No | Combined with `htmlSource` at render time. |
-| `renderer` | SELECT | No (default `HANDLEBARS`) | Only `HANDLEBARS` is currently supported. |
 | `boundObjectName` | TEXT | No | Twenty object singular name (e.g. `company`, or any custom object). Validated against live metadata when saved through the Template Editor UI; not enforced for direct API writes that bypass the editor. |
 | `previewData` | RAW_JSON | No | Sample context for the live preview. |
 | `variables` | RAW_JSON | No | Optional explicit variable metadata; the editor also auto-discovers variables from `htmlSource` and the bound object's schema. |
 | `allowedOutputTypes` | ARRAY | No (default `['PDF']`) | Informational; does not currently gate `Generate PDF`. |
 | `status` | SELECT | No (default `ACTIVE`) | `DRAFT` / `ACTIVE` / `ARCHIVED` — only `ACTIVE` templates appear in **Generate Document**. |
+
+## Starter templates
+
+The app ships five ready-to-use templates: Sales Proposal, Company Invoice, Welcome
+Letter, Meeting Summary, and Task Handover. To seed them into a workspace:
+
+1. Run the **Seed Starter Templates** logic function from a workflow or programmatically.
+2. Templates are created with status `DRAFT` — review and activate the ones you want users
+   to see.
+3. The seeder is idempotent: re-running skips templates that already exist (by name).
+
+Users can duplicate a starter template via Twenty's native "Duplicate" record action, then
+customize the copy.
 
 ## Configuration
 

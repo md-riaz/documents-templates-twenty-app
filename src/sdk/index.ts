@@ -45,16 +45,12 @@ export const generatePdfFromHtml = (input: GeneratePdfFromHtmlSdkInput, runtime:
 
 
 const stringOrUndefined = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
-const booleanOrUndefined = (value: unknown): boolean | undefined => typeof value === 'boolean' ? value : undefined;
 const numberOrUndefined = (value: unknown): number | undefined => typeof value === 'number' ? value : undefined;
 
 const toTemplateSummary = (record: Record<string, unknown>): TemplateSummary => ({
   id: stringOrUndefined(record.id) ?? '',
   name: stringOrUndefined(record.name) ?? 'Untitled template',
-  slug: stringOrUndefined(record.slug),
   status: stringOrUndefined(record.status),
-  isActive: booleanOrUndefined(record.isActive),
-  renderer: stringOrUndefined(record.renderer),
   category: record.category,
   version: numberOrUndefined(record.version),
 });
@@ -76,12 +72,11 @@ export const listTemplates = async (
   const records = await resolved.api?.listRecords?.('documentTemplate', input);
   const summaries = records ? records.map(toTemplateSummary) : await fallbackListTemplates(input, resolved);
   return summaries.filter((template) => {
-    if (input.activeOnly && template.isActive === false) return false;
+    if (input.activeOnly && String(template.status ?? '').toUpperCase() !== 'ACTIVE') return false;
     if (input.search) {
       const query = input.search.toLowerCase();
       return template.id.toLowerCase().includes(query)
-        || template.name.toLowerCase().includes(query)
-        || (template.slug?.toLowerCase().includes(query) ?? false);
+        || template.name.toLowerCase().includes(query);
     }
     return true;
   }).slice(0, input.limit ?? summaries.length);

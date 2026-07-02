@@ -10,7 +10,6 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 const expectedFiles = [
   'src/logic/rendering/handlebars-renderer.ts',
   'src/logic/rendering/helper-registry.ts',
-  'src/logic/rendering/css-combiner.ts',
   'src/logic/rendering/template-validation.ts',
   'src/logic/rendering/render-errors.ts',
 ];
@@ -24,7 +23,6 @@ test('rendering core modules exist and are publicly exported', () => {
   for (const exportName of [
     'renderHandlebarsTemplate',
     'createDefaultHelperRegistry',
-    'combineCssWithHtml',
     'validateHandlebarsTemplate',
     'TemplateRenderError',
     'mapTemplateRenderError',
@@ -33,7 +31,6 @@ test('rendering core modules exist and are publicly exported', () => {
   }
 });
 
-const { combineCssWithHtml } = await import('../dist/logic/rendering/css-combiner.js');
 const { createDefaultHelperRegistry } = await import('../dist/logic/rendering/helper-registry.js');
 const { renderHandlebarsTemplate } = await import('../dist/logic/rendering/handlebars-renderer.js');
 const { mapTemplateRenderError, TemplateRenderError } = await import('../dist/logic/rendering/render-errors.js');
@@ -50,7 +47,6 @@ test('Handlebars-style renderer supports variables, loops, conditionals, helpers
       '<p>{{unsafe}}</p><aside>{{{unsafe}}}</aside>',
       '<time>{{formatDate closeDate "en-US"}}</time>',
     ].join(''),
-    cssSource: 'h1 { color: red; }',
     context: {
       company: { name: 'Acme' },
       opportunity: { open: true, stage: '' },
@@ -64,7 +60,6 @@ test('Handlebars-style renderer supports variables, loops, conditionals, helpers
   });
 
   assert.equal(result.errors.length, 0);
-  assert.match(result.html, /<style>h1 \{ color: red; \}<\/style>/);
   assert.match(result.html, /<h1>ACME<\/h1>/);
   assert.match(result.html, /<p>Draft<\/p>/);
   assert.match(result.html, /<li>0 setup \$12\.50<\/li>/);
@@ -123,15 +118,6 @@ test('helper registry supports custom helpers and duplicate registration protect
   assert.equal(registry.invoke('surround', ['ok', '<', '>'], {}), '<ok>');
   assert.throws(() => registry.register('surround', () => ''), /already registered/);
   assert.throws(() => registry.invoke('missingHelper', [], {}), /Unknown template helper/);
-});
-
-test('CSS combiner merges into head when present and prepends otherwise', () => {
-  assert.equal(
-    combineCssWithHtml('<html><head><title>x</title></head><body>Hi</body></html>', 'body { margin: 0; }'),
-    '<html><head><title>x</title><style>body { margin: 0; }</style></head><body>Hi</body></html>',
-  );
-  assert.equal(combineCssWithHtml('<p>Hi</p>', 'p { color: blue; }'), '<style>p { color: blue; }</style><p>Hi</p>');
-  assert.equal(combineCssWithHtml('<p>Hi</p>', '   '), '<p>Hi</p>');
 });
 
 test('template validation reports syntax errors and strict missing variables', () => {

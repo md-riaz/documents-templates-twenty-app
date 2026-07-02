@@ -24,18 +24,13 @@ export type ListTemplatesInput = {
   activeOnly?: boolean;
   search?: string;
   categoryId?: string;
-  provider?: string;
-  renderer?: string;
   limit?: number;
 };
 
 export type TemplateSummary = {
   id: string;
   name: string;
-  slug?: string;
   status?: string;
-  isActive?: boolean;
-  renderer?: string;
   category?: unknown;
   version?: number;
 };
