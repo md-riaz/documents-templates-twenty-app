@@ -134,7 +134,10 @@ const attachPdfToRecord = async (input: {
   fileName: string;
   metadata?: Record<string, unknown>;
 }): Promise<RecordAttachmentResult | null> => {
-  if (!input.objectName || !input.recordId || !input.storage.attachFileToRecord) return null;
+  if (!input.objectName || !input.recordId) return null;
+  if (!input.storage.attachFileToRecord) {
+    throw new Error(`PDF was uploaded but could not be attached to ${input.objectName}: no attach adapter configured.`);
+  }
 
   const attached = await input.storage.attachFileToRecord({
     objectName: input.objectName,
@@ -145,6 +148,10 @@ const attachPdfToRecord = async (input: {
     contentType: 'application/pdf',
     metadata: input.metadata,
   });
+
+  if (!attached.attachmentId) {
+    throw new Error(`PDF was uploaded but Twenty did not return an attachment id for ${input.objectName}.`);
+  }
 
   return {
     objectName: input.objectName,

@@ -34,6 +34,8 @@ const {
   validateTemplateEditorState,
   insertVariableExpression,
   mergeTemplateVariables,
+  fetchDocumentTemplate,
+  createCoreTemplateEditorApi,
 } = await import('../dist/front-components/template-editor.front-component.js');
 
 test('mergeTemplateVariables de-duplicates by path, preferring already-referenced entries', () => {
@@ -205,4 +207,114 @@ test('template editor supports keyboard tab navigation and variable insertion', 
   assert.match(validation.join('\n'), /Template name is required/);
   assert.match(validation.join('\n'), /HTML source is required/);
   assert.match(validation.join('\n'), /Preview JSON is not valid JSON/);
+});
+
+test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTemplate, coercing RAW_JSON fields', async () => {
+  const fakeClient = {
+    async query(request) {
+      assert.ok(request.documentTemplate);
+      assert.equal(request.documentTemplate.__args.filter.id.eq, 'template-9');
+      return {
+        documentTemplate: {
+          id: 'template-9',
+          name: 'Proposal',
+          htmlSource: '<h1>{{company.name}}</h1>',
+          cssSource: 'h1 { color: red; }',
+          previewData: '{"company":{"name":"Acme"}}',
+          variables: '[]',
+          renderer: 'HANDLEBARS',
+          boundObjectName: 'company',
+          allowedOutputTypes: ['HTML', 'PDF'],
+          status: 'ACTIVE',
+          version: 2,
+        },
+      };
+    },
+  };
+
+  const template = await fetchDocumentTemplate(fakeClient, 'template-9');
+  assert.equal(template.id, 'template-9');
+  assert.deepEqual(template.previewData, { company: { name: 'Acme' } });
+  assert.deepEqual(template.variables, []);
+  assert.equal(template.boundObjectName, 'company');
+  assert.equal(template.version, 2);
+});
+
+test('fetchDocumentTemplate returns null for a missing record', async () => {
+  const template = await fetchDocumentTemplate({ query: async () => ({ documentTemplate: null }) }, 'missing');
+  assert.equal(template, null);
+});
+
+test('createCoreTemplateEditorApi renders previews locally, saves via updateDocumentTemplate/createDocumentTemplate, and validates boundObjectName against live metadata', async () => {
+  const mutations = [];
+  const fakeClient = {
+    async mutation(request) {
+      mutations.push(request);
+      const field = Object.keys(request)[0];
+      if (field === 'updateDocumentTemplate') {
+        return { updateDocumentTemplate: { id: request.updateDocumentTemplate.__args.id, version: 5 } };
+      }
+      if (field === 'createDocumentTemplate') {
+        return { createDocumentTemplate: { id: 'template-new', version: 1 } };
+      }
+      if (field === 'createTemplateVersion') {
+        return { createTemplateVersion: { id: 'version-1' } };
+      }
+      throw new Error(`unexpected mutation field ${field}`);
+    },
+  };
+  const fakeMetadataApi = {
+    async listObjects() {
+      return [{ nameSingular: 'company', labelSingular: 'Company', fields: [] }];
+    },
+    async getFields(objectNameSingular) {
+      if (objectNameSingular !== 'company') return [];
+      return [{ name: 'name', label: 'Name', type: 'TEXT', isRelation: false }];
+    },
+  };
+
+  const api = createCoreTemplateEditorApi(fakeClient, fakeMetadataApi);
+
+  const preview = await api.renderPreview({ htmlSource: '<h1>{{name}}</h1>', cssSource: '', previewData: { name: 'Ada' } });
+  assert.equal(preview.ok, true);
+  assert.match(preview.html, /Ada/);
+  assert.equal(mutations.length, 0, 'preview must be fully local, no network call');
+
+  const updated = await api.saveTemplate({ id: 'template-9', name: 'Proposal', htmlSource: '<h1>x</h1>', status: 'ACTIVE' });
+  assert.equal(updated.id, 'template-9');
+  assert.equal(updated.version, 5);
+
+  const created = await api.saveTemplate({ name: 'New', htmlSource: '<p>x</p>', status: 'ACTIVE' });
+  assert.equal(created.id, 'template-new');
+
+  const fields = await api.listFields('company');
+  assert.deepEqual(fields, [{ path: 'company.name', label: 'company.name' }]);
+
+  const validCheck = await api.validateBoundObjectName('company');
+  assert.equal(validCheck.ok, true);
+  const invalidCheck = await api.validateBoundObjectName('not-a-real-object');
+  assert.equal(invalidCheck.ok, false);
+  assert.match(invalidCheck.message, /not a valid Twenty object name/);
+});
+
+test('TemplateEditorController.save rejects an invalid boundObjectName before persisting', async () => {
+  const saveTemplateCalls = [];
+  const api = {
+    async renderPreview() { return { ok: true, html: '', warnings: [], errors: [] }; },
+    async saveTemplate(input) { saveTemplateCalls.push(input); return { ...input, id: 'template-1', version: 1 }; },
+    async createTemplateVersion() { return {}; },
+    async validateBoundObjectName(name) {
+      return name === 'company' ? { ok: true } : { ok: false, message: `"${name}" is not a valid Twenty object name.` };
+    },
+  };
+  const controller = new TemplateEditorController({
+    initialState: createTemplateEditorState({ template: { ...fixtureTemplate, boundObjectName: 'not-real' } }),
+    api,
+    debounceMs: 1,
+  });
+
+  const result = await controller.save();
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join('\n'), /not a valid Twenty object name/);
+  assert.equal(saveTemplateCalls.length, 0, 'save must not persist when boundObjectName is invalid');
 });

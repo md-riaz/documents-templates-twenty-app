@@ -9,7 +9,7 @@ import {
 export default defineView({
   universalIdentifier: DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
   objectUniversalIdentifier: DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
-  name: 'Active Templates',
+  name: 'Templates',
   type: ViewType.TABLE,
   visibility: ViewVisibility.WORKSPACE,
   position: 40,
@@ -22,7 +22,7 @@ export default defineView({
     { universalIdentifier: 'a7573e8d-c5cb-44b0-a74a-9d9730cf9293', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName, position: 5, size: 120 },
   ],
   sorts: [
-    { universalIdentifier: '95699ab7-f04d-4913-9c89-ec81055423bd', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, direction: ViewSortDirection.ASC },
+    { universalIdentifier: '95699ab7-f04d-4913-9c89-ec81055423bd', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, direction: ViewSortDirection.DESC },
   ],
 });
 

@@ -167,12 +167,17 @@ test('UTF-8 and RTL smoke fixtures render through HTML and PDF metadata without 
     fileName: 'مرحبا café.pdf',
     principal: generatorPrincipal,
     adapter: { async renderHtmlToPdf(input) { pdfCalls.push(input); return Buffer.from('%PDF-1.4\nمرحبا café\n%%EOF', 'utf8'); } },
-    storage: { async uploadFile(input) {
-      assert.equal(input.contentType, 'application/pdf');
-      assert.equal(input.metadata.documentId, 'document-utf8');
-      assert.match(Buffer.from(input.body).toString('utf8'), /مرحبا café/);
-      return { url: 'twenty://files/document-utf8.pdf' };
-    } },
+    storage: {
+      async uploadFile(input) {
+        assert.equal(input.contentType, 'application/pdf');
+        assert.equal(input.metadata.documentId, 'document-utf8');
+        assert.match(Buffer.from(input.body).toString('utf8'), /مرحبا café/);
+        return { url: 'twenty://files/document-utf8.pdf', fileId: 'file-utf8' };
+      },
+      async attachFileToRecord() {
+        return { attachmentId: 'attachment-utf8' };
+      },
+    },
   });
   assert.equal(pdf.ok, true);
   assert.match(pdfCalls[0].html, /שלום עולם/);

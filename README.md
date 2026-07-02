@@ -26,8 +26,8 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 
 ### Quick start
 
-1. Open **Documents & Templates** from the Twenty navigation menu.
-2. Create or select a template in the template library.
+1. Open the **Documents & Templates** folder in the Twenty navigation menu, then **Templates**.
+2. Create or select a template — see "Creating a template" below.
 3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.
 4. Use the live preview to validate variables before publishing.
 5. From a supported record page, choose **Generate Document**.
@@ -37,7 +37,61 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
    cached `pdfUrl` (a signed link that expires) goes stale. The source CRM record reaches
    the same file through its **Documents** tab's "View Document" link, so nothing is
    duplicated.
-8. Use the **Documents** record tab to review document audit/history.
+8. Use the **Documents** navigation item (or a record's **Documents** tab) to review
+   document audit/history.
+
+### Creating a template
+
+**In the UI (primary path):**
+
+1. Go to **Documents & Templates → Templates** and click **+ Add New** — Twenty creates
+   the record immediately with defaults (`status: Active`, `renderer: Handlebars`).
+2. Open the new row. The **Template Editor** tab loads the record's current fields
+   (fetched live via Twenty's API — the editor always reflects the actual record, not a
+   placeholder).
+3. Fill in:
+   - **Name** — how the template appears in pickers.
+   - **Bound object** (Settings tab) — the Twenty object this template is designed for
+     (e.g. `company`, `person`, or any custom object's singular name). This powers the
+     schema-backed variable picker and is validated against live metadata on save.
+   - **HTML** — Handlebars markup. Use the variable picker (merges fields from the bound
+     object's schema with any variables already typed into the template) to insert
+     `{{path.to.field}}` expressions without typing them by hand.
+   - **CSS**, **Preview JSON** (sample data for the live preview), and **Settings**
+     (renderer, status).
+4. The **Preview** tab live-renders your HTML/CSS against the Preview JSON entirely
+   client-side — no save needed to see it.
+5. Click **Save template**. Changing HTML/CSS on an existing template automatically
+   records a new `TemplateVersion` snapshot.
+6. Set status to **Active** (the default) to make it selectable in **Generate Document**
+   on any record of the bound object type.
+
+**Programmatically** (bulk-seeding, CI, migrations): use `twenty-client-sdk`'s
+`CoreApiClient` or `RestApiClient` directly against your workspace, the same way this
+app's own logic functions do:
+
+```ts
+import { CoreApiClient } from 'twenty-client-sdk/core';
+
+const client = new CoreApiClient(); // reads TWENTY_API_URL/TWENTY_API_KEY from the environment
+await client.mutation({
+  createDocumentTemplate: {
+    __args: {
+      data: {
+        name: 'Corporate Proposal',
+        htmlSource: '<h1>Proposal for {{company.name}}</h1>',
+        cssSource: 'h1 { color: #2563eb; }',
+        renderer: 'HANDLEBARS',
+        boundObjectName: 'company',
+        status: 'ACTIVE',
+      },
+    },
+    id: true,
+  },
+});
+```
+
+See [docs/admin-guide.md](docs/admin-guide.md) for the full field reference.
 
 ### Template authoring basics
 

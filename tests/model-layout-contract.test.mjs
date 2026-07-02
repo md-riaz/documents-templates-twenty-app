@@ -41,6 +41,8 @@ test('navigation saved views command menu and page tab shells are registered', (
     'src/menu/document-template.view.ts',
     'src/menu/document.view.ts',
     'src/menu/documents-templates.navigation-menu-item.ts',
+    'src/menu/documents-templates-folder.navigation-menu-item.ts',
+    'src/menu/documents.navigation-menu-item.ts',
     'src/page-layout-tabs/documents-standard-record-tabs.ts',
   ]) {
     assert.ok(existsSync(join(root, path)), `${path} should exist`);
@@ -54,10 +56,26 @@ test('navigation saved views command menu and page tab shells are registered', (
     'documentObject',
     'documentTemplateView',
     'documentView',
+    'documentsNavigationMenuItem',
+    'documentsTemplatesNavigationFolder',
     'documentsTemplatesNavigationMenuItem',
     'companyDocumentsPageLayoutTab',
     'personDocumentsPageLayoutTab',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
+});
+
+test('navigation folder groups Documents and Templates items', () => {
+  const folder = read('src/menu/documents-templates-folder.navigation-menu-item.ts');
+  assert.match(folder, /NavigationMenuItemType\.FOLDER/);
+  assert.match(folder, /name: 'Documents & Templates'/);
+
+  const documents = read('src/menu/documents.navigation-menu-item.ts');
+  assert.match(documents, /name: 'Documents'/);
+  assert.match(documents, /folderUniversalIdentifier: DOCUMENTS_TEMPLATES_NAVIGATION_FOLDER_UNIVERSAL_IDENTIFIER/);
+
+  const templates = read('src/menu/documents-templates.navigation-menu-item.ts');
+  assert.match(templates, /name: 'Templates'/);
+  assert.match(templates, /folderUniversalIdentifier: DOCUMENTS_TEMPLATES_NAVIGATION_FOLDER_UNIVERSAL_IDENTIFIER/);
 });

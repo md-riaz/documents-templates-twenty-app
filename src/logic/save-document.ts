@@ -99,9 +99,21 @@ export const saveDocumentLogic = async (
       };
     }
 
+    const id = typeof created.id === 'string' && created.id ? created.id : undefined;
+    if (!id) {
+      return {
+        ok: false,
+        errors: [{
+          code: 'DOCUMENT_SAVE_ERROR',
+          message: 'Document API adapter did not return a created record id.',
+          userMessage: 'The document could not be saved because Twenty did not return a Document id.',
+        }],
+      };
+    }
+
     return {
       ok: true,
-      id: typeof created.id === 'string' ? created.id : undefined,
+      id,
       record: created,
       errors: [],
     };

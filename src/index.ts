@@ -7,6 +7,8 @@ export { default as documentObject } from './objects/document.object';
 export { default as documentTemplateView } from './menu/document-template.view';
 export { default as documentView } from './menu/document.view';
 export { default as documentsTemplatesNavigationMenuItem } from './menu/documents-templates.navigation-menu-item';
+export { default as documentsTemplatesNavigationFolder } from './menu/documents-templates-folder.navigation-menu-item';
+export { default as documentsNavigationMenuItem } from './menu/documents.navigation-menu-item';
 export {
   default as documentShellFrontComponent,
   DocumentShellComponent,

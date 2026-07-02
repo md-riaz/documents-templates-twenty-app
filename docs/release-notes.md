@@ -1,5 +1,44 @@
 # Release notes — Documents & Templates
 
+## 0.2.3
+
+### Fixed
+
+- **Template Editor and Documents tab were never wired to real data.** `TemplateEditorComponent`
+  never called `useSelectedRecordIds()`/`useRecordId()` and had no way to learn which record it
+  was editing — its `template`/`api` props were only reachable from tests, since Twenty's
+  `FRONT_COMPONENT` widgets have no prop-injection mechanism (confirmed against Twenty's own
+  docs). Every template editor session showed the same blank defaults, for every record. Fixed by
+  having the component fetch its own record via `CoreApiClient` (the same client already used
+  server-side in this app's logic functions) and save via the same client's mutations.
+  `DocumentShellComponent` (the Documents tab) had the identical gap — it only read an injected
+  `records` prop that nothing ever supplied — fixed the same way, querying `documents` filtered by
+  `primaryRecordId` directly.
+- Confirmed (via `twenty-client-sdk`'s generated client source) that `CoreApiClient`/
+  `MetadataApiClient` auto-authenticate inside a front component through the host's
+  `frontComponentHostCommunicationApi.requestAccessTokenRefresh` bridge — no manual token handling
+  needed, matching the pattern Twenty's own docs describe.
+- **`save-document.ts` treated a missing created record id as success.** `ok: true` with
+  `id: undefined` let a workflow continue with no usable `documentId`, so a later `Generate PDF`
+  step could never attach to the saved record. Now returns `ok: false`.
+- **`generate-pdf.ts` silently accepted a failed or missing attachment.** `attachPdfToRecord`
+  returned `null` when the storage adapter couldn't attach, and accepted an `undefined`
+  `attachmentId` from a successful-looking call — either way, the record could be marked
+  `PDF_GENERATED` with no durable Attachment behind it. Both cases now throw, correctly failing
+  the generation.
+
+### Added
+
+- **Write-time `boundObjectName` validation** in the Template Editor's save path, checked against
+  live metadata (best-effort — direct API writes that bypass the editor UI are not covered, since
+  Twenty has no generic before-save hook for custom objects).
+- **Navigation folder.** "Documents & Templates" is now a folder in the left nav containing two
+  items — **Documents** (all generated documents) and **Templates** (the reusable template
+  library) — replacing the single flat "Templates" entry.
+- Documented both ways to create a template (UI, via the Template Editor; programmatic, via
+  `CoreApiClient`/`RestApiClient`) in the README, plus a `DocumentTemplate` field reference in the
+  admin guide.
+
 ## 0.2.2
 
 ### Changed

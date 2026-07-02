@@ -2,8 +2,13 @@ import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { defineFrontComponent } from 'twenty-sdk/define';
+import { useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { CoreApiClient } from 'twenty-client-sdk/core';
 
 import { TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
+import { renderHandlebarsTemplate } from '../logic/rendering/handlebars-renderer';
+import { createMetadataApi, type MetadataApi } from '../logic/metadata/metadata-client';
+import { listBoundObjectFields } from '../logic/list-template-variables';
 
 export type TemplateEditorTab = 'html' | 'css' | 'preview' | 'settings';
 
@@ -53,6 +58,13 @@ export type TemplateEditorApi = {
    * template source).
    */
   listFields?(objectNameSingular: string): Promise<TemplateEditorVariable[]>;
+  /**
+   * Best-effort write-time check that `boundObjectName` names a real Twenty
+   * object, using live metadata. Optional — when omitted, `save()` skips the
+   * check (matches existing behavior for callers/tests that inject their own
+   * `api` without this method).
+   */
+  validateBoundObjectName?(name: string): Promise<{ ok: boolean; message?: string }>;
 };
 
 const defaultTemplate: TemplateEditorTemplate = {
@@ -224,6 +236,15 @@ export class TemplateEditorController {
       return { ok: false, errors: validationErrors };
     }
 
+    if (this.state.boundObjectName && this.api.validateBoundObjectName) {
+      const boundObjectValidation = await this.api.validateBoundObjectName(this.state.boundObjectName);
+      if (!boundObjectValidation.ok) {
+        const errors = [boundObjectValidation.message ?? `"${this.state.boundObjectName}" is not a valid Twenty object name.`];
+        this.state = { ...this.state, validationErrors: errors };
+        return { ok: false, errors };
+      }
+    }
+
     const sourceChanged = this.state.htmlSource !== this.state.originalHtmlSource || this.state.cssSource !== this.state.originalCssSource;
     const nextVersion = this.state.id && sourceChanged ? this.state.version + 1 : Math.max(this.state.version, 1);
     const previewData = JSON.parse(this.state.previewJson || '{}') as Record<string, unknown>;
@@ -280,9 +301,9 @@ export class TemplateEditorController {
 }
 
 /**
- * Fallback preview API used until the real render API (separate workstream) is
- * injected. Produces a real HTML+CSS document so the live-preview iframe shows
- * rendered output (without server-side variable interpolation).
+ * Fallback preview API with no persistence at all — useful for tests/storybook
+ * contexts that don't want a network dependency. NOT used by the live widget
+ * (see `createCoreTemplateEditorApi` below).
  */
 export const createLocalPreviewTemplateEditorApi = (): TemplateEditorApi => ({
   renderPreview: async ({ htmlSource, cssSource }) => ({
@@ -295,27 +316,182 @@ export const createLocalPreviewTemplateEditorApi = (): TemplateEditorApi => ({
   createTemplateVersion: async () => ({}),
 });
 
+/** Minimal genql-style surface this file needs from the generated CoreApiClient. */
+type GenqlClientLike = {
+  query: (request: Record<string, unknown>) => Promise<Record<string, unknown> | null | undefined>;
+  mutation: (request: Record<string, unknown>) => Promise<Record<string, unknown> | null | undefined>;
+};
+
+const DOCUMENT_TEMPLATE_SELECTION = {
+  id: true,
+  name: true,
+  htmlSource: true,
+  cssSource: true,
+  previewData: true,
+  variables: true,
+  renderer: true,
+  boundObjectName: true,
+  allowedOutputTypes: true,
+  status: true,
+  version: true,
+};
+
+/** `previewData`/`variables` are RAW_JSON — coerce whether the client returns a JSON string or an already-parsed value. */
+const coerceJson = <T,>(value: unknown, fallback: T): T => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return (value as T) ?? fallback;
+};
+
+export const fetchDocumentTemplate = async (
+  client: GenqlClientLike,
+  id: string,
+): Promise<TemplateEditorTemplate | null> => {
+  const result = await client.query({
+    documentTemplate: { __args: { filter: { id: { eq: id } } }, ...DOCUMENT_TEMPLATE_SELECTION },
+  });
+  const record = result?.documentTemplate as Record<string, unknown> | null | undefined;
+  if (!record) return null;
+  return {
+    id: record.id as string,
+    name: (record.name as string) ?? '',
+    htmlSource: (record.htmlSource as string) ?? '',
+    cssSource: (record.cssSource as string) ?? '',
+    previewData: coerceJson(record.previewData, {}),
+    variables: coerceJson(record.variables, []),
+    renderer: (record.renderer as string) ?? 'HANDLEBARS',
+    boundObjectName: (record.boundObjectName as string) ?? '',
+    allowedOutputTypes: (record.allowedOutputTypes as string[]) ?? ['HTML', 'PDF'],
+    status: (record.status as string) ?? 'DRAFT',
+    version: (record.version as number) ?? 1,
+  };
+};
+
+/**
+ * Real `TemplateEditorApi` backed directly by Twenty's `CoreApiClient`/metadata
+ * client, both of which auto-authenticate inside a front component via the
+ * host's `frontComponentHostCommunicationApi.requestAccessTokenRefresh` bridge
+ * (confirmed in `twenty-client-sdk`'s generated client source — no manual
+ * token handling needed here, matching the pattern already used server-side in
+ * `src/logic-functions/core-client-adapters.ts`).
+ */
+export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi: MetadataApi): TemplateEditorApi => ({
+  async renderPreview({ htmlSource, cssSource, previewData }) {
+    // Pure, local Handlebars rendering — no network round-trip needed for a preview.
+    const rendered = renderHandlebarsTemplate({ htmlSource, cssSource, context: previewData });
+    return {
+      ok: rendered.errors.length === 0,
+      html: rendered.html,
+      warnings: rendered.warnings,
+      errors: rendered.errors,
+    };
+  },
+  async saveTemplate(input) {
+    const data = {
+      name: input.name,
+      htmlSource: input.htmlSource,
+      cssSource: input.cssSource ?? '',
+      previewData: input.previewData ?? {},
+      variables: input.variables ?? [],
+      renderer: input.renderer ?? 'HANDLEBARS',
+      boundObjectName: input.boundObjectName || null,
+      allowedOutputTypes: input.allowedOutputTypes ?? ['HTML', 'PDF'],
+      status: input.status ?? 'ACTIVE',
+    };
+    const result = input.id
+      ? await client.mutation({ updateDocumentTemplate: { __args: { id: input.id, data }, ...DOCUMENT_TEMPLATE_SELECTION } })
+      : await client.mutation({ createDocumentTemplate: { __args: { data }, ...DOCUMENT_TEMPLATE_SELECTION } });
+    const saved = (result?.updateDocumentTemplate ?? result?.createDocumentTemplate) as Record<string, unknown> | undefined;
+    if (!saved) throw new Error('Twenty did not return a saved DocumentTemplate record.');
+    return { ...input, id: saved.id as string, version: (saved.version as number) ?? input.version };
+  },
+  async createTemplateVersion(input) {
+    return client.mutation({
+      createTemplateVersion: {
+        __args: {
+          data: {
+            templateId: input.templateId,
+            versionNumber: input.versionNumber,
+            htmlSource: input.htmlSource,
+            cssSource: input.cssSource,
+            name: input.name,
+          },
+        },
+        id: true,
+      },
+    });
+  },
+  async listFields(objectNameSingular) {
+    const fields = await listBoundObjectFields(objectNameSingular, metadataApi);
+    return fields.map((field) => ({ path: field.name, label: field.name }));
+  },
+  async validateBoundObjectName(name) {
+    const objects = await metadataApi.listObjects();
+    const match = objects.some((object) => object.nameSingular.toLowerCase() === name.toLowerCase());
+    return match ? { ok: true } : { ok: false, message: `"${name}" is not a valid Twenty object name.` };
+  },
+});
+
 export type TemplateEditorComponentProps = {
-  /** Injected by the real workstream; falls back to a local HTML+CSS preview. */
+  /**
+   * Test/override hook — when supplied, the component skips its own record
+   * fetch and `CoreApiClient`-backed API and uses this instead. The live
+   * widget never receives this prop (Twenty has no prop-injection mechanism
+   * for front components), so it always falls through to the real fetch.
+   */
   api?: TemplateEditorApi;
+  /** Test/override hook — see `api` above; live widget never receives this. */
   template?: Partial<TemplateEditorTemplate>;
 };
 
 export const TemplateEditorComponent = ({ api, template }: TemplateEditorComponentProps) => {
+  const selectedRecordIds = useSelectedRecordIds();
+  const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : undefined;
+
+  const clientRef = useRef<GenqlClientLike | null>(null);
+  const client = (clientRef.current ??= new CoreApiClient() as unknown as GenqlClientLike);
+
   const controllerRef = useRef<TemplateEditorController | null>(null);
   const controller = (controllerRef.current ??= new TemplateEditorController({
     initialState: createTemplateEditorState({ template }),
-    api: api ?? createLocalPreviewTemplateEditorApi(),
+    api: api ?? createCoreTemplateEditorApi(client, createMetadataApi()),
   }));
 
   const [state, setState] = useState<TemplateEditorState>(() => controller.state);
   const [availableFields, setAvailableFields] = useState<TemplateEditorVariable[]>([]);
+  const [isLoadingRecord, setIsLoadingRecord] = useState(Boolean(recordId && !template && !api));
   const sync = (): void => setState(controller.state);
 
   useEffect(() => {
     void controller.flushPreview().then(sync);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Load the real DocumentTemplate record for this widget's record id. Twenty
+  // has no mechanism to inject `template`/`api` props into a mounted front
+  // component (confirmed — the widget config only carries the front
+  // component's universal identifier), so this fetch is the only way the
+  // editor can learn which record it's actually editing.
+  useEffect(() => {
+    if (!recordId || template || api) return;
+    let cancelled = false;
+    setIsLoadingRecord(true);
+    void fetchDocumentTemplate(client, recordId).then((record) => {
+      if (cancelled) return;
+      if (record) controller.state = createTemplateEditorState({ template: record });
+      setIsLoadingRecord(false);
+      sync();
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordId]);
 
   // Refresh the schema-backed field picker whenever the bound object changes.
   useEffect(() => {
@@ -357,6 +533,14 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const fieldLabelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 500 };
   const textInputStyle: CSSProperties = { padding: '6px 8px', border: '1px solid #d0d5dd', borderRadius: 4, font: 'inherit' };
   const textAreaStyle: CSSProperties = { ...textInputStyle, width: '100%', minHeight: 220, fontFamily: 'monospace', fontSize: 13, resize: 'vertical', boxSizing: 'border-box' };
+
+  if (isLoadingRecord) {
+    return (
+      <section aria-label="Template editor" aria-busy="true">
+        <p>Loading template…</p>
+      </section>
+    );
+  }
 
   return (
     <section

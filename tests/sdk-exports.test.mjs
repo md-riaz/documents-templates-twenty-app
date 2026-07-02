@@ -105,7 +105,10 @@ test('SDK wrappers render templates and generate PDFs through typed runtime adap
     storageAdapter: {
       async uploadFile(input) {
         assert.equal(input.contentType, 'application/pdf');
-        return { url: `twenty://files/${input.fileName}` };
+        return { url: `twenty://files/${input.fileName}`, fileId: 'file-1' };
+      },
+      async attachFileToRecord() {
+        return { attachmentId: 'attachment-1' };
       },
     },
   });

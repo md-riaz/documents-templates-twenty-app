@@ -18,6 +18,23 @@ Grant the default app role only to users who need document automation.
 
 UI visibility is convenience only; logic functions enforce permissions server-side.
 
+## DocumentTemplate field reference
+
+For admins/integrators authoring templates programmatically (see the README's
+"Creating a template" section for the UI path):
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | TEXT | Yes | Display name shown in template pickers. |
+| `htmlSource` | TEXT | Yes | Handlebars markup. |
+| `cssSource` | TEXT | No | Combined with `htmlSource` at render time. |
+| `renderer` | SELECT | No (default `HANDLEBARS`) | Only `HANDLEBARS` is currently supported. |
+| `boundObjectName` | TEXT | No | Twenty object singular name (e.g. `company`, or any custom object). Validated against live metadata when saved through the Template Editor UI; not enforced for direct API writes that bypass the editor. |
+| `previewData` | RAW_JSON | No | Sample context for the live preview. |
+| `variables` | RAW_JSON | No | Optional explicit variable metadata; the editor also auto-discovers variables from `htmlSource` and the bound object's schema. |
+| `allowedOutputTypes` | ARRAY | No (default `['PDF']`) | Informational; does not currently gate `Generate PDF`. |
+| `status` | SELECT | No (default `ACTIVE`) | `DRAFT` / `ACTIVE` / `ARCHIVED` — only `ACTIVE` templates appear in **Generate Document**. |
+
 ## Configuration
 
 1. Confirm the app package uses `twenty-sdk` and `twenty-client-sdk` versions compatible with the installed workspace.
