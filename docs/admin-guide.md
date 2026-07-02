@@ -27,7 +27,6 @@ For admins/integrators authoring templates programmatically (see the README's
 | --- | --- | --- | --- |
 | `name` | TEXT | Yes | Display name shown in template pickers. |
 | `htmlSource` | TEXT | Yes | Handlebars markup. |
-| `cssSource` | TEXT | No | Combined with `htmlSource` at render time. |
 | `renderer` | SELECT | No (default `HANDLEBARS`) | Only `HANDLEBARS` is currently supported. |
 | `boundObjectName` | TEXT | No | Twenty object singular name (e.g. `company`, or any custom object). Validated against live metadata when saved through the Template Editor UI; not enforced for direct API writes that bypass the editor. |
 | `previewData` | RAW_JSON | No | Sample context for the live preview. |

@@ -73,7 +73,7 @@ Found and fixed by deploying the app to a real Twenty workspace and exercising r
 generation end-to-end for the first time — these bugs were invisible to unit tests because they
 only used mocked API clients, not the real Twenty GraphQL schema.
 
-- **`htmlSource`/`cssSource`/`renderedHtml`/`errorMessage` were `RICH_TEXT`, not `TEXT`.**
+- **`htmlSource`/`renderedHtml`/`errorMessage` were `RICH_TEXT`, not `TEXT`.**
   `RICH_TEXT` is a composite `{ blocknote, markdown }` type in Twenty's schema — genql's
   `__scalar: true` (used by the generic record-repository bridge) silently omits composite
   fields, so `DocumentTemplate.htmlSource` was never actually retrievable at runtime and every

@@ -57,7 +57,6 @@ const fixtureTemplate = {
   isActive: true,
   status: 'ACTIVE',
   htmlSource: '<main><h1>Bonjour {{person.name}}</h1><p>{{company.name}} — {{message}}</p><p>{{unsafe}}</p></main>',
-  cssSource: 'main { font-family: "Noto Sans", sans-serif; }',
   renderer: 'HANDLEBARS',
 };
 
@@ -148,7 +147,6 @@ test('UTF-8 and RTL smoke fixtures render through HTML and PDF metadata without 
 
   const rendered = renderHandlebarsTemplate({
     htmlSource: fixtureTemplate.htmlSource,
-    cssSource: fixtureTemplate.cssSource,
     context: { person: { name: 'Zoë 李' }, company: { name: 'München GmbH' }, message: 'مرحبا — €42', unsafe: '<script>alert("x")</script>' },
   });
   assert.equal(rendered.errors.length, 0);

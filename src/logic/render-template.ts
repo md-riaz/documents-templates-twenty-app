@@ -71,7 +71,6 @@ type DocumentTemplateRecord = {
   id?: string;
   name?: string;
   htmlSource?: string;
-  cssSource?: string | null;
   boundObjectName?: string | null;
   renderer?: string | null;
   status?: string | null;
@@ -220,7 +219,6 @@ export const renderTemplateLogic = async (input: RenderTemplateLogicInput): Prom
   const loadedContext = await buildContext(input, template);
   const rendered = renderHandlebarsTemplate({
     htmlSource: template.htmlSource,
-    cssSource: template.cssSource ?? undefined,
     context: loadedContext.context,
     strictMissingVariables: input.strictMissingVariables,
   });

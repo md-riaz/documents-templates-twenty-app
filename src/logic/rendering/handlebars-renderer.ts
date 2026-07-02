@@ -1,5 +1,4 @@
 import Handlebars from 'handlebars';
-import { combineCssWithHtml } from './css-combiner';
 import {
   adaptHelperForHandlebars,
   createDefaultHelperRegistry,
@@ -14,7 +13,6 @@ import { validateHandlebarsTemplate } from './template-validation';
 
 export type RenderHandlebarsTemplateInput = {
   htmlSource: string;
-  cssSource?: string;
   context?: TemplateContext;
   helpers?: HelperRegistry;
   partials?: Record<string, string>;
@@ -58,7 +56,6 @@ const createRuntime = (
 
 export const renderHandlebarsTemplate = ({
   htmlSource,
-  cssSource,
   context = {},
   helpers = createDefaultHelperRegistry(),
   partials = {},
@@ -90,7 +87,7 @@ export const renderHandlebarsTemplate = ({
   const warnings = strictMissingVariables ? [] : validation.warnings;
 
   return {
-    html: errors.length ? '' : combineCssWithHtml(renderedRaw, cssSource),
+    html: errors.length ? '' : renderedRaw,
     context,
     warnings,
     errors,

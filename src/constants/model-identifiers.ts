@@ -16,7 +16,6 @@ export const DOCUMENT_TEMPLATE_FIELDS = {
   category: 'f3b5080e-aae2-4e4d-bdf2-d0487388814b',
   description: '5ff44796-77ae-4479-a2af-5c6b71f4e0fb',
   htmlSource: 'a45b67ab-a09e-42e4-b288-5cc34b9339a2',
-  cssSource: 'eeb4c5ed-1637-4773-ad12-af628cfb43d7',
   previewData: '4f516d80-001b-4000-827c-a6c3811ac55f',
   variables: 'dffbba91-28f1-456d-9496-9d5df3021701',
   renderer: 'dc86ed49-c756-4166-9f8e-a117fdfdaf4d',
@@ -33,7 +32,6 @@ export const TEMPLATE_VERSION_FIELDS = {
   template: 'e6e55c2e-f7f8-4f33-8d0d-6beefb014e9c',
   versionNumber: '0500aaf7-efb7-4c4f-b7ff-8e3e5dd38d81',
   htmlSource: '4aed6acb-7e9f-45fa-b8b1-9509a4dc79c4',
-  cssSource: '4a746fc6-10c8-4ec4-b7b9-3979da39140c',
   diff: 'aa0373bf-33c8-429b-acba-e87028696850',
   createdBy: '445d1e51-e925-4862-9089-c0f5a368535e',
 } as const;

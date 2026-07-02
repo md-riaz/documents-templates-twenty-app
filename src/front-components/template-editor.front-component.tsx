@@ -9,7 +9,7 @@ import { renderHandlebarsTemplate } from '../logic/rendering/handlebars-renderer
 import { createMetadataApi, type MetadataApi } from '../logic/metadata/metadata-client';
 import { listBoundObjectFields } from '../logic/list-template-variables';
 
-export type TemplateEditorTab = 'html' | 'css' | 'preview';
+export type TemplateEditorTab = 'html' | 'preview';
 
 export type TemplateEditorVariable = {
   path: string;
@@ -21,7 +21,6 @@ export type TemplateEditorTemplate = {
   id?: string;
   name: string;
   htmlSource: string;
-  cssSource?: string;
   previewData?: Record<string, unknown>;
   variables?: TemplateEditorVariable[];
   renderer?: string;
@@ -43,13 +42,12 @@ export type TemplateEditorState = Required<Omit<TemplateEditorTemplate, 'id' | '
   validationErrors: string[];
   statusMessage: string;
   originalHtmlSource: string;
-  originalCssSource: string;
 };
 
 export type TemplateEditorApi = {
-  renderPreview(input: { htmlSource: string; cssSource: string; previewData: Record<string, unknown> }): Promise<{ ok: boolean; html: string; warnings: string[]; errors: Array<{ userMessage?: string; message?: string }> }>;
+  renderPreview(input: { htmlSource: string; previewData: Record<string, unknown> }): Promise<{ ok: boolean; html: string; warnings: string[]; errors: Array<{ userMessage?: string; message?: string }> }>;
   saveTemplate(input: TemplateEditorTemplate): Promise<TemplateEditorTemplate>;
-  createTemplateVersion(input: { templateId: string; versionNumber: number; htmlSource: string; cssSource: string; name: string }): Promise<unknown>;
+  createTemplateVersion(input: { templateId: string; versionNumber: number; htmlSource: string; name: string }): Promise<unknown>;
   /**
    * Live, schema-backed field list for the template's bound object (standard
    * or custom), from the metadata client. Optional — falls back to an empty
@@ -69,7 +67,6 @@ export type TemplateEditorApi = {
 const defaultTemplate: TemplateEditorTemplate = {
   name: '',
   htmlSource: '',
-  cssSource: '',
   previewData: {},
   variables: [],
   renderer: 'HANDLEBARS',
@@ -89,7 +86,6 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
     id: template.id,
     name: template.name,
     htmlSource: template.htmlSource,
-    cssSource: template.cssSource ?? '',
     previewData,
     previewJson: JSON.stringify(previewData, null, 2),
     variables: template.variables ?? [],
@@ -104,7 +100,6 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
     validationErrors: [],
     statusMessage: '',
     originalHtmlSource: template.htmlSource,
-    originalCssSource: template.cssSource ?? '',
   };
 };
 
@@ -145,7 +140,6 @@ export const insertVariableExpression = (value: string, variablePath: string, cu
 
 const tabs: Array<{ id: TemplateEditorTab; label: string }> = [
   { id: 'html', label: 'HTML' },
-  { id: 'css', label: 'CSS' },
   { id: 'preview', label: 'Preview JSON' },
 ];
 
@@ -176,7 +170,7 @@ export class TemplateEditorController {
 
   updateField(field: keyof TemplateEditorState, value: unknown): void {
     this.state = { ...this.state, [field]: value } as TemplateEditorState;
-    if (['htmlSource', 'cssSource', 'previewJson'].includes(String(field))) {
+    if (['htmlSource', 'previewJson'].includes(String(field))) {
       this.schedulePreview();
     }
   }
@@ -198,7 +192,7 @@ export class TemplateEditorController {
     }
 
     const previewData = JSON.parse(this.state.previewJson || '{}') as Record<string, unknown>;
-    const result = await this.api.renderPreview({ htmlSource: this.state.htmlSource, cssSource: this.state.cssSource, previewData });
+    const result = await this.api.renderPreview({ htmlSource: this.state.htmlSource, previewData });
     this.state = {
       ...this.state,
       previewData,
@@ -234,14 +228,13 @@ export class TemplateEditorController {
       }
     }
 
-    const sourceChanged = this.state.htmlSource !== this.state.originalHtmlSource || this.state.cssSource !== this.state.originalCssSource;
+    const sourceChanged = this.state.htmlSource !== this.state.originalHtmlSource;
     const nextVersion = this.state.id && sourceChanged ? this.state.version + 1 : Math.max(this.state.version, 1);
     const previewData = JSON.parse(this.state.previewJson || '{}') as Record<string, unknown>;
     const template = await this.api.saveTemplate({
       id: this.state.id,
       name: this.state.name,
       htmlSource: this.state.htmlSource,
-      cssSource: this.state.cssSource,
       previewData,
       variables: this.state.variables,
       renderer: this.state.renderer,
@@ -256,7 +249,6 @@ export class TemplateEditorController {
         templateId: this.state.id,
         versionNumber: nextVersion,
         htmlSource: this.state.htmlSource,
-        cssSource: this.state.cssSource,
         name: `${this.state.name} v${nextVersion}`,
       });
     }
@@ -269,7 +261,6 @@ export class TemplateEditorController {
       validationErrors: [],
       statusMessage: `Saved version ${template.version ?? nextVersion}`,
       originalHtmlSource: this.state.htmlSource,
-      originalCssSource: this.state.cssSource,
     };
     return { ok: true, template };
   }
@@ -295,9 +286,9 @@ export class TemplateEditorController {
  * (see `createCoreTemplateEditorApi` below).
  */
 export const createLocalPreviewTemplateEditorApi = (): TemplateEditorApi => ({
-  renderPreview: async ({ htmlSource, cssSource }) => ({
+  renderPreview: async ({ htmlSource }) => ({
     ok: true,
-    html: `<style>${cssSource}</style>${htmlSource}`,
+    html: htmlSource,
     warnings: [],
     errors: [],
   }),
@@ -315,7 +306,6 @@ const DOCUMENT_TEMPLATE_SELECTION = {
   id: true,
   name: true,
   htmlSource: true,
-  cssSource: true,
   previewData: true,
   variables: true,
   renderer: true,
@@ -350,7 +340,6 @@ export const fetchDocumentTemplate = async (
     id: record.id as string,
     name: (record.name as string) ?? '',
     htmlSource: (record.htmlSource as string) ?? '',
-    cssSource: (record.cssSource as string) ?? '',
     previewData: coerceJson(record.previewData, {}),
     variables: coerceJson(record.variables, []),
     renderer: (record.renderer as string) ?? 'HANDLEBARS',
@@ -370,9 +359,8 @@ export const fetchDocumentTemplate = async (
  * `src/logic-functions/core-client-adapters.ts`).
  */
 export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi: MetadataApi): TemplateEditorApi => ({
-  async renderPreview({ htmlSource, cssSource, previewData }) {
-    // Pure, local Handlebars rendering — no network round-trip needed for a preview.
-    const rendered = renderHandlebarsTemplate({ htmlSource, cssSource, context: previewData });
+  async renderPreview({ htmlSource, previewData }) {
+    const rendered = renderHandlebarsTemplate({ htmlSource, context: previewData });
     return {
       ok: rendered.errors.length === 0,
       html: rendered.html,
@@ -392,7 +380,6 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
     // with no default.
     const editorOwnedData = {
       htmlSource: input.htmlSource,
-      cssSource: input.cssSource ?? '',
       previewData: input.previewData ?? {},
       variables: input.variables ?? [],
     };
@@ -425,7 +412,6 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
             templateId: input.templateId,
             versionNumber: input.versionNumber,
             htmlSource: input.htmlSource,
-            cssSource: input.cssSource,
             name: input.name,
           },
         },
@@ -490,7 +476,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         }
         const rendered = await resolvedApi.renderPreview({
           htmlSource: tmpl.htmlSource,
-          cssSource: tmpl.cssSource ?? '',
           previewData: tmpl.previewData ?? {},
         });
         if (cancelled) return;

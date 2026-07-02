@@ -23,7 +23,7 @@ test('custom objects and relations are defined for document lifecycle records', 
   }
 
   const template = read('src/objects/document-template.object.ts');
-  for (const field of ['htmlSource', 'cssSource', 'previewData', 'variables', 'renderer', 'boundObjectName', 'status', 'version']) {
+  for (const field of ['htmlSource', 'previewData', 'variables', 'renderer', 'boundObjectName', 'status', 'version']) {
     assert.match(template, new RegExp(field), `DocumentTemplate should define ${field}`);
   }
   assert.match(template, /TemplateCategory/);

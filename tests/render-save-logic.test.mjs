@@ -45,7 +45,6 @@ const createFixtureApi = () => {
           isActive: true,
           status: 'ACTIVE',
           htmlSource: '<h1>Hello {{person.name.firstName}}</h1><p>{{uppercase company.name}}</p>',
-          cssSource: 'h1 { color: rebeccapurple; }',
           renderer: 'HANDLEBARS',
         };
       }
@@ -108,7 +107,6 @@ test('renderTemplateLogic loads template, context, renders HTML/CSS and warning 
   });
 
   assert.equal(output.ok, true);
-  assert.match(output.html, /<style>h1 \{ color: rebeccapurple; \}<\/style>/);
   assert.match(output.html, /Hello Ada/);
   assert.match(output.html, /ANALYTICAL ENGINES LTD/);
   assert.equal(output.context.person.name.firstName, 'Ada');

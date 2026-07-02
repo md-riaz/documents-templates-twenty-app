@@ -66,7 +66,7 @@ const createApi = () => {
       }
       return {
         ok: true,
-        html: `<style>${input.cssSource}</style>${input.htmlSource.replace('{{person.name.firstName}}', input.previewData.person.name.firstName)}`,
+        html: `${input.htmlSource.replace('{{person.name.firstName}}', input.previewData.person.name.firstName)}`,
         warnings: input.previewData.warning ? ['Fixture warning'] : [],
         errors: [],
       };
@@ -90,7 +90,6 @@ const fixtureTemplate = {
   name: 'Welcome Letter',
   slug: 'welcome-letter',
   htmlSource: '<h1>Hello {{person.name.firstName}}</h1>',
-  cssSource: 'h1 { color: purple; }',
   previewData: { person: { name: { firstName: 'Ada' } } },
   variables: [{ path: 'person.name.firstName', label: 'First name', required: true }],
   renderer: 'HANDLEBARS',
@@ -184,7 +183,7 @@ test('template editor save creates or updates templates and records versions whe
 test('template editor supports keyboard tab navigation and variable insertion', () => {
   let state = createTemplateEditorState({ template: fixtureTemplate });
   state = TemplateEditorController.reduceKey(state, { key: 'ArrowRight', target: 'tabs' });
-  assert.equal(state.activeTab, 'css');
+  assert.equal(state.activeTab, 'preview');
   state = TemplateEditorController.reduceKey(state, { key: 'End', target: 'tabs' });
   assert.equal(state.activeTab, 'preview');
   state = TemplateEditorController.reduceKey(state, { key: 'Home', target: 'tabs' });
@@ -210,7 +209,6 @@ test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTempl
           id: 'template-9',
           name: 'Proposal',
           htmlSource: '<h1>{{company.name}}</h1>',
-          cssSource: 'h1 { color: red; }',
           previewData: '{"company":{"name":"Acme"}}',
           variables: '[]',
           renderer: 'HANDLEBARS',
@@ -266,7 +264,7 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
 
   const api = createCoreTemplateEditorApi(fakeClient, fakeMetadataApi);
 
-  const preview = await api.renderPreview({ htmlSource: '<h1>{{name}}</h1>', cssSource: '', previewData: { name: 'Ada' } });
+  const preview = await api.renderPreview({ htmlSource: '<h1>{{name}}</h1>', previewData: { name: 'Ada' } });
   assert.equal(preview.ok, true);
   assert.match(preview.html, /Ada/);
   assert.equal(mutations.length, 0, 'preview must be fully local, no network call');
@@ -277,7 +275,7 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
   const updateData = mutations.find((m) => m.updateDocumentTemplate).updateDocumentTemplate.__args.data;
   assert.deepEqual(
     Object.keys(updateData).sort(),
-    ['cssSource', 'htmlSource', 'previewData', 'variables'],
+    ['htmlSource', 'previewData', 'variables'],
     'updating an existing template must not touch name/renderer/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
   );
 

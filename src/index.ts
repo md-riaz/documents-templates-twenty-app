@@ -112,7 +112,6 @@ export {
   type TemplateContext,
   type TemplateHelper,
 } from './logic/rendering/helper-registry';
-export { combineCssWithHtml } from './logic/rendering/css-combiner';
 export {
   extractReferencedVariables,
   validateHandlebarsTemplate,

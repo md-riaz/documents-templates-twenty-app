@@ -78,7 +78,6 @@ await client.mutation({
       data: {
         name: 'Corporate Proposal',
         htmlSource: '<h1>Proposal for {{company.name}}</h1>',
-        cssSource: 'h1 { color: #2563eb; }',
         renderer: 'HANDLEBARS',
         boundObjectName: 'company',
         status: 'ACTIVE',
