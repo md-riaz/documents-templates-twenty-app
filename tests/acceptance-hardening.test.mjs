@@ -117,11 +117,7 @@ test('modal and editor controls expose keyboard-friendly labels, dialog roles, l
       variables: [{ path: 'person.name', label: 'Person name', required: true }],
     },
   }));
-  assert.match(editorMarkup, /role="tablist"/);
-  assert.match(editorMarkup, /aria-label="Template editor tabs"/);
-  assert.match(editorMarkup, /role="listbox"[^>]*aria-label="Available template variables"/);
-  assert.match(editorMarkup, /data-responsive-layout="split-stack"/);
-  assert.match(editorMarkup, /aria-live="polite"/);
+  assert.match(editorMarkup, /aria-label="Template preview"/);
 
   const generateMarkup = renderGenerateDocumentModalMarkup(createGenerateDocumentState({
     primaryObjectType: 'person',

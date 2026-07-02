@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { defineFrontComponent } from 'twenty-sdk/define';
@@ -150,24 +149,15 @@ const tabs: Array<{ id: TemplateEditorTab; label: string }> = [
   { id: 'preview', label: 'Preview JSON' },
 ];
 
-export const renderTemplateEditorMarkup = (state: TemplateEditorState): string => `
-<section class="template-editor" aria-label="Template editor" data-responsive-layout="split-stack">
-  <div role="tablist" aria-label="Template editor tabs">
-    ${tabs.map((tab) => `<button role="tab" aria-selected="${state.activeTab === tab.id}" data-tab="${tab.id}">${tab.label}</button>`).join('')}
-  </div>
-  <label>HTML<textarea aria-label="HTML template source">${escapeAttribute(state.htmlSource)}</textarea></label>
-  <label>CSS<textarea aria-label="CSS template source">${escapeAttribute(state.cssSource)}</textarea></label>
-  <label>Preview JSON<textarea aria-label="Preview JSON data">${escapeAttribute(state.previewJson)}</textarea></label>
-  <aside role="listbox" aria-label="Available template variables">
-    ${state.variables.map((variable) => `<button role="option" data-variable="${escapeAttribute(variable.path)}">${escapeAttribute(variable.label ?? variable.path)}</button>`).join('')}
-  </aside>
-  <output aria-live="polite">${escapeAttribute(state.statusMessage || state.validationErrors.join(' '))}</output>
+export const renderTemplateEditorMarkup = (_state: TemplateEditorState): string => `
+<section class="template-editor" aria-label="Template preview">
+  <div aria-busy="true">Loading preview…</div>
 </section>`;
 
 export const templateEditorFrontComponent = {
-  name: 'template-editor',
-  label: 'Template Editor',
-  description: 'HTML/CSS template editor with preview JSON, settings, live preview, and variable browser.',
+  name: 'template-preview',
+  label: 'Template Preview',
+  description: 'Renders a live preview of the document template.',
   component: renderTemplateEditorMarkup,
 };
 
@@ -473,213 +463,90 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const clientRef = useRef<GenqlClientLike | null>(null);
   const client = (clientRef.current ??= new CoreApiClient() as unknown as GenqlClientLike);
 
-  const controllerRef = useRef<TemplateEditorController | null>(null);
-  const controller = (controllerRef.current ??= new TemplateEditorController({
-    initialState: createTemplateEditorState({ template }),
-    api: api ?? createCoreTemplateEditorApi(client, createMetadataApi()),
-  }));
+  const resolvedApiRef = useRef(api ? null : createCoreTemplateEditorApi(client, createMetadataApi()));
+  const resolvedApi = api ?? resolvedApiRef.current!;
 
-  const [state, setState] = useState<TemplateEditorState>(() => controller.state);
-  const [availableFields, setAvailableFields] = useState<TemplateEditorVariable[]>([]);
-  const [isLoadingRecord, setIsLoadingRecord] = useState(Boolean(recordId && !template && !api));
-  const sync = (): void => setState(controller.state);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    void controller.flushPreview().then(sync);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Load the real DocumentTemplate record for this widget's record id. Twenty
-  // has no mechanism to inject `template`/`api` props into a mounted front
-  // component (confirmed — the widget config only carries the front
-  // component's universal identifier), so this fetch is the only way the
-  // editor can learn which record it's actually editing.
-  useEffect(() => {
-    if (!recordId || template || api) return;
+    if (!recordId && !template) {
+      setIsLoading(false);
+      setErrorMessage('No template record selected.');
+      return;
+    }
     let cancelled = false;
-    setIsLoadingRecord(true);
-    void fetchDocumentTemplate(client, recordId).then((record) => {
-      if (cancelled) return;
-      if (record) controller.state = createTemplateEditorState({ template: record });
-      setIsLoadingRecord(false);
-      sync();
-    });
-    return () => {
-      cancelled = true;
-    };
+    void (async () => {
+      try {
+        const tmpl = template
+          ? { ...defaultTemplate, ...template }
+          : await fetchDocumentTemplate(client, recordId!);
+        if (cancelled) return;
+        if (!tmpl) {
+          setIsLoading(false);
+          setErrorMessage('Template not found.');
+          return;
+        }
+        const rendered = await resolvedApi.renderPreview({
+          htmlSource: tmpl.htmlSource,
+          cssSource: tmpl.cssSource ?? '',
+          previewData: tmpl.previewData ?? {},
+        });
+        if (cancelled) return;
+        setPreviewHtml(rendered.html);
+        setIsLoading(false);
+        if (!rendered.ok) {
+          setErrorMessage(rendered.errors.map((e) => e.userMessage ?? e.message ?? '').join(' '));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setIsLoading(false);
+          setErrorMessage(err instanceof Error ? err.message : 'Failed to load preview.');
+        }
+      }
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordId]);
 
-  // Refresh the schema-backed field picker whenever the bound object changes.
-  useEffect(() => {
-    let cancelled = false;
-    if (!state.boundObjectName || !controller.api.listFields) {
-      setAvailableFields([]);
-      return;
-    }
-    void controller.api.listFields(state.boundObjectName).then((fields) => {
-      if (!cancelled) setAvailableFields(fields);
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.boundObjectName]);
-
-  const updateField = (field: keyof TemplateEditorState, value: unknown): void => {
-    controller.updateField(field, value);
-    sync();
-    void controller.flushPreview().then(sync);
-  };
-
-  const setActiveTab = (tab: TemplateEditorTab): void => {
-    controller.setActiveTab(tab);
-    sync();
-  };
-
-  const onTabKeyDown = (event: { key: string }): void => {
-    controller.state = TemplateEditorController.reduceKey(controller.state, { key: event.key, target: 'tabs' });
-    sync();
-  };
-
-  const onSave = async (): Promise<void> => {
-    await controller.save();
-    sync();
-  };
-
-  const fieldLabelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 500 };
-  const textInputStyle: CSSProperties = { padding: '6px 8px', border: '1px solid #d0d5dd', borderRadius: 4, font: 'inherit' };
-  const textAreaStyle: CSSProperties = { ...textInputStyle, width: '100%', minHeight: 220, fontFamily: 'monospace', fontSize: 13, resize: 'vertical', boxSizing: 'border-box' };
-
-  if (isLoadingRecord) {
+  if (isLoading) {
     return (
-      <section aria-label="Template editor" aria-busy="true">
-        <p>Loading template…</p>
+      <section aria-label="Template preview" aria-busy="true" style={{ padding: 16 }}>
+        <p style={{ color: '#475467' }}>Loading preview…</p>
+      </section>
+    );
+  }
+
+  if (errorMessage && !previewHtml) {
+    return (
+      <section aria-label="Template preview" style={{ padding: 16 }}>
+        <p style={{ color: '#b42318' }}>{errorMessage}</p>
       </section>
     );
   }
 
   return (
-    <section
-      className="template-editor"
-      aria-label="Template editor"
-      data-responsive-layout="split-stack"
-      style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, maxWidth: 720 }}
-    >
-      <div
-        role="tablist"
-        aria-label="Template editor tabs"
-        onKeyDown={onTabKeyDown}
-        style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e4e7ec' }}
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={state.activeTab === tab.id}
-            data-tab={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '8px 12px',
-              border: 'none',
-              borderBottom: state.activeTab === tab.id ? '2px solid #4b5eff' : '2px solid transparent',
-              background: 'transparent',
-              fontWeight: state.activeTab === tab.id ? 600 : 400,
-              cursor: 'pointer',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {state.activeTab === 'html' ? (
-        <label style={fieldLabelStyle}>
-          HTML
-          <textarea
-            aria-label="HTML template source"
-            value={state.htmlSource}
-            onChange={(event) => updateField('htmlSource', event.target.value)}
-            style={textAreaStyle}
-          />
-        </label>
-      ) : null}
-
-      {state.activeTab === 'css' ? (
-        <label style={fieldLabelStyle}>
-          CSS
-          <textarea
-            aria-label="CSS template source"
-            value={state.cssSource}
-            onChange={(event) => updateField('cssSource', event.target.value)}
-            style={textAreaStyle}
-          />
-        </label>
-      ) : null}
-
-      {state.activeTab === 'preview' ? (
-        <label style={fieldLabelStyle}>
-          Preview JSON
-          <textarea
-            aria-label="Preview JSON data"
-            value={state.previewJson}
-            onChange={(event) => updateField('previewJson', event.target.value)}
-            style={textAreaStyle}
-          />
-        </label>
-      ) : null}
-
-      <aside
-        role="listbox"
-        aria-label="Available template variables"
-        style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
-      >
-        {mergeTemplateVariables(state.variables, availableFields).map((variable) => (
-          <button
-            key={variable.path}
-            type="button"
-            role="option"
-            aria-selected={false}
-            data-variable={variable.path}
-            onClick={() => updateField('htmlSource', insertVariableExpression(state.htmlSource, variable.path, state.htmlSource.length).value)}
-            style={{ padding: '4px 8px', borderRadius: 999, border: '1px solid #d0d5dd', background: '#f9fafb', fontSize: 12, cursor: 'pointer' }}
-          >
-            {variable.label ?? variable.path}
-          </button>
-        ))}
-      </aside>
-
-      <div style={fieldLabelStyle}>
-        Preview
-        <iframe
-          aria-label="Template live preview"
-          title="Template live preview"
-          srcDoc={state.previewHtml}
-          sandbox=""
-          style={{ width: '100%', height: 320, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
-        />
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          type="button"
-          onClick={() => void onSave()}
-          style={{ padding: '8px 16px', border: 'none', borderRadius: 4, background: '#4b5eff', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
-        >
-          Save template
-        </button>
-        <output aria-live="polite" style={{ fontSize: 13, color: state.validationErrors.length ? '#b42318' : '#475467' }}>
-          {state.statusMessage || state.validationErrors.join(' ')}
+    <section aria-label="Template preview" style={{ padding: 16, height: '100%' }}>
+      <iframe
+        aria-label="Template preview"
+        title="Template preview"
+        srcDoc={previewHtml}
+        sandbox=""
+        style={{ width: '100%', height: '100%', minHeight: 480, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
+      />
+      {errorMessage ? (
+        <output aria-live="polite" style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#b42318' }}>
+          {errorMessage}
         </output>
-      </div>
+      ) : null}
     </section>
   );
 };
 
 export default defineFrontComponent({
   universalIdentifier: TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-  name: 'template-editor',
-  description: 'HTML/CSS template editor with live preview, preview JSON, and a schema-backed variable browser.',
+  name: 'template-preview',
+  description: 'Renders a live preview of the document template using its HTML source and preview data.',
   component: TemplateEditorComponent,
 });

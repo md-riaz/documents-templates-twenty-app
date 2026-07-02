@@ -101,22 +101,12 @@ const fixtureTemplate = {
   version: 3,
 };
 
-test('template editor renders accessible HTML/CSS/preview tabs and variable browser', () => {
+test('renderTemplateEditorMarkup returns a preview placeholder', () => {
   const state = createTemplateEditorState({ template: fixtureTemplate });
   const markup = renderTemplateEditorMarkup(state);
 
-  assert.match(markup, /role="tablist"/);
-  assert.match(markup, /aria-label="Template editor tabs"/);
-  for (const tab of ['HTML', 'CSS', 'Preview JSON']) {
-    assert.match(markup, new RegExp(`role="tab"[^>]*>${tab}`));
-  }
-  assert.doesNotMatch(markup, /role="tab"[^>]*>Settings/, 'Name/Renderer/Status/Bound object are edited via the native Fields tab now');
-  assert.match(markup, /aria-label="HTML template source"/);
-  assert.match(markup, /aria-label="CSS template source"/);
-  assert.match(markup, /aria-label="Preview JSON data"/);
-  assert.match(markup, /role="listbox"[^>]*aria-label="Available template variables"/);
-  assert.match(markup, /data-variable="person\.name\.firstName"/);
-  assert.match(markup, /aria-live="polite"/);
+  assert.match(markup, /aria-label="Template preview"/);
+  assert.match(markup, /Loading preview/);
 });
 
 test('template editor debounces live preview and updates preview result', async () => {
