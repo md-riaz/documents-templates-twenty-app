@@ -24,61 +24,227 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 
 ## User guide
 
-### Quick start
+### DocumentTemplate fields
 
-1. Open the **Documents & Templates** folder in the Twenty navigation menu, then **Templates**.
-2. Create or select a template — see "Creating a template" below.
-3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.
-4. Use the live preview to validate variables before publishing.
-5. From a supported record page, choose **Generate Document**.
-6. Review the rendered content, optionally generate a PDF, then save.
-7. Generated PDFs attach to the Document audit record itself — so the PDF can always be
-   retrieved later from that record's own Files tab using only its ID, even after the
-   cached `pdfUrl` (a signed link that expires) goes stale. The source CRM record reaches
-   the same file through its **Documents** tab's "View Document" link, so nothing is
-   duplicated.
-8. Use the **Documents** navigation item (or a record's **Documents** tab) to review
-   document audit/history.
+Every template is a `DocumentTemplate` record. Here is what each field does:
 
-### Creating a template
+| Field | Purpose |
+| --- | --- |
+| **Name** | Display name shown in template pickers and the Templates list view. |
+| **HTML Source** | The Handlebars HTML markup that defines your document. This is where all your HTML, CSS (`<style>` tags), and `{{variable}}` expressions go. |
+| **Bound Object Name** | The Twenty object this template is designed for — e.g. `company`, `person`, `opportunity`, or any custom object. When set, the renderer automatically loads that record and its relations as template context. Validated against live metadata on save. |
+| **Status** | `ACTIVE` (default), `DRAFT`, or `ARCHIVED`. Only **Active** templates appear in the Generate Document picker. |
+| **Category** | Optional grouping — link to a `TemplateCategory` record for organizing templates (e.g. "Sales", "Onboarding"). |
+| **Preview Data** | Sample JSON context for the live preview. Lets you see what the rendered document looks like without saving or loading a real record. |
+| **Variables** | Optional explicit variable schema (JSON). The editor also auto-discovers variables from `htmlSource` and the bound object's field schema. |
+| **Allowed Output Types** | Defaults to `['PDF']`. Informational — does not currently gate output. |
+| **Version** | Auto-incremented version number. Each save that changes HTML Source creates a `TemplateVersion` snapshot. |
+| **Description** | Optional rich-text description for documentation purposes. |
 
-**In the UI (primary path):**
+### Step 1: Create a template
 
-1. Go to **Documents & Templates → Templates** and click **+ Add New** — Twenty creates
-   the record immediately with defaults (`status: Active`).
-2. Open the new row. Its record page has two tabs:
-   - **Fields** — Twenty's native field editor at the top (General/System groups) for
-     **Name**, **Category**, **Bound object**, **Status**, **Allowed output types**, etc. Below the standard fields, a dedicated large **HTML Source** editing
-     area (same pattern Twenty's Task object uses for its body field) lets you write
-     Handlebars markup directly.
-   - **Editor** — the rich template editor for the parts a native field can't handle:
-     - **HTML** — Handlebars markup with the variable picker (merges fields from the bound
-       object's schema with any variables already typed into the template) to insert
-       `{{path.to.field}}` expressions without typing them by hand.
-     - **CSS** and **Preview JSON** (sample data for the live preview).
-3. The live preview renders your HTML/CSS against the Preview JSON entirely client-side —
-   no save needed to see it.
-4. Click **Save template**. Changing HTML/CSS on an existing template automatically
-   records a new `TemplateVersion` snapshot.
-5. Set status to **Active** (the default, set on the Fields tab) to make it selectable in
-   **Generate Document** on any record of the bound object type.
+1. Open **Documents & Templates → Templates** in the left navigation menu.
+2. Click **+ Add New** — Twenty creates the record with defaults (`status: Active`).
+3. Open the new row. The record page has two tabs:
 
-**Programmatically** (bulk-seeding, CI, migrations): use `twenty-client-sdk`'s
-`CoreApiClient` or `RestApiClient` directly against your workspace, the same way this
-app's own logic functions do:
+   **Fields tab** (opens by default) — Twenty's native field editor with all the fields
+   listed above. The **HTML Source** field has a large editing area at the bottom of this
+   tab, so you can write Handlebars markup directly here.
+
+   **Preview tab** — a rich editor with a variable picker (showing fields from the bound
+   object's schema) and a live rendered preview of your template against the Preview Data.
+
+4. Fill in the key fields:
+   - **Name** — give the template a descriptive name (e.g. "Opportunity Proposal").
+   - **Bound Object Name** — set this to the object you'll generate documents from (e.g.
+     `opportunity`). This tells the renderer which record to load and which relations are
+     available.
+   - **HTML Source** — write your Handlebars HTML (see "Writing HTML Source" below).
+   - **Preview Data** — paste sample JSON so you can preview the output without a real
+     record.
+   - **Status** — leave as `ACTIVE` (or set to `DRAFT` while authoring).
+
+5. Switch to the **Preview** tab to see the rendered output. The preview updates
+   client-side from Preview Data — no save needed.
+6. Save the record. Changing HTML Source on an existing template automatically creates a
+   `TemplateVersion` snapshot.
+
+### Step 2: Generate a document from a template
+
+1. Navigate to any CRM record (e.g. an Opportunity, Company, or Person).
+2. Open the **command menu** (click the `⌘` button or use the keyboard shortcut) and
+   choose **Generate Document**.
+3. Select an **Active** template from the picker. Only templates whose `boundObjectName`
+   matches the current record's object type (or templates with no bound object) appear.
+4. The app renders the template against the live CRM record — you see a preview of the
+   final HTML.
+5. Click **Generate PDF** to convert the rendered HTML to a PDF and save it.
+6. The app creates a **Document** audit record linked to the source CRM record, generates
+   the PDF via Puppeteer, uploads it to Twenty's file storage, and attaches it to the
+   Document record.
+7. The source record's **Documents** tab now shows the new Document with a "View Document"
+   link. The Document record's own **Files** tab holds the PDF — durable, re-signed on
+   every query (the cached `pdfUrl` expires after ~24h).
+
+You can also automate this with workflows — see
+[docs/workflow-examples.md](docs/workflow-examples.md) for a step-by-step walkthrough of
+chaining **Render Template → Save Document → Generate PDF** in Twenty's workflow builder.
+
+### Writing HTML Source (Handlebars guide)
+
+Templates use [Handlebars](https://handlebarsjs.com/) syntax inside standard HTML. The
+renderer loads the bound object's record and its **first-level relations** automatically,
+so you can reference related data without any extra setup.
+
+#### Basic variables
+
+Use `{{object.field}}` to insert a field value. The top-level key is always the bound
+object's singular name:
+
+```handlebars
+<!-- boundObjectName: "company" -->
+<h1>{{company.name}}</h1>
+<p>Domain: {{company.domainName}}</p>
+<p>Employees: {{company.employees}}</p>
+```
+
+```handlebars
+<!-- boundObjectName: "person" -->
+<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>
+<p>Email: {{person.email}}</p>
+<p>Job title: {{person.jobTitle}}</p>
+```
+
+#### Accessing related objects (relations)
+
+When the renderer loads a record, it **shallow-expands one level of relations** from live
+metadata. This means you can access any directly related object's fields using dot
+notation — no extra configuration needed:
+
+```handlebars
+<!-- boundObjectName: "opportunity" -->
+<h1>{{opportunity.name}}</h1>
+<p>Company: {{opportunity.company.name}}</p>
+<p>Contact: {{opportunity.pointOfContact.name.firstName}} {{opportunity.pointOfContact.name.lastName}}</p>
+<p>Contact title: {{opportunity.pointOfContact.jobTitle}}</p>
+<p>Deal value: ${{opportunity.amount.amountMicros}}</p>
+<p>Stage: {{opportunity.stage}}</p>
+<p>Close date: {{opportunity.closeDate}}</p>
+```
+
+```handlebars
+<!-- boundObjectName: "person" -->
+<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>
+<p>Works at: {{person.company.name}}</p>
+<p>Company domain: {{person.company.domainName}}</p>
+```
+
+The available relation paths depend on the object's schema in your workspace. Use the
+**variable picker** in the Preview tab to browse all available fields and relations for
+the bound object — click any field to insert its `{{path}}` automatically.
+
+#### Conditionals
+
+```handlebars
+{{#if opportunity.closeDate}}
+  <p>Target close: {{opportunity.closeDate}}</p>
+{{else}}
+  <p>Close date not set</p>
+{{/if}}
+```
+
+#### Loops
+
+```handlebars
+{{#each items}}
+  <tr>
+    <td>{{this.name}}</td>
+    <td>{{this.quantity}}</td>
+    <td>{{this.price}}</td>
+  </tr>
+{{/each}}
+```
+
+#### Built-in helpers
+
+The renderer includes standard Handlebars helpers (`#if`, `#unless`, `#each`, `#with`)
+and a set of utility helpers:
+
+```handlebars
+{{uppercase company.name}}          {{!-- "ACME CORPORATION" --}}
+{{lowercase person.email}}           {{!-- "ada@example.com" --}}
+{{capitalize opportunity.stage}}     {{!-- "Proposal" --}}
+{{formatDate opportunity.closeDate}} {{!-- formatted date string --}}
+```
+
+#### Embedding CSS
+
+Put `<style>` tags directly in `htmlSource` — there is no separate CSS field. This keeps
+everything in one place and ensures the PDF renderer sees the same styles:
+
+```html
+<style>
+  body { font-family: 'Segoe UI', sans-serif; color: #1a1a2e; }
+  .header { background: #1a1a2e; color: white; padding: 40px; }
+  .amount { font-size: 28px; font-weight: 700; color: #0f3460; }
+</style>
+
+<div class="header">
+  <h1>Proposal for {{opportunity.company.name}}</h1>
+</div>
+<p class="amount">${{opportunity.amount.amountMicros}}</p>
+```
+
+#### HTML escaping
+
+- `{{variable}}` — auto-escaped (safe for user-supplied data).
+- `{{{variable}}}` — unescaped (raw HTML). Only use for trusted, sanitized content.
+
+#### Preview Data example
+
+The **Preview Data** field (JSON) lets you test your template without a real record. Its
+shape should mirror the context the renderer produces — the bound object name as the
+top-level key, with nested relations:
+
+```json
+{
+  "opportunity": {
+    "name": "Enterprise CRM Migration",
+    "stage": "PROPOSAL",
+    "closeDate": "2026-08-15",
+    "amount": { "amountMicros": 75000000000, "currencyCode": "USD" },
+    "company": { "name": "Acme Corporation" },
+    "pointOfContact": {
+      "name": { "firstName": "Sarah", "lastName": "Chen" },
+      "jobTitle": "VP of Operations"
+    }
+  }
+}
+```
+
+### Creating a template programmatically
+
+For bulk-seeding, CI, or migrations, use `twenty-client-sdk`'s `CoreApiClient` directly:
 
 ```ts
 import { CoreApiClient } from 'twenty-client-sdk/core';
 
-const client = new CoreApiClient(); // reads TWENTY_API_URL/TWENTY_API_KEY from the environment
+const client = new CoreApiClient();
 await client.mutation({
   createDocumentTemplate: {
     __args: {
       data: {
-        name: 'Corporate Proposal',
-        htmlSource: '<h1>Proposal for {{company.name}}</h1>',
-        boundObjectName: 'company',
+        name: 'Opportunity Proposal',
+        htmlSource: '<h1>Proposal for {{opportunity.company.name}}</h1>...',
+        boundObjectName: 'opportunity',
         status: 'ACTIVE',
+        previewData: JSON.stringify({
+          opportunity: {
+            name: 'Sample Deal',
+            company: { name: 'Acme Corp' },
+            pointOfContact: { name: { firstName: 'Jane', lastName: 'Doe' } },
+          },
+        }),
       },
     },
     id: true,
@@ -87,21 +253,6 @@ await client.mutation({
 ```
 
 See [docs/admin-guide.md](docs/admin-guide.md) for the full field reference.
-
-### Template authoring basics
-
-- Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.
-- Add preview JSON that matches the expected CRM context so editors can validate before publishing.
-- Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.
-- Use triple-stash only for trusted, sanitized content.
-- Keep templates inactive until preview data, variable coverage, and permissions are reviewed.
-
-### Common user flows
-
-- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, and save audit history — the PDF attaches to the new Document record, reachable from the source record's Documents tab.
-- **Follow up on a record:** render an updated template against the record's current CRM data, generate a fresh PDF, and get a new Document record with a new audit entry — no separate send step required.
-- **Regenerate a document:** open the record's Documents tab, find a previous document, and rerun the template with current CRM data.
-- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its own Document record.
 
 ## Documentation links
 
