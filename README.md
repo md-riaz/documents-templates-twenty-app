@@ -47,16 +47,13 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 1. Go to **Documents & Templates → Templates** and click **+ Add New** — Twenty creates
    the record immediately with defaults (`status: Active`, `renderer: Handlebars`).
 2. Open the new row. Its record page has two tabs:
-   - **Fields** — Twenty's native field editor. Set **Name** (how the template appears in
-     pickers), **Category**, **Renderer**, **Bound object** (the Twenty object this
-     template is designed for, e.g. `company`, `person`, or any custom object's singular
-     name — powers the schema-backed variable picker and is validated against live
-     metadata when the Editor tab saves), **Status**, and **Allowed output types** here,
-     the same way you'd edit fields on any other record.
-   - **Editor** — the rich template editor (fetched live via Twenty's API — it always
-     reflects the actual record, not a placeholder), for the parts a native field can't
-     handle:
-     - **HTML** — Handlebars markup. Use the variable picker (merges fields from the bound
+   - **Fields** — Twenty's native field editor at the top (General/System groups) for
+     **Name**, **Category**, **Renderer**, **Bound object**, **Status**, **Allowed output
+     types**, etc. Below the standard fields, a dedicated large **HTML Source** editing
+     area (same pattern Twenty's Task object uses for its body field) lets you write
+     Handlebars markup directly.
+   - **Editor** — the rich template editor for the parts a native field can't handle:
+     - **HTML** — Handlebars markup with the variable picker (merges fields from the bound
        object's schema with any variables already typed into the template) to insert
        `{{path.to.field}}` expressions without typing them by hand.
      - **CSS** and **Preview JSON** (sample data for the live preview).

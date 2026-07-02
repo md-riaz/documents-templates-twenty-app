@@ -70,12 +70,15 @@ test('navigation saved views command menu and page tab shells are registered', (
   }
 });
 
-test('DocumentTemplate record page shows a native Fields tab before the custom Editor tab', () => {
+test('DocumentTemplate record page shows a native Fields tab with HTML Source editor below, before the custom Editor tab', () => {
   const fieldsTab = read('src/page-layout-tabs/document-template-fields.page-layout-tab.ts');
   assert.match(fieldsTab, /title: 'Fields'/);
   assert.match(fieldsTab, /position: 0/);
   assert.match(fieldsTab, /type: 'FIELDS'/);
   assert.match(fieldsTab, /configurationType: 'FIELDS'/);
+  assert.match(fieldsTab, /type: 'FIELD'/, 'Fields tab should include a dedicated FIELD widget for HTML Source');
+  assert.match(fieldsTab, /fieldDisplayMode: 'EDITOR'/, 'HTML Source widget should use EDITOR display mode');
+  assert.match(fieldsTab, /DOCUMENT_TEMPLATE_FIELDS\.htmlSource/, 'HTML Source widget should reference the htmlSource field');
 
   const editorTab = read('src/page-layout-tabs/document-template-editor.page-layout-tab.ts');
   assert.match(editorTab, /title: 'Editor'/);
