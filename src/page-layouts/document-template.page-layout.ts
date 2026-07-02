@@ -7,10 +7,11 @@ import {
 
 /**
  * Page layout bound to the app's own DocumentTemplate object. Opening a
- * DocumentTemplate record shows the rich template editor instead of Twenty's
- * generic field-by-field form. See
- * `src/page-layout-tabs/document-template-editor.page-layout-tab.ts` for the
- * tab/widget that attaches the template editor to this layout.
+ * DocumentTemplate record shows two tabs: a native "Fields" tab (Twenty's
+ * standard field editor) and an "Editor" tab hosting the rich template
+ * editor front component. See
+ * `src/page-layout-tabs/document-template-fields.page-layout-tab.ts` and
+ * `src/page-layout-tabs/document-template-editor.page-layout-tab.ts`.
  *
  * NOTE: the Twenty CLI discovers entities via static analysis of the
  * `export default defineXxx({...})` expression — it must be inline (not a

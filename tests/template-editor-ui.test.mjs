@@ -101,15 +101,16 @@ const fixtureTemplate = {
   version: 3,
 };
 
-test('template editor renders accessible HTML/CSS/preview/settings tabs and variable browser', () => {
+test('template editor renders accessible HTML/CSS/preview tabs and variable browser', () => {
   const state = createTemplateEditorState({ template: fixtureTemplate });
   const markup = renderTemplateEditorMarkup(state);
 
   assert.match(markup, /role="tablist"/);
   assert.match(markup, /aria-label="Template editor tabs"/);
-  for (const tab of ['HTML', 'CSS', 'Preview JSON', 'Settings']) {
+  for (const tab of ['HTML', 'CSS', 'Preview JSON']) {
     assert.match(markup, new RegExp(`role="tab"[^>]*>${tab}`));
   }
+  assert.doesNotMatch(markup, /role="tab"[^>]*>Settings/, 'Name/Renderer/Status/Bound object are edited via the native Fields tab now');
   assert.match(markup, /aria-label="HTML template source"/);
   assert.match(markup, /aria-label="CSS template source"/);
   assert.match(markup, /aria-label="Preview JSON data"/);
@@ -195,7 +196,7 @@ test('template editor supports keyboard tab navigation and variable insertion', 
   state = TemplateEditorController.reduceKey(state, { key: 'ArrowRight', target: 'tabs' });
   assert.equal(state.activeTab, 'css');
   state = TemplateEditorController.reduceKey(state, { key: 'End', target: 'tabs' });
-  assert.equal(state.activeTab, 'settings');
+  assert.equal(state.activeTab, 'preview');
   state = TemplateEditorController.reduceKey(state, { key: 'Home', target: 'tabs' });
   assert.equal(state.activeTab, 'html');
 
@@ -204,7 +205,7 @@ test('template editor supports keyboard tab navigation and variable insertion', 
   assert.equal(inserted.cursor, '<p>Hello {{person.name.firstName}}'.length);
 
   const validation = validateTemplateEditorState({ ...state, name: '', htmlSource: '', previewJson: '{bad' });
-  assert.match(validation.join('\n'), /Template name is required/);
+  assert.match(validation.join('\n'), /Set a Name in the Fields tab before saving/);
   assert.match(validation.join('\n'), /HTML source is required/);
   assert.match(validation.join('\n'), /Preview JSON is not valid JSON/);
 });
@@ -283,9 +284,18 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
   const updated = await api.saveTemplate({ id: 'template-9', name: 'Proposal', htmlSource: '<h1>x</h1>', status: 'ACTIVE' });
   assert.equal(updated.id, 'template-9');
   assert.equal(updated.version, 5);
+  const updateData = mutations.find((m) => m.updateDocumentTemplate).updateDocumentTemplate.__args.data;
+  assert.deepEqual(
+    Object.keys(updateData).sort(),
+    ['cssSource', 'htmlSource', 'previewData', 'variables'],
+    'updating an existing template must not touch name/renderer/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
+  );
 
   const created = await api.saveTemplate({ name: 'New', htmlSource: '<p>x</p>', status: 'ACTIVE' });
   assert.equal(created.id, 'template-new');
+  const createData = mutations.find((m) => m.createDocumentTemplate).createDocumentTemplate.__args.data;
+  assert.equal(createData.name, 'New', 'a brand-new record has no Fields-tab edit to clobber, so it still needs name seeded');
+  assert.equal(createData.status, 'ACTIVE');
 
   const fields = await api.listFields('company');
   assert.deepEqual(fields, [{ path: 'company.name', label: 'company.name' }]);

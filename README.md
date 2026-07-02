@@ -46,25 +46,26 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 
 1. Go to **Documents & Templates → Templates** and click **+ Add New** — Twenty creates
    the record immediately with defaults (`status: Active`, `renderer: Handlebars`).
-2. Open the new row. The **Template Editor** tab loads the record's current fields
-   (fetched live via Twenty's API — the editor always reflects the actual record, not a
-   placeholder).
-3. Fill in:
-   - **Name** — how the template appears in pickers.
-   - **Bound object** (Settings tab) — the Twenty object this template is designed for
-     (e.g. `company`, `person`, or any custom object's singular name). This powers the
-     schema-backed variable picker and is validated against live metadata on save.
-   - **HTML** — Handlebars markup. Use the variable picker (merges fields from the bound
-     object's schema with any variables already typed into the template) to insert
-     `{{path.to.field}}` expressions without typing them by hand.
-   - **CSS**, **Preview JSON** (sample data for the live preview), and **Settings**
-     (renderer, status).
-4. The **Preview** tab live-renders your HTML/CSS against the Preview JSON entirely
-   client-side — no save needed to see it.
-5. Click **Save template**. Changing HTML/CSS on an existing template automatically
+2. Open the new row. Its record page has two tabs:
+   - **Fields** — Twenty's native field editor. Set **Name** (how the template appears in
+     pickers), **Category**, **Renderer**, **Bound object** (the Twenty object this
+     template is designed for, e.g. `company`, `person`, or any custom object's singular
+     name — powers the schema-backed variable picker and is validated against live
+     metadata when the Editor tab saves), **Status**, and **Allowed output types** here,
+     the same way you'd edit fields on any other record.
+   - **Editor** — the rich template editor (fetched live via Twenty's API — it always
+     reflects the actual record, not a placeholder), for the parts a native field can't
+     handle:
+     - **HTML** — Handlebars markup. Use the variable picker (merges fields from the bound
+       object's schema with any variables already typed into the template) to insert
+       `{{path.to.field}}` expressions without typing them by hand.
+     - **CSS** and **Preview JSON** (sample data for the live preview).
+3. The live preview renders your HTML/CSS against the Preview JSON entirely client-side —
+   no save needed to see it.
+4. Click **Save template**. Changing HTML/CSS on an existing template automatically
    records a new `TemplateVersion` snapshot.
-6. Set status to **Active** (the default) to make it selectable in **Generate Document**
-   on any record of the bound object type.
+5. Set status to **Active** (the default, set on the Fields tab) to make it selectable in
+   **Generate Document** on any record of the bound object type.
 
 **Programmatically** (bulk-seeding, CI, migrations): use `twenty-client-sdk`'s
 `CoreApiClient` or `RestApiClient` directly against your workspace, the same way this

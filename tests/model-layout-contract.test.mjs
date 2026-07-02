@@ -44,6 +44,8 @@ test('navigation saved views command menu and page tab shells are registered', (
     'src/menu/documents-templates-folder.navigation-menu-item.ts',
     'src/menu/documents.navigation-menu-item.ts',
     'src/page-layout-tabs/documents-standard-record-tabs.ts',
+    'src/page-layout-tabs/document-template-fields.page-layout-tab.ts',
+    'src/page-layout-tabs/document-template-editor.page-layout-tab.ts',
   ]) {
     assert.ok(existsSync(join(root, path)), `${path} should exist`);
   }
@@ -61,9 +63,23 @@ test('navigation saved views command menu and page tab shells are registered', (
     'documentsTemplatesNavigationMenuItem',
     'companyDocumentsPageLayoutTab',
     'personDocumentsPageLayoutTab',
+    'documentTemplateFieldsTab',
+    'documentTemplateEditorTab',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
+});
+
+test('DocumentTemplate record page shows a native Fields tab before the custom Editor tab', () => {
+  const fieldsTab = read('src/page-layout-tabs/document-template-fields.page-layout-tab.ts');
+  assert.match(fieldsTab, /title: 'Fields'/);
+  assert.match(fieldsTab, /position: 0/);
+  assert.match(fieldsTab, /type: 'FIELDS'/);
+  assert.match(fieldsTab, /configurationType: 'FIELDS'/);
+
+  const editorTab = read('src/page-layout-tabs/document-template-editor.page-layout-tab.ts');
+  assert.match(editorTab, /title: 'Editor'/);
+  assert.match(editorTab, /position: 1/);
 });
 
 test('navigation folder groups Documents and Templates items', () => {

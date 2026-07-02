@@ -64,6 +64,7 @@ export {
   personDocumentsPageLayoutTab,
 } from './page-layout-tabs/documents-standard-record-tabs';
 export { default as documentTemplatePageLayout } from './page-layouts/document-template.page-layout';
+export { default as documentTemplateFieldsTab } from './page-layout-tabs/document-template-fields.page-layout-tab';
 export { default as documentTemplateEditorTab } from './page-layout-tabs/document-template-editor.page-layout-tab';
 export { default as generateDocumentCommandMenuItem } from './menu/generate-document.command-menu-item';
 export {

@@ -10,7 +10,7 @@ import { renderHandlebarsTemplate } from '../logic/rendering/handlebars-renderer
 import { createMetadataApi, type MetadataApi } from '../logic/metadata/metadata-client';
 import { listBoundObjectFields } from '../logic/list-template-variables';
 
-export type TemplateEditorTab = 'html' | 'css' | 'preview' | 'settings';
+export type TemplateEditorTab = 'html' | 'css' | 'preview';
 
 export type TemplateEditorVariable = {
   path: string;
@@ -111,7 +111,7 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
 
 export const validateTemplateEditorState = (state: Pick<TemplateEditorState, 'name' | 'htmlSource' | 'previewJson'>): string[] => {
   const errors: string[] = [];
-  if (!state.name.trim()) errors.push('Template name is required.');
+  if (!state.name.trim()) errors.push('Set a Name in the Fields tab before saving.');
   if (!state.htmlSource.trim()) errors.push('HTML source is required.');
   try {
     JSON.parse(state.previewJson || '{}');
@@ -148,7 +148,6 @@ const tabs: Array<{ id: TemplateEditorTab; label: string }> = [
   { id: 'html', label: 'HTML' },
   { id: 'css', label: 'CSS' },
   { id: 'preview', label: 'Preview JSON' },
-  { id: 'settings', label: 'Settings' },
 ];
 
 export const renderTemplateEditorMarkup = (state: TemplateEditorState): string => `
@@ -392,20 +391,38 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
     };
   },
   async saveTemplate(input) {
-    const data = {
-      name: input.name,
+    // Name/Renderer/Bound object/Status/Allowed output types are edited via
+    // the native "Fields" tab now, independently of this widget. On update,
+    // only send the fields this editor actually owns — including the others
+    // here would silently overwrite a concurrent edit made in that tab with
+    // a stale in-memory value. A brand-new record (no id yet — not reachable
+    // from the live widget, since Twenty always creates the record row
+    // before this widget mounts, but used by tests/programmatic callers)
+    // still needs them seeded, since `name`/`htmlSource` are non-nullable
+    // with no default.
+    const editorOwnedData = {
       htmlSource: input.htmlSource,
       cssSource: input.cssSource ?? '',
       previewData: input.previewData ?? {},
       variables: input.variables ?? [],
-      renderer: input.renderer ?? 'HANDLEBARS',
-      boundObjectName: input.boundObjectName || null,
-      allowedOutputTypes: input.allowedOutputTypes ?? ['HTML', 'PDF'],
-      status: input.status ?? 'ACTIVE',
     };
     const result = input.id
-      ? await client.mutation({ updateDocumentTemplate: { __args: { id: input.id, data }, ...DOCUMENT_TEMPLATE_SELECTION } })
-      : await client.mutation({ createDocumentTemplate: { __args: { data }, ...DOCUMENT_TEMPLATE_SELECTION } });
+      ? await client.mutation({ updateDocumentTemplate: { __args: { id: input.id, data: editorOwnedData }, ...DOCUMENT_TEMPLATE_SELECTION } })
+      : await client.mutation({
+          createDocumentTemplate: {
+            __args: {
+              data: {
+                ...editorOwnedData,
+                name: input.name,
+                renderer: input.renderer ?? 'HANDLEBARS',
+                boundObjectName: input.boundObjectName || null,
+                allowedOutputTypes: input.allowedOutputTypes ?? ['HTML', 'PDF'],
+                status: input.status ?? 'ACTIVE',
+              },
+            },
+            ...DOCUMENT_TEMPLATE_SELECTION,
+          },
+        });
     const saved = (result?.updateDocumentTemplate ?? result?.createDocumentTemplate) as Record<string, unknown> | undefined;
     if (!saved) throw new Error('Twenty did not return a saved DocumentTemplate record.');
     return { ...input, id: saved.id as string, version: (saved.version as number) ?? input.version };
@@ -577,16 +594,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         ))}
       </div>
 
-      <label style={fieldLabelStyle}>
-        Name
-        <input
-          aria-label="Template name"
-          value={state.name}
-          onChange={(event) => updateField('name', event.target.value)}
-          style={textInputStyle}
-        />
-      </label>
-
       {state.activeTab === 'html' ? (
         <label style={fieldLabelStyle}>
           HTML
@@ -621,46 +628,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
             style={textAreaStyle}
           />
         </label>
-      ) : null}
-
-      {state.activeTab === 'settings' ? (
-        <div aria-label="Template settings" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <label style={fieldLabelStyle}>
-            Renderer
-            <select
-              aria-label="Template renderer"
-              value={state.renderer}
-              onChange={(event) => updateField('renderer', event.target.value)}
-              style={textInputStyle}
-            >
-              {/* HANDLEBARS is the only renderer supported by the object schema and renderTemplateLogic; do not add options here until a renderer is fully implemented end-to-end. */}
-              <option value="HANDLEBARS">Handlebars</option>
-            </select>
-          </label>
-          <label style={fieldLabelStyle}>
-            Status
-            <select
-              aria-label="Template status"
-              value={state.status}
-              onChange={(event) => updateField('status', event.target.value)}
-              style={textInputStyle}
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="ACTIVE">Active</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
-          </label>
-          <label style={fieldLabelStyle}>
-            Bound object
-            <input
-              aria-label="Bound object name"
-              placeholder="e.g. company, person, or any custom object name"
-              value={state.boundObjectName}
-              onChange={(event) => updateField('boundObjectName', event.target.value)}
-              style={textInputStyle}
-            />
-          </label>
-        </div>
       ) : null}
 
       <aside
