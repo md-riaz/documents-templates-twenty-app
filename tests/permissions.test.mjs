@@ -11,8 +11,8 @@ const scopes = [
   'viewTemplates',
   'manageTemplates',
   'generateDocuments',
-  'viewGeneratedDocs',
-  'deleteGeneratedDocs',
+  'viewDocuments',
+  'deleteDocuments',
 ];
 
 test('application identity metadata is configured', () => {

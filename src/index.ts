@@ -3,43 +3,58 @@ export { default as defaultRole } from './default-role';
 export { default as documentTemplateObject } from './objects/document-template.object';
 export { default as templateCategoryObject } from './objects/template-category.object';
 export { default as templateVersionObject } from './objects/template-version.object';
-export { default as generatedDocumentObject } from './objects/generated-document.object';
+export { default as documentObject } from './objects/document.object';
 export { default as documentTemplateView } from './menu/document-template.view';
-export { default as generatedDocumentView } from './menu/generated-document.view';
+export { default as documentView } from './menu/document.view';
 export { default as documentsTemplatesNavigationMenuItem } from './menu/documents-templates.navigation-menu-item';
-export { default as documentShellFrontComponent } from './front-components/document-shell.front-component';
+export { default as documentsTemplatesNavigationFolder } from './menu/documents-templates-folder.navigation-menu-item';
+export { default as documentsNavigationMenuItem } from './menu/documents.navigation-menu-item';
 export {
+  default as documentShellFrontComponent,
+  DocumentShellComponent,
+  type DocumentShellComponentProps,
+} from './front-components/document-shell.front-component';
+export {
+  TemplateEditorComponent,
   TemplateEditorController,
+  createLocalPreviewTemplateEditorApi,
   createTemplateEditorState,
   insertVariableExpression,
+  mergeTemplateVariables,
   renderTemplateEditorMarkup,
   templateEditorFrontComponent,
   validateTemplateEditorState,
   type TemplateEditorApi,
+  type TemplateEditorComponentProps,
   type TemplateEditorState,
   type TemplateEditorTab,
   type TemplateEditorTemplate,
   type TemplateEditorVariable,
 } from './front-components/template-editor.front-component';
 export {
+  GenerateDocumentComponent,
   GenerateDocumentController,
   createGenerateDocumentState,
-  filterGeneratedDocumentHistory,
+  createUnavailableGenerateDocumentApi,
+  filterDocumentHistory,
   generateDocumentFrontComponent,
-  generatedDocumentHistoryFrontComponent,
+  documentHistoryFrontComponent,
   isGenerateDocumentActionVisible,
-  renderGeneratedDocumentHistoryMarkup,
+  renderDocumentHistoryMarkup,
   renderGenerateDocumentModalMarkup,
-  type GeneratedDocumentHistoryRecord,
+  type DocumentHistoryRecord,
   type GenerateDocumentApi,
+  type GenerateDocumentComponentProps,
   type GenerateDocumentState,
   type GenerateDocumentTemplate,
 } from './front-components/generate-document.front-component';
 export {
+  PdfSettingsFields,
   createPdfSettingsState,
   pdfSettingsFrontComponent,
   renderPdfSettingsMarkup,
   validatePdfSettingsState,
+  type PdfSettingsFieldsProps,
   type PdfSettingsState,
 } from './front-components/pdf-settings.front-component';
 export {
@@ -48,6 +63,10 @@ export {
   opportunityDocumentsPageLayoutTab,
   personDocumentsPageLayoutTab,
 } from './page-layout-tabs/documents-standard-record-tabs';
+export { default as documentTemplatePageLayout } from './page-layouts/document-template.page-layout';
+export { default as documentTemplateFieldsTab } from './page-layout-tabs/document-template-fields.page-layout-tab';
+export { default as documentTemplateEditorTab } from './page-layout-tabs/document-template-editor.page-layout-tab';
+export { default as generateDocumentCommandMenuItem } from './menu/generate-document.command-menu-item';
 export {
   ContextProviderRegistry,
   createContextProviderRegistry,
@@ -59,11 +78,14 @@ export {
   type ContextProviderResult,
 } from './logic/context/provider-registry';
 export {
-  DEFAULT_CONTEXT_PROVIDER_NAMES,
-  createDefaultContextProviders,
-  loadDefaultRecordContext,
-  type DefaultContextProviderName,
-} from './logic/context/default-providers';
+  createCachedMetadataApi,
+  createMetadataApi,
+  type CachedMetadataApiOptions,
+  type MetadataApi,
+  type MetadataObject,
+  type MetadataObjectField,
+  type MetadataQueryClient,
+} from './logic/metadata/metadata-client';
 export {
   DOCUMENTS_TEMPLATES_PERMISSION_SCOPES,
   PERMISSION_SCOPE_LABELS,
@@ -117,18 +139,19 @@ export {
   type ValidateTemplateOutput,
 } from './logic/validate-template';
 export {
+  listBoundObjectFields,
   listTemplateVariablesLogic,
   type ListTemplateVariablesInput,
   type TemplateVariableInfo,
 } from './logic/list-template-variables';
 export {
-  buildGeneratedDocumentRecord,
-  saveGeneratedDocumentLogic,
-  type GeneratedDocumentRepositoryApi,
-  type GeneratedDocumentStatus,
-  type SaveGeneratedDocumentInput,
-  type SaveGeneratedDocumentOutput,
-} from './logic/save-generated-document';
+  buildDocumentRecord,
+  saveDocumentLogic,
+  type DocumentRepositoryApi,
+  type DocumentStatus,
+  type SaveDocumentInput,
+  type SaveDocumentOutput,
+} from './logic/save-document';
 export {
   DEFAULT_PDF_SETTINGS,
   mapPdfSettingsToBrowserOptions,
@@ -141,42 +164,52 @@ export {
 export {
   createPdfStorageKey,
   generatePdfFromHtmlLogic,
-  type GeneratedDocumentUpdateApi,
+  type DocumentUpdateApi,
   type GeneratePdfFromHtmlInput,
   type GeneratePdfFromHtmlOutput,
   type HtmlToPdfAdapter,
   type PdfStorageAdapter,
-  type SourceRecordAttachmentResult,
+  type RecordAttachmentResult,
 } from './logic/generate-pdf';
 export {
   createPdfAdapter,
   pdfAdapter,
 } from './adapters/pdf.adapter';
 export {
-  createTwentyStorageAdapter,
-} from './adapters/twenty-storage.adapter';
-export {
   ACCEPTANCE_SCENARIOS,
   renderRtlSmokeFixture,
   runAcceptanceScenario,
-  sanitizeGeneratedDocumentHtml,
-  validateGeneratedDocumentAuditTrail,
+  sanitizeDocumentHtml,
+  validateDocumentAuditTrail,
   type AcceptanceContext,
   type AcceptanceScenario,
   type AcceptanceScenarioId,
 } from './logic/acceptance-hardening';
 export {
-  GLOBAL_TRIGGER_REQUIREMENTS,
-  documentWorkflowActions,
-  generatePdfWorkflowAction,
-  renderTemplateWorkflowAction,
-  runDocumentWorkflowAction,
-  saveGeneratedDocumentWorkflowAction,
-  type DocumentWorkflowAction,
-  type DocumentWorkflowActionDefinition,
-  type DocumentWorkflowActionOutput,
-  type WorkflowTriggerPattern,
-} from './workflow-actions/document-workflow-actions';
+  runGeneratePdf,
+  type GeneratePdfActionDeps,
+  type GeneratePdfActionInput,
+  type GeneratePdfActionOutput,
+} from './logic-functions/generate-pdf.logic-function';
+export {
+  runRenderTemplate,
+  type RenderTemplateActionDeps,
+  type RenderTemplateActionInput,
+} from './logic-functions/render-template.logic-function';
+export {
+  runSaveDocument,
+  type SaveDocumentActionDeps,
+  type SaveDocumentActionInput,
+  type SaveDocumentActionOutput,
+} from './logic-functions/save-document.logic-function';
+export {
+  WORKFLOW_ACTION_PRINCIPAL,
+  createCoreRecordApi,
+  createCoreStorageAdapter,
+  type CoreRecordApi,
+  type GenqlClientLike,
+  type GenqlRequest,
+} from './logic-functions/core-client-adapters';
 export {
   createDocumentsTemplatesSdk,
   generatePdfFromHtml,

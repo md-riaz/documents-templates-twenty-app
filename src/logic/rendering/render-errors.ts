@@ -64,6 +64,10 @@ export const mapTemplateRenderError = (
 
   if (
     phase === 'compile' ||
+    // `validateHandlebarsTemplate` calls `Handlebars.parse()` directly during
+    // the "validation" phase, so any error surfaced there is definitionally
+    // a template syntax error regardless of its message wording.
+    phase === 'validation' ||
     lower.includes('unexpected') ||
     lower.includes('unclosed') ||
     lower.includes('mismatched') ||
@@ -79,7 +83,7 @@ export const mapTemplateRenderError = (
     });
   }
 
-  if (lower.includes('unknown template helper')) {
+  if (lower.includes('unknown template helper') || lower.includes('missing helper')) {
     return new TemplateRenderError({
       code: 'UNKNOWN_HELPER',
       message,

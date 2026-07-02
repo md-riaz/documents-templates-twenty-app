@@ -4,7 +4,7 @@ import {
   DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS,
   DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS,
   DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 const RECORD_PAGE_LAYOUTS = {
   company: STANDARD_PAGE_LAYOUT.companyRecordPage.universalIdentifier,
@@ -22,8 +22,8 @@ const makeDocumentsPageLayoutTab = (object: keyof typeof DOCUMENTS_TAB_UNIVERSAL
   widgets: [
     {
       universalIdentifier: DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS[object],
-      title: 'Generated Documents',
-      type: 'front-component',
+      title: 'Documents',
+      type: 'FRONT_COMPONENT',
       gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
       configuration: {
         configurationType: 'FRONT_COMPONENT',

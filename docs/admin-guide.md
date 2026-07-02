@@ -12,28 +12,43 @@ Grant the default app role only to users who need document automation.
 | --- | --- | --- |
 | `viewTemplates` | Sales, success, operations | Browse and preview active templates. |
 | `manageTemplates` | Template owners/admins | Create, edit, deactivate, and version templates. |
-| `generateDocuments` | Sales, success, operations | Render documents and save generated records. |
-| `sendDocuments` | Authorized documents senders | Send templated documents and optional PDF attachments. |
-| `viewGeneratedDocs` | Record collaborators | View generated-document history. |
-| `deleteGeneratedDocs` | Admins/compliance owners | Remove generated records where policy allows. |
+| `generateDocuments` | Sales, success, operations | Render documents, generate PDFs, and save document records. |
+| `viewDocuments` | Record collaborators | View document history. |
+| `deleteDocuments` | Admins/compliance owners | Remove document records where policy allows. |
 
 UI visibility is convenience only; logic functions enforce permissions server-side.
+
+## DocumentTemplate field reference
+
+For admins/integrators authoring templates programmatically (see the README's
+"Creating a template" section for the UI path):
+
+| Field | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `name` | TEXT | Yes | Display name shown in template pickers. |
+| `htmlSource` | TEXT | Yes | Handlebars markup. |
+| `cssSource` | TEXT | No | Combined with `htmlSource` at render time. |
+| `renderer` | SELECT | No (default `HANDLEBARS`) | Only `HANDLEBARS` is currently supported. |
+| `boundObjectName` | TEXT | No | Twenty object singular name (e.g. `company`, or any custom object). Validated against live metadata when saved through the Template Editor UI; not enforced for direct API writes that bypass the editor. |
+| `previewData` | RAW_JSON | No | Sample context for the live preview. |
+| `variables` | RAW_JSON | No | Optional explicit variable metadata; the editor also auto-discovers variables from `htmlSource` and the bound object's schema. |
+| `allowedOutputTypes` | ARRAY | No (default `['PDF']`) | Informational; does not currently gate `Generate PDF`. |
+| `status` | SELECT | No (default `ACTIVE`) | `DRAFT` / `ACTIVE` / `ARCHIVED` — only `ACTIVE` templates appear in **Generate Document**. |
 
 ## Configuration
 
 1. Confirm the app package uses `twenty-sdk` and `twenty-client-sdk` versions compatible with the installed workspace.
 2. Review marketplace metadata placeholders in `src/application-config.ts` before external submission.
 3. Configure PDF defaults in the app settings surface before enabling PDF output for users.
-4. Configure documents transport through Twenty-native documents or the SMTP adapter boundary when available.
-5. Register any custom SDK context providers before workflows rely on provider-specific variables.
+4. Register any custom SDK context providers before workflows rely on provider-specific variables.
 
 ## Operational guidance
 
-- Keep templates inactive until preview data, permission coverage, and recipients have been reviewed.
+- Keep templates inactive until preview data and permission coverage have been reviewed.
 - Prefer escaped Handlebars expressions for user data.
-- Treat generated PDFs attached to source CRM records as customer-facing files subject to retention policy.
-- Treat GeneratedDocument records as audit/history metadata, not the primary file location.
-- Audit failed sends and PDF-generation errors from generated-document statuses.
+- Treat generated PDFs, attached to their Document record, as customer-facing files subject to retention policy.
+- Document records ARE the primary file location (via their own Files tab) — not just audit/history metadata.
+- Audit PDF-generation errors from document statuses.
 
 ## Release checklist
 
@@ -48,6 +63,6 @@ UI visibility is convenience only; logic functions enforce permissions server-si
 ## Troubleshooting
 
 - **Cannot reach Twenty server:** start the local Twenty server before `yarn twenty dev --once --dry-run`.
-- **Template renders missing data:** check provider name, record type, permissions, and preview JSON.
+- **Template renders missing data:** check bound object/context provider name, record type, permissions, and preview JSON.
 - **PDF generation fails:** verify browser/PDF adapter availability and storage upload configuration.
-- **Documents is blocked:** verify recipient validation, sender permissions, and configured transport.
+- **Attachment missing on the Document record:** verify the storage adapter is configured and a Document record was saved (via Save Document) before Generate PDF ran, since the PDF attaches to that record's ID.

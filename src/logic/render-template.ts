@@ -1,11 +1,11 @@
 import {
-  createContextProviderRegistry,
+  ContextProviderRegistry,
+  loadGenericRecordContext,
   type ContextProviderApi,
   type ContextProviderInput,
   type ContextProviderPermissions,
-  type ContextProviderRegistry,
 } from './context/provider-registry';
-import { createDefaultContextProviders } from './context/default-providers';
+import type { MetadataApi } from './metadata/metadata-client';
 import {
   renderHandlebarsTemplate,
   type RenderHandlebarsTemplateOutput,
@@ -51,6 +51,7 @@ export type RenderTemplateLogicInput = {
   permissions?: ContextProviderPermissions;
   currentUser?: Record<string, unknown>;
   workspace?: Record<string, unknown>;
+  metadataApi?: MetadataApi;
 };
 
 export type RenderTemplateLogicOutput = {
@@ -71,7 +72,7 @@ type DocumentTemplateRecord = {
   name?: string;
   htmlSource?: string;
   cssSource?: string | null;
-  provider?: string | null;
+  boundObjectName?: string | null;
   renderer?: string | null;
   status?: string | null;
   isActive?: boolean | null;
@@ -111,24 +112,37 @@ const buildContext = async (
   const context = { ...(input.previewData ?? {}) };
   const warnings: string[] = [];
 
-  if (!input.previewData && (input.primaryObjectType || input.primaryRecordId)) {
-    if (!input.primaryObjectType || !input.primaryRecordId) {
+  // `boundObjectName` holds a real Twenty object name (or is empty/null) by
+  // construction, so it is safe to use directly as the object type; the ad-hoc
+  // `input.primaryObjectType` is the override/fallback for calls not backed by
+  // a saved template. A bound template only needs `primaryRecordId` — it must
+  // NOT also require `input.primaryObjectType`, or the whole point of binding
+  // a template to an object is defeated.
+  const effectiveObjectType = template.boundObjectName || input.primaryObjectType;
+
+  if (!input.previewData && (effectiveObjectType || input.primaryRecordId)) {
+    if (!effectiveObjectType || !input.primaryRecordId) {
       return {
         context,
-        warnings: ['Both primaryObjectType and primaryRecordId are required to load record context.'],
+        warnings: ['A bound object (from the template) or primaryObjectType, plus primaryRecordId, are required to load record context.'],
       };
     }
 
-    const registry = input.registry ?? createContextProviderRegistry({ providers: createDefaultContextProviders() });
     const providerInput: ContextProviderInput = {
-      primaryObjectType: template.provider || input.primaryObjectType,
+      primaryObjectType: effectiveObjectType,
       primaryRecordId: input.primaryRecordId,
       api: input.api,
       permissions: input.permissions,
       currentUser: input.currentUser,
       workspace: input.workspace,
+      metadataApi: input.metadataApi,
     };
-    const loaded = await registry.load(providerInput);
+    // Use the injected registry when provided; otherwise fall back to the
+    // metadata-enhanced generic loader that now handles every object (standard
+    // or custom) uniformly — no hardcoded per-object providers needed.
+    const loaded = input.registry
+      ? await input.registry.load(providerInput)
+      : await loadGenericRecordContext(providerInput);
     Object.assign(context, loaded.context);
     warnings.push(...loaded.warnings);
   }

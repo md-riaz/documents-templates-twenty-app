@@ -17,6 +17,13 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       APP_SECRET: ${APP_SECRET}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      # LOGIC_FUNCTION_TYPE must be changed from DISABLED to a real function-execution
+      # backend or this app's workflow-builder steps (Render Template, Generate PDF,
+      # Save Document — each a logic function) will not run. See Twenty's own
+      # deployment docs at https://docs.twenty.com for the executor values supported by
+      # your Twenty version/deployment (e.g. a local Node executor vs. a Lambda-style
+      # sandboxed executor); DISABLED is only appropriate if you do not need workflow
+      # automation to execute.
       LOGIC_FUNCTION_TYPE: ${LOGIC_FUNCTION_TYPE:-DISABLED}
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
@@ -46,6 +53,13 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       APP_SECRET: ${APP_SECRET}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      # LOGIC_FUNCTION_TYPE must be changed from DISABLED to a real function-execution
+      # backend or this app's workflow-builder steps (Render Template, Generate PDF,
+      # Save Document — each a logic function) will not run. See Twenty's own
+      # deployment docs at https://docs.twenty.com for the executor values supported by
+      # your Twenty version/deployment (e.g. a local Node executor vs. a Lambda-style
+      # sandboxed executor); DISABLED is only appropriate if you do not need workflow
+      # automation to execute.
       LOGIC_FUNCTION_TYPE: ${LOGIC_FUNCTION_TYPE:-DISABLED}
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser

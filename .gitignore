@@ -3,3 +3,6 @@ dist/
 .env
 .codex/
 *.log
+.twenty/output/src/
+.pnp.cjs
+.pnp.loader.mjs

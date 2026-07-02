@@ -11,7 +11,7 @@ const objectFiles = [
   ['src/objects/document-template.object.ts', 'DocumentTemplate'],
   ['src/objects/template-category.object.ts', 'TemplateCategory'],
   ['src/objects/template-version.object.ts', 'TemplateVersion'],
-  ['src/objects/generated-document.object.ts', 'GeneratedDocument'],
+  ['src/objects/document.object.ts', 'Document'],
 ];
 
 test('custom objects and relations are defined for document lifecycle records', () => {
@@ -23,25 +23,29 @@ test('custom objects and relations are defined for document lifecycle records', 
   }
 
   const template = read('src/objects/document-template.object.ts');
-  for (const field of ['htmlSource', 'cssSource', 'previewData', 'variables', 'renderer', 'provider', 'status', 'version']) {
+  for (const field of ['htmlSource', 'cssSource', 'previewData', 'variables', 'renderer', 'boundObjectName', 'status', 'version']) {
     assert.match(template, new RegExp(field), `DocumentTemplate should define ${field}`);
   }
   assert.match(template, /TemplateCategory/);
   assert.match(template, /TemplateVersion/);
-  assert.match(template, /GeneratedDocument/);
+  assert.match(template, /DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER/, 'DocumentTemplate should reference the Document object it relates to');
 
-  const generated = read('src/objects/generated-document.object.ts');
+  const document = read('src/objects/document.object.ts');
   for (const field of ['primaryObjectType', 'primaryRecordId', 'renderedHtml', 'pdfUrl', 'status', 'generatedAt']) {
-    assert.match(generated, new RegExp(field), `GeneratedDocument should define ${field}`);
+    assert.match(document, new RegExp(field), `Document should define ${field}`);
   }
 });
 
 test('navigation saved views command menu and page tab shells are registered', () => {
   for (const path of [
     'src/menu/document-template.view.ts',
-    'src/menu/generated-document.view.ts',
+    'src/menu/document.view.ts',
     'src/menu/documents-templates.navigation-menu-item.ts',
+    'src/menu/documents-templates-folder.navigation-menu-item.ts',
+    'src/menu/documents.navigation-menu-item.ts',
     'src/page-layout-tabs/documents-standard-record-tabs.ts',
+    'src/page-layout-tabs/document-template-fields.page-layout-tab.ts',
+    'src/page-layout-tabs/document-template-editor.page-layout-tab.ts',
   ]) {
     assert.ok(existsSync(join(root, path)), `${path} should exist`);
   }
@@ -51,13 +55,43 @@ test('navigation saved views command menu and page tab shells are registered', (
     'documentTemplateObject',
     'templateCategoryObject',
     'templateVersionObject',
-    'generatedDocumentObject',
+    'documentObject',
     'documentTemplateView',
-    'generatedDocumentView',
+    'documentView',
+    'documentsNavigationMenuItem',
+    'documentsTemplatesNavigationFolder',
     'documentsTemplatesNavigationMenuItem',
     'companyDocumentsPageLayoutTab',
     'personDocumentsPageLayoutTab',
+    'documentTemplateFieldsTab',
+    'documentTemplateEditorTab',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
+});
+
+test('DocumentTemplate record page shows a native Fields tab before the custom Editor tab', () => {
+  const fieldsTab = read('src/page-layout-tabs/document-template-fields.page-layout-tab.ts');
+  assert.match(fieldsTab, /title: 'Fields'/);
+  assert.match(fieldsTab, /position: 0/);
+  assert.match(fieldsTab, /type: 'FIELDS'/);
+  assert.match(fieldsTab, /configurationType: 'FIELDS'/);
+
+  const editorTab = read('src/page-layout-tabs/document-template-editor.page-layout-tab.ts');
+  assert.match(editorTab, /title: 'Editor'/);
+  assert.match(editorTab, /position: 1/);
+});
+
+test('navigation folder groups Documents and Templates items', () => {
+  const folder = read('src/menu/documents-templates-folder.navigation-menu-item.ts');
+  assert.match(folder, /NavigationMenuItemType\.FOLDER/);
+  assert.match(folder, /name: 'Documents & Templates'/);
+
+  const documents = read('src/menu/documents.navigation-menu-item.ts');
+  assert.match(documents, /name: 'Documents'/);
+  assert.match(documents, /folderUniversalIdentifier: DOCUMENTS_TEMPLATES_NAVIGATION_FOLDER_UNIVERSAL_IDENTIFIER/);
+
+  const templates = read('src/menu/documents-templates.navigation-menu-item.ts');
+  assert.match(templates, /name: 'Templates'/);
+  assert.match(templates, /folderUniversalIdentifier: DOCUMENTS_TEMPLATES_NAVIGATION_FOLDER_UNIVERSAL_IDENTIFIER/);
 });

@@ -8,7 +8,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 const expectedFiles = [
-  'src/front-components/generate-document.front-component.ts',
+  'src/front-components/generate-document.front-component.tsx',
 ];
 
 test('generate document record action component exists and is publicly exported', () => {
@@ -21,7 +21,7 @@ test('generate document record action component exists and is publicly exported'
     'GenerateDocumentController',
     'createGenerateDocumentState',
     'renderGenerateDocumentModalMarkup',
-    'filterGeneratedDocumentHistory',
+    'filterDocumentHistory',
     'isGenerateDocumentActionVisible',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
@@ -31,7 +31,7 @@ test('generate document record action component exists and is publicly exported'
 const {
   GenerateDocumentController,
   createGenerateDocumentState,
-  filterGeneratedDocumentHistory,
+  filterDocumentHistory,
   isGenerateDocumentActionVisible,
   renderGenerateDocumentModalMarkup,
 } = await import('../dist/front-components/generate-document.front-component.js');
@@ -65,7 +65,7 @@ const createApi = () => {
         template: { id: input.templateId, name: 'Welcome Letter' },
       };
     },
-    async saveGeneratedDocument(input) {
+    async saveDocument(input) {
       saves.push(input);
       return { ok: true, id: `generated-${saves.length}`, record: { id: `generated-${saves.length}`, ...input }, errors: [] };
     },
@@ -76,8 +76,8 @@ const createApi = () => {
 };
 
 const recordContext = { primaryObjectType: 'person', primaryRecordId: 'person-1' };
-const generatorPrincipal = { permissionScopes: ['generateDocuments', 'viewGeneratedDocs'] };
-const viewerPrincipal = { permissionScopes: ['viewGeneratedDocs'] };
+const generatorPrincipal = { permissionScopes: ['generateDocuments', 'viewDocuments'] };
+const viewerPrincipal = { permissionScopes: ['viewDocuments'] };
 
 test('generate document action visibility requires generateDocuments permission and record context', () => {
   assert.equal(isGenerateDocumentActionVisible({ principal: generatorPrincipal, ...recordContext }), true);
@@ -126,7 +126,7 @@ test('generate document controller renders a single-record preview and saves gen
   const generated = await controller.generate({ save: true });
 
   assert.equal(generated.ok, true);
-  assert.equal(generated.generatedDocumentId, 'generated-1');
+  assert.equal(generated.documentId, 'generated-1');
   assert.equal(api.renders.length, 1);
   assert.deepEqual(api.renders[0], {
     templateId: 'template-1',
@@ -164,8 +164,8 @@ test('generate document controller supports preview-only generation and render e
   assert.deepEqual(api.notifications.at(-1), { type: 'error', message: 'Template render failed.' });
 });
 
-test('generated document history is filtered by primary object and record id in newest-first order', () => {
-  const history = filterGeneratedDocumentHistory({
+test('document history is filtered by primary object and record id in newest-first order', () => {
+  const history = filterDocumentHistory({
     primaryObjectType: 'person',
     primaryRecordId: 'person-1',
     records: [

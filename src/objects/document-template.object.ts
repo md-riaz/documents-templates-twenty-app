@@ -3,13 +3,13 @@ import { defineObject, FieldType, OnDeleteAction, RelationType } from 'twenty-sd
 import {
   DOCUMENT_TEMPLATE_FIELDS,
   DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
-  GENERATED_DOCUMENT_FIELDS,
-  GENERATED_DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+  DOCUMENT_FIELDS,
+  DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
   TEMPLATE_CATEGORY_FIELDS,
   TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
   TEMPLATE_VERSION_FIELDS,
   TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 enum DocumentTemplateRenderer {
   HANDLEBARS = 'HANDLEBARS',
@@ -19,17 +19,6 @@ enum DocumentTemplateStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
   ARCHIVED = 'ARCHIVED',
-}
-
-enum DocumentTemplateProvider {
-  DEFAULT = 'DEFAULT',
-  COMPANY = 'company',
-  PERSON = 'person',
-  OPPORTUNITY = 'opportunity',
-  TASK = 'task',
-  NOTE = 'note',
-  CALENDAR_EVENT = 'calendarEvent',
-  CUSTOM = 'custom',
 }
 
 export default defineObject({
@@ -57,8 +46,8 @@ export default defineObject({
       universalSettings: { relationType: RelationType.MANY_TO_ONE, onDelete: OnDeleteAction.SET_NULL, joinColumnName: 'categoryId' },
     },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.description, type: FieldType.RICH_TEXT, name: 'description', label: 'Description', description: 'Template description', icon: 'IconNotes', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.RICH_TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.cssSource, type: FieldType.RICH_TEXT, name: 'cssSource', label: 'CSS Source', description: 'Template CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.cssSource, type: FieldType.TEXT, name: 'cssSource', label: 'CSS Source', description: 'Template CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.variables, type: FieldType.RAW_JSON, name: 'variables', label: 'Variables', description: 'Variable schema as JSON', icon: 'IconBraces', isNullable: true, defaultValue: null },
     {
@@ -72,23 +61,14 @@ export default defineObject({
       options: [{ value: DocumentTemplateRenderer.HANDLEBARS, label: 'Handlebars', position: 0, color: 'blue' }],
     },
     {
-      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.provider,
-      type: FieldType.SELECT,
-      name: 'provider',
-      label: 'Provider',
-      description: 'Context provider for this template',
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName,
+      type: FieldType.TEXT,
+      name: 'boundObjectName',
+      label: 'Bound Object Name',
+      description: 'Twenty object (standard or custom) this template is bound to; validated at write-time against live metadata',
       icon: 'IconPlug',
-      defaultValue: `'${DocumentTemplateProvider.DEFAULT}'`,
-      options: [
-        { value: DocumentTemplateProvider.DEFAULT, label: 'Default', position: 0, color: 'gray' },
-        { value: DocumentTemplateProvider.COMPANY, label: 'Company', position: 1, color: 'blue' },
-        { value: DocumentTemplateProvider.PERSON, label: 'Person', position: 2, color: 'green' },
-        { value: DocumentTemplateProvider.OPPORTUNITY, label: 'Opportunity', position: 3, color: 'purple' },
-        { value: DocumentTemplateProvider.TASK, label: 'Task', position: 4, color: 'orange' },
-        { value: DocumentTemplateProvider.NOTE, label: 'Note', position: 5, color: 'yellow' },
-        { value: DocumentTemplateProvider.CALENDAR_EVENT, label: 'Calendar Event', position: 6, color: 'red' },
-        { value: DocumentTemplateProvider.CUSTOM, label: 'Custom', position: 7, color: 'gray' },
-      ],
+      isNullable: true,
+      defaultValue: null,
     },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: ['PDF'] as string[] },
     {
@@ -119,15 +99,15 @@ export default defineObject({
       universalSettings: { relationType: RelationType.ONE_TO_MANY },
     },
     {
-      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.generatedDocuments,
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.documents,
       type: FieldType.RELATION,
-      name: 'generatedDocuments',
-      label: 'GeneratedDocument records',
-      description: 'GeneratedDocument history from this DocumentTemplate',
+      name: 'documents',
+      label: 'Document records',
+      description: 'Document history from this DocumentTemplate',
       icon: 'IconFileText',
       isNullable: true,
-      relationTargetFieldMetadataUniversalIdentifier: GENERATED_DOCUMENT_FIELDS.template,
-      relationTargetObjectMetadataUniversalIdentifier: GENERATED_DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
+      relationTargetFieldMetadataUniversalIdentifier: DOCUMENT_FIELDS.template,
+      relationTargetObjectMetadataUniversalIdentifier: DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
       universalSettings: { relationType: RelationType.ONE_TO_MANY },
     },
   ],

@@ -9,7 +9,7 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 
 const expectedFiles = [
   'src/logic/render-template.ts',
-  'src/logic/save-generated-document.ts',
+  'src/logic/save-document.ts',
 ];
 
 test('render/save logic function modules exist and are publicly exported', () => {
@@ -20,9 +20,9 @@ test('render/save logic function modules exist and are publicly exported', () =>
   const index = read('src/index.ts');
   for (const exportName of [
     'renderTemplateLogic',
-    'saveGeneratedDocumentLogic',
+    'saveDocumentLogic',
     'RenderTemplateLogicInput',
-    'SaveGeneratedDocumentInput',
+    'SaveDocumentInput',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
@@ -31,7 +31,7 @@ test('render/save logic function modules exist and are publicly exported', () =>
 const { PermissionDeniedError } = await import('../dist/permissions/permission-guards.js');
 const { createContextProviderRegistry } = await import('../dist/logic/context/provider-registry.js');
 const { renderTemplateLogic } = await import('../dist/logic/render-template.js');
-const { saveGeneratedDocumentLogic } = await import('../dist/logic/save-generated-document.js');
+const { saveDocumentLogic } = await import('../dist/logic/save-document.js');
 
 const createFixtureApi = () => {
   const created = [];
@@ -52,13 +52,27 @@ const createFixtureApi = () => {
       if (objectName === 'documentTemplate' && id === 'inactive-template') {
         return { id, name: 'Inactive', isActive: false, status: 'ARCHIVED', htmlSource: 'Nope' };
       }
+      if (objectName === 'documentTemplate' && id === 'bound-template') {
+        return {
+          id,
+          name: 'Opportunity Brief',
+          isActive: true,
+          status: 'ACTIVE',
+          renderer: 'HANDLEBARS',
+          boundObjectName: 'opportunity',
+          htmlSource: '<h1>{{opportunity.name}}</h1>',
+        };
+      }
       if (objectName === 'person' && id === 'person-1') {
         return { id, name: { firstName: 'Ada', lastName: 'Lovelace' }, companyId: 'company-1' };
+      }
+      if (objectName === 'opportunity' && id === 'op-1') {
+        return { id, name: 'Big Deal' };
       }
       return null;
     },
     async createRecord(objectName, data) {
-      assert.equal(objectName, 'generatedDocument');
+      assert.equal(objectName, 'document');
       const record = { id: `generated-${created.length + 1}`, ...data };
       created.push(record);
       return record;
@@ -103,6 +117,41 @@ test('renderTemplateLogic loads template, context, renders HTML/CSS and warning 
   assert.equal(output.template.id, 'template-1');
 });
 
+test('renderTemplateLogic uses template.boundObjectName as the object type, overriding input.primaryObjectType', async () => {
+  const api = createFixtureApi();
+  const output = await renderTemplateLogic({
+    templateId: 'bound-template',
+    // Caller passes 'person', but the saved template is bound to 'opportunity';
+    // boundObjectName must win (this is the corrected, sentinel-free behavior).
+    primaryObjectType: 'person',
+    primaryRecordId: 'op-1',
+    principal: generatorPrincipal,
+    api,
+  });
+
+  assert.equal(output.ok, true);
+  assert.match(output.html, /Big Deal/);
+  assert.equal(output.context.opportunity.name, 'Big Deal');
+  assert.equal('person' in output.context, false, 'bound object should override the ad-hoc primaryObjectType');
+});
+
+test('renderTemplateLogic loads context for a bound template given only primaryRecordId (no primaryObjectType at all)', async () => {
+  const api = createFixtureApi();
+  const output = await renderTemplateLogic({
+    templateId: 'bound-template',
+    // This is the primary motivating use case for boundObjectName: the caller
+    // only has a record id, and relies entirely on the template's own binding
+    // to resolve the object type. Must NOT be rejected for lacking primaryObjectType.
+    primaryRecordId: 'op-1',
+    principal: generatorPrincipal,
+    api,
+  });
+
+  assert.equal(output.ok, true);
+  assert.match(output.html, /Big Deal/);
+  assert.equal(output.context.opportunity.name, 'Big Deal');
+});
+
 test('renderTemplateLogic supports previewData with viewTemplates permission only', async () => {
   const api = createFixtureApi();
   const output = await renderTemplateLogic({
@@ -144,9 +193,9 @@ test('renderTemplateLogic rejects missing permission, inactive templates, and re
   assert.match(missingStrict.errors.map((error) => error.message).join('\n'), /Missing required template variable/);
 });
 
-test('saveGeneratedDocumentLogic persists generatedDocument records through the Twenty API adapter', async () => {
+test('saveDocumentLogic persists document records through the Twenty API adapter', async () => {
   const api = createFixtureApi();
-  const saved = await saveGeneratedDocumentLogic({
+  const saved = await saveDocumentLogic({
     templateId: 'template-1',
     primaryObjectType: 'person',
     primaryRecordId: 'person-1',
@@ -165,7 +214,7 @@ test('saveGeneratedDocumentLogic persists generatedDocument records through the 
   assert.equal(api.created.length, 1);
   assert.deepEqual(api.created[0], {
     id: 'generated-1',
-    name: 'Generated document for person person-1',
+    name: 'Document for person person-1',
     templateId: 'template-1',
     primaryObjectType: 'person',
     primaryRecordId: 'person-1',
@@ -179,9 +228,9 @@ test('saveGeneratedDocumentLogic persists generatedDocument records through the 
   });
 });
 
-test('saveGeneratedDocumentLogic enforces generateDocuments permission and surfaces API errors', async () => {
+test('saveDocumentLogic enforces generateDocuments permission and surfaces API errors', async () => {
   await assert.rejects(
-    () => saveGeneratedDocumentLogic({
+    () => saveDocumentLogic({
       templateId: 'template-1',
       renderedHtml: '<p>Nope</p>',
       principal: viewerPrincipal,
@@ -190,7 +239,7 @@ test('saveGeneratedDocumentLogic enforces generateDocuments permission and surfa
     PermissionDeniedError,
   );
 
-  const failed = await saveGeneratedDocumentLogic({
+  const failed = await saveDocumentLogic({
     templateId: 'template-1',
     renderedHtml: '<p>Nope</p>',
     principal: generatorPrincipal,

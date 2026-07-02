@@ -9,17 +9,17 @@
     "websiteUrl": "https://github.com/md-riaz/documents-templates-twenty-app#readme",
     "issueReportUrl": "https://github.com/md-riaz/documents-templates-twenty-app/issues",
     "screenshots": [],
-    "aboutDescription": "# Documents & Templates for Twenty CRM\n\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, send templated documents, and keep a searchable audit trail.\n\n## Why use this app?\n\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\n- **Record-first file management:** generated PDFs attach to the originating CRM record so users find them where they already work.\n- **Auditability:** GeneratedDocument records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\n\n## Reusable business scenarios\n\n| Scenario | Example output | Business value |\n| --- | --- | --- |\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\n| Customer onboarding | Welcome pack, implementation checklist, kickoff documents | Creates repeatable onboarding material from live CRM context. |\n| Renewals and account management | Renewal notice, QBR summary, success-plan documents | Helps account teams communicate consistently at scale. |\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction documents | Reuses the same template engine for non-sales CRM processes. |\n| Bulk campaigns | One document/documents per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\n\n## User guide\n\n### Quick start\n\n1. Open **Documents & Templates** from the Twenty navigation menu.\n2. Create or select a template in the template library.\n3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.\n4. Use the live preview to validate variables before publishing.\n5. From a supported record page, choose **Generate Document** or **Generate Documents**.\n6. Review the rendered content, optionally generate a PDF, then save or send.\n7. Generated PDFs attach to the source CRM record when record context is available.\n8. Use the **Documents** record tab to review generated-document audit/history.\n\n### Template authoring basics\n\n- Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.\n- Add preview JSON that matches the expected CRM context so editors can validate before sending.\n- Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.\n- Use triple-stash only for trusted, sanitized content.\n- Keep templates inactive until preview data, variable coverage, and permissions are reviewed.\n\n### Common user flows\n\n- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, attach it to the source record, and save audit history.\n- **Send a follow-up documents:** choose an documents-ready template, verify recipients and rendered subject, optionally attach the generated PDF, then send.\n- **Regenerate a document:** open the record history tab, find a previous generated document, and rerun the template with current CRM data.\n- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its source record.\n\n## Documentation links\n\n- [Admin guide](docs/admin-guide.md)\n- [Workflow examples](docs/workflow-examples.md)\n- [SDK usage examples](examples/sdk-usage.ts)\n- [Release notes](docs/release-notes.md)\n- [CI commands](docs/ci-commands.md)\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\n\n## Marketplace readiness\n\n- User guide: this README.\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\n\n## Screenshot briefs\n\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\n\n- [Template library](docs/screenshots/01-template-library.md)\n- [Template editor](docs/screenshots/02-template-editor.md)\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\n\n## Adding Documents tab to any record page\n\nThe app ships with a Documents tab on Company, Person, and Opportunity records. To add a filtered Documents tab to any other record (custom objects, Tasks, Notes, etc.):\n\n### Via Twenty UI\n\n1. Open the record page for the object (e.g., Task, custom \"Proposal\" object)\n2. Click the **+** tab button or go to **Settings → Data Model → [Object] → Page Layout**\n3. Add a new tab, name it \"Documents\"\n4. Add a **Front Component** widget\n5. Select the **Documents Shell** front component from this app\n6. Save the layout\n\nThe widget automatically filters generated documents by the current record's type and ID.\n\n### Via code (for app developers)\n\n```typescript\nimport { definePageLayoutTab, PageLayoutTabLayoutMode, STANDARD_PAGE_LAYOUT } from 'twenty-sdk/define';\n\n// For a standard object (e.g., customTask):\ndefinePageLayoutTab({\n  universalIdentifier: '<your-unique-uuid>',\n  pageLayoutUniversalIdentifier: STANDARD_PAGE_LAYOUT.customTaskRecordPage.universalIdentifier,\n  title: 'Documents',\n  icon: 'IconFileText',\n  position: 60,\n  layoutMode: PageLayoutTabLayoutMode.GRID,\n  widgets: [{\n    universalIdentifier: '<widget-uuid>',\n    title: 'Generated Documents',\n    type: 'front-component',\n    gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },\n    configuration: {\n      configurationType: 'FRONT_COMPONENT',\n      frontComponentUniversalIdentifier: '<DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER>',\n    },\n  }],\n});\n```\n\nFor custom objects, use the object's page layout universal identifier from the metadata API or your object definition.\n\n## PDF Generation\n\nPDF generation uses Puppeteer with Chromium. Requires Chromium installed on the server.\n\n### Docker deployment (recommended)\n\nUse the provided Dockerfile that extends Twenty with Chromium:\n\n```bash\n# Clone and build\ngit clone https://github.com/md-riaz/documents-templates-twenty-app.git\ncd documents-templates-twenty-app/docker\n\n# Create .env file\ncp .env.example .env\n# Edit .env with your settings\n\n# Build and start\ndocker compose up -d\n```\n\nThe Dockerfile installs Alpine's musl-native Chromium automatically. See `docker/Dockerfile`.\n\n### VPS deployment (non-Docker)\n\nOn Ubuntu/Debian:\n\n```bash\n# Install Chromium\nsudo apt update\nsudo apt install -y chromium-browser\n\n# Set environment variables\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n\n# Or add to /etc/environment for persistence\necho 'PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true' | sudo tee -a /etc/environment\necho 'PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser' | sudo tee -a /etc/environment\n```\n\nOn Alpine (if running Twenty without Docker):\n\n```bash\napk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto dbus\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n```\n\nOn RHEL/CentOS/Fedora:\n\n```bash\nsudo dnf install -y chromium\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n```\n\n### How it works\n\n1. Templates are rendered to HTML using Handlebars + CRM data\n2. Puppeteer converts HTML to PDF using system Chromium\n3. PDF is stored and attached to the source record\n\n### Supported formats\n\n- A4, A3, A5, Letter, Legal\n- Portrait or landscape orientation\n- Custom margins (mm, cm, in, px, pt)\n- Header/footer templates\n- Background graphics printing\n\n### Using the adapter\n\n```typescript\nimport { pdfAdapter } from 'documents-templates';\n\nconst pdfBytes = await pdfAdapter.renderHtmlToPdf({\n  html: '<h1>Invoice</h1><p>...</p>',\n  options: {\n    format: 'A4',\n    landscape: false,\n    printBackground: true,\n    margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },\n    displayHeaderFooter: false,\n    preferCSSPageSize: true,\n  }\n});\n```\n\n## Verification\n\nRun the release verification command from the app root:\n\n```bash\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\n```\n\nIf a local Twenty server and CLI script are available, also run:\n\n```bash\nyarn twenty dev --once --dry-run\n```\n",
-    "yarnLockChecksum": "c81ef67ba2dee397c97d0b0e971f3fb4",
-    "packageJsonChecksum": "d2c9f30f1d053800632ae48761420e69"
+    "aboutDescription": "# Documents & Templates for Twenty CRM\n\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, and keep a searchable audit trail.\n\n## Why use this app?\n\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\n- **Record-first file management:** the CRM record you generated from links straight to its Document record, whose Files tab holds the PDF — no duplicate copies.\n- **Auditability:** Document records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\n\n## Reusable business scenarios\n\n| Scenario | Example output | Business value |\n| --- | --- | --- |\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\n| Customer onboarding | Welcome pack, implementation checklist, kickoff documents | Creates repeatable onboarding material from live CRM context. |\n| Renewals and account management | Renewal notice, QBR summary, success-plan documents | Helps account teams communicate consistently at scale. |\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction documents | Reuses the same template engine for non-sales CRM processes. |\n| Bulk campaigns | One document/documents per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\n\n## User guide\n\n### Quick start\n\n1. Open the **Documents & Templates** folder in the Twenty navigation menu, then **Templates**.\n2. Create or select a template — see \"Creating a template\" below.\n3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.\n4. Use the live preview to validate variables before publishing.\n5. From a supported record page, choose **Generate Document**.\n6. Review the rendered content, optionally generate a PDF, then save.\n7. Generated PDFs attach to the Document audit record itself — so the PDF can always be\n   retrieved later from that record's own Files tab using only its ID, even after the\n   cached `pdfUrl` (a signed link that expires) goes stale. The source CRM record reaches\n   the same file through its **Documents** tab's \"View Document\" link, so nothing is\n   duplicated.\n8. Use the **Documents** navigation item (or a record's **Documents** tab) to review\n   document audit/history.\n\n### Creating a template\n\n**In the UI (primary path):**\n\n1. Go to **Documents & Templates → Templates** and click **+ Add New** — Twenty creates\n   the record immediately with defaults (`status: Active`, `renderer: Handlebars`).\n2. Open the new row. Its record page has two tabs:\n   - **Fields** — Twenty's native field editor. Set **Name** (how the template appears in\n     pickers), **Category**, **Renderer**, **Bound object** (the Twenty object this\n     template is designed for, e.g. `company`, `person`, or any custom object's singular\n     name — powers the schema-backed variable picker and is validated against live\n     metadata when the Editor tab saves), **Status**, and **Allowed output types** here,\n     the same way you'd edit fields on any other record.\n   - **Editor** — the rich template editor (fetched live via Twenty's API — it always\n     reflects the actual record, not a placeholder), for the parts a native field can't\n     handle:\n     - **HTML** — Handlebars markup. Use the variable picker (merges fields from the bound\n       object's schema with any variables already typed into the template) to insert\n       `{{path.to.field}}` expressions without typing them by hand.\n     - **CSS** and **Preview JSON** (sample data for the live preview).\n3. The live preview renders your HTML/CSS against the Preview JSON entirely client-side —\n   no save needed to see it.\n4. Click **Save template**. Changing HTML/CSS on an existing template automatically\n   records a new `TemplateVersion` snapshot.\n5. Set status to **Active** (the default, set on the Fields tab) to make it selectable in\n   **Generate Document** on any record of the bound object type.\n\n**Programmatically** (bulk-seeding, CI, migrations): use `twenty-client-sdk`'s\n`CoreApiClient` or `RestApiClient` directly against your workspace, the same way this\napp's own logic functions do:\n\n```ts\nimport { CoreApiClient } from 'twenty-client-sdk/core';\n\nconst client = new CoreApiClient(); // reads TWENTY_API_URL/TWENTY_API_KEY from the environment\nawait client.mutation({\n  createDocumentTemplate: {\n    __args: {\n      data: {\n        name: 'Corporate Proposal',\n        htmlSource: '<h1>Proposal for {{company.name}}</h1>',\n        cssSource: 'h1 { color: #2563eb; }',\n        renderer: 'HANDLEBARS',\n        boundObjectName: 'company',\n        status: 'ACTIVE',\n      },\n    },\n    id: true,\n  },\n});\n```\n\nSee [docs/admin-guide.md](docs/admin-guide.md) for the full field reference.\n\n### Template authoring basics\n\n- Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.\n- Add preview JSON that matches the expected CRM context so editors can validate before publishing.\n- Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.\n- Use triple-stash only for trusted, sanitized content.\n- Keep templates inactive until preview data, variable coverage, and permissions are reviewed.\n\n### Common user flows\n\n- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, and save audit history — the PDF attaches to the new Document record, reachable from the source record's Documents tab.\n- **Follow up on a record:** render an updated template against the record's current CRM data, generate a fresh PDF, and get a new Document record with a new audit entry — no separate send step required.\n- **Regenerate a document:** open the record's Documents tab, find a previous document, and rerun the template with current CRM data.\n- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its own Document record.\n\n## Documentation links\n\n- [Admin guide](docs/admin-guide.md)\n- [Workflow examples](docs/workflow-examples.md)\n- [SDK usage examples](examples/sdk-usage.ts)\n- [Release notes](docs/release-notes.md)\n- [CI commands](docs/ci-commands.md)\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\n\n## Marketplace readiness\n\n- User guide: this README.\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\n\n## Screenshot briefs\n\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\n\n- [Template library](docs/screenshots/01-template-library.md)\n- [Template editor](docs/screenshots/02-template-editor.md)\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\n\n## Generating documents from any record\n\nThe primary, zero-configuration way to generate a document is the **Generate Document**\ncommand-menu item. Select any record — on any standard or custom object, no per-object setup\nrequired — open the command menu, and choose **Generate Document**. This works out of the box\nbecause it does not depend on a page layout being customized for that object.\n\n### Documents history tab (optional, per-object)\n\nThe app also ships a Documents widget (a real front component) that shows document history\nfiltered by the current record's type and ID, with a link to each Document record's own Files\ntab. It comes pre-attached to Company, Person,\nand Opportunity record pages. Admins who want the same dedicated tab on another object (a custom\nobject, Task, Note, etc.) can attach it manually, per object, through Twenty's own UI:\n\n1. Open the record page for the object (e.g., Task, custom \"Proposal\" object).\n2. Go to **Settings → Data Model → [Object] → Page Layout** (or use the **+** tab button on the\n   record page).\n3. Add a new tab, name it \"Documents\".\n4. Add a **Front Component** widget and select the Documents history front component from this\n   app.\n5. Save the layout.\n\n### Why there's no fully dynamic Documents tab\n\nTwenty's page-layout system is compile-time/static: which tabs and widgets exist on an object's\nrecord page is defined ahead of time (via the Settings UI or an app's object/page-layout\ndefinitions), not computed per-request. That means a single Documents *tab* cannot automatically\nappear on every current and future custom object without either rebuilding the app or an admin\nattaching it by hand as described above. The two mechanisms that *do* work without a rebuild for\nan arbitrary object are: the **Generate Document** command-menu item (available everywhere, zero\nconfiguration) and manually attaching the Documents history widget via the Data Model UI\n(per-object, admin-driven, no rebuild required — just a UI action).\n\n## PDF Generation\n\nPDF generation uses Puppeteer with Chromium. Requires Chromium installed on the server.\n\n### Docker deployment (recommended)\n\nUse the provided Dockerfile that extends Twenty with Chromium:\n\n```bash\n# Clone and build\ngit clone https://github.com/md-riaz/documents-templates-twenty-app.git\ncd documents-templates-twenty-app/docker\n\n# Create .env file\ncp .env.example .env\n# Edit .env with your settings\n\n# Build and start\ndocker compose up -d\n```\n\nThe Dockerfile installs Alpine's musl-native Chromium automatically. See `docker/Dockerfile`.\n\n### VPS deployment (non-Docker)\n\nOn Ubuntu/Debian:\n\n```bash\n# Install Chromium\nsudo apt update\nsudo apt install -y chromium-browser\n\n# Set environment variables\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n\n# Or add to /etc/environment for persistence\necho 'PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true' | sudo tee -a /etc/environment\necho 'PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser' | sudo tee -a /etc/environment\n```\n\nOn Alpine (if running Twenty without Docker):\n\n```bash\napk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto dbus\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n```\n\nOn RHEL/CentOS/Fedora:\n\n```bash\nsudo dnf install -y chromium\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n```\n\n### How it works\n\n1. Templates are rendered to HTML using Handlebars + CRM data\n2. Puppeteer converts HTML to PDF using system Chromium\n3. PDF is stored and attached to the source record\n\n### Supported formats\n\n- A4, A3, A5, Letter, Legal\n- Portrait or landscape orientation\n- Custom margins (mm, cm, in, px, pt)\n- Header/footer templates\n- Background graphics printing\n\n### Using the adapter\n\n```typescript\nimport { pdfAdapter } from 'documents-templates';\n\nconst pdfBytes = await pdfAdapter.renderHtmlToPdf({\n  html: '<h1>Invoice</h1><p>...</p>',\n  options: {\n    format: 'A4',\n    landscape: false,\n    printBackground: true,\n    margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },\n    displayHeaderFooter: false,\n    preferCSSPageSize: true,\n  }\n});\n```\n\n## Verification\n\nRun the release verification command from the app root:\n\n```bash\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\n```\n\nIf a local Twenty server and CLI script are available, also run:\n\n```bash\nyarn twenty dev --once --dry-run\n```\n",
+    "yarnLockChecksum": "09aa379ca25d03ecddf2b951917ae848",
+    "packageJsonChecksum": "f320cc064e52eb0791cec16487948ec9"
   },
   "objects": [
     {
       "universalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
-      "nameSingular": "generatedDocument",
-      "namePlural": "generatedDocuments",
-      "labelSingular": "GeneratedDocument",
-      "labelPlural": "Generated Documents",
+      "nameSingular": "document",
+      "namePlural": "documents",
+      "labelSingular": "Document",
+      "labelPlural": "Documents",
       "description": "Audit record for a document rendered from CRM data.",
       "icon": "IconFileText",
       "isSearchable": true,
@@ -30,7 +30,7 @@
           "type": "TEXT",
           "name": "name",
           "label": "Name",
-          "description": "Generated document name",
+          "description": "Document name",
           "icon": "IconAbc"
         },
         {
@@ -71,7 +71,7 @@
         },
         {
           "universalIdentifier": "d4c14004-d87b-4feb-860f-e0c37ad703c6",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "renderedHtml",
           "label": "Rendered HTML",
           "description": "Rendered HTML snapshot",
@@ -123,7 +123,7 @@
         },
         {
           "universalIdentifier": "50e010d9-ac5c-488e-b04c-c6b9b886b89e",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "errorMessage",
           "label": "Error Message",
           "description": "Failure reason",
@@ -250,7 +250,7 @@
         {
           "name": "timelineActivities",
           "label": "Timeline Activities",
-          "description": "Generated Documents tied to the GeneratedDocument",
+          "description": "Documents tied to the Document",
           "icon": "IconBuildingSkyscraper",
           "isNullable": true,
           "type": "RELATION",
@@ -264,7 +264,7 @@
         {
           "name": "attachments",
           "label": "Attachments",
-          "description": "Generated Documents tied to the GeneratedDocument",
+          "description": "Documents tied to the Document",
           "icon": "IconBuildingSkyscraper",
           "isNullable": true,
           "type": "RELATION",
@@ -278,7 +278,7 @@
         {
           "name": "noteTargets",
           "label": "Note Targets",
-          "description": "Generated Documents tied to the GeneratedDocument",
+          "description": "Documents tied to the Document",
           "icon": "IconBuildingSkyscraper",
           "isNullable": true,
           "type": "RELATION",
@@ -292,7 +292,7 @@
         {
           "name": "taskTargets",
           "label": "Task Targets",
-          "description": "Generated Documents tied to the GeneratedDocument",
+          "description": "Documents tied to the Document",
           "icon": "IconBuildingSkyscraper",
           "isNullable": true,
           "type": "RELATION",
@@ -352,7 +352,7 @@
         },
         {
           "universalIdentifier": "a45b67ab-a09e-42e4-b288-5cc34b9339a2",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "htmlSource",
           "label": "HTML Source",
           "description": "Handlebars HTML source",
@@ -360,7 +360,7 @@
         },
         {
           "universalIdentifier": "eeb4c5ed-1637-4773-ad12-af628cfb43d7",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "cssSource",
           "label": "CSS Source",
           "description": "Template CSS source",
@@ -407,71 +407,14 @@
           ]
         },
         {
-          "universalIdentifier": "28e03c28-abd5-4854-908f-82180df59c10",
-          "type": "SELECT",
-          "name": "provider",
-          "label": "Provider",
-          "description": "Context provider for this template",
+          "universalIdentifier": "3012ab43-b335-4e0a-b3e5-1739b6d08800",
+          "type": "TEXT",
+          "name": "boundObjectName",
+          "label": "Bound Object Name",
+          "description": "Twenty object (standard or custom) this template is bound to; validated at write-time against live metadata",
           "icon": "IconPlug",
-          "defaultValue": "'DEFAULT'",
-          "options": [
-            {
-              "value": "DEFAULT",
-              "label": "Default",
-              "position": 0,
-              "color": "gray",
-              "id": "8a534352-1a6e-59c0-8c81-72fe2456ea8f"
-            },
-            {
-              "value": "company",
-              "label": "Company",
-              "position": 1,
-              "color": "blue",
-              "id": "a204dd52-1dfd-570d-9a5f-fca65f7ecf7d"
-            },
-            {
-              "value": "person",
-              "label": "Person",
-              "position": 2,
-              "color": "green",
-              "id": "4931a50e-5a60-5a40-895a-c9297d71072b"
-            },
-            {
-              "value": "opportunity",
-              "label": "Opportunity",
-              "position": 3,
-              "color": "purple",
-              "id": "5209ea67-ce0c-5029-81b8-b584ba38e3e3"
-            },
-            {
-              "value": "task",
-              "label": "Task",
-              "position": 4,
-              "color": "orange",
-              "id": "7aa3b393-6d01-5fb1-8e99-cb2f6d24c4ef"
-            },
-            {
-              "value": "note",
-              "label": "Note",
-              "position": 5,
-              "color": "yellow",
-              "id": "72d02247-ad18-5e09-acc1-3e18089e6e6a"
-            },
-            {
-              "value": "calendarEvent",
-              "label": "Calendar Event",
-              "position": 6,
-              "color": "red",
-              "id": "321a15a4-4743-52f0-b556-0f54aa28d9ed"
-            },
-            {
-              "value": "custom",
-              "label": "Custom",
-              "position": 7,
-              "color": "gray",
-              "id": "a082b49f-0b38-5338-9a1e-3b85d0b41247"
-            }
-          ]
+          "isNullable": true,
+          "defaultValue": null
         },
         {
           "universalIdentifier": "59771ff1-ebb9-4b2f-8093-c2476a08fa0d",
@@ -542,9 +485,9 @@
         {
           "universalIdentifier": "18a6f32c-d6ab-4c95-a5ab-a35670a2c574",
           "type": "RELATION",
-          "name": "generatedDocuments",
-          "label": "GeneratedDocument records",
-          "description": "GeneratedDocument history from this DocumentTemplate",
+          "name": "documents",
+          "label": "Document records",
+          "description": "Document history from this DocumentTemplate",
           "icon": "IconFileText",
           "isNullable": true,
           "relationTargetFieldMetadataUniversalIdentifier": "ab859ed3-e237-42d8-942b-0d34e5bba737",
@@ -947,7 +890,7 @@
         },
         {
           "universalIdentifier": "4aed6acb-7e9f-45fa-b8b1-9509a4dc79c4",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "htmlSource",
           "label": "HTML Source",
           "description": "Snapshot of HTML source",
@@ -955,7 +898,7 @@
         },
         {
           "universalIdentifier": "4a746fc6-10c8-4ec4-b7b9-3979da39140c",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "cssSource",
           "label": "CSS Source",
           "description": "Snapshot of CSS source",
@@ -1184,15 +1127,15 @@
       "morphId": "20202020-f635-435d-ab8d-e1168b375c70"
     },
     {
-      "name": "targetGeneratedDocument",
-      "label": "GeneratedDocument",
-      "description": "GeneratedDocument GeneratedDocument",
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
       "icon": "IconTimelineEvent",
       "isNullable": true,
       "universalSettings": {
         "relationType": "MANY_TO_ONE",
         "onDelete": "SET_NULL",
-        "joinColumnName": "targetGeneratedDocumentId"
+        "joinColumnName": "targetDocumentId"
       },
       "universalIdentifier": "30042d2e-a2c0-526f-bfa3-84c33bd7d766",
       "objectUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5",
@@ -1220,15 +1163,15 @@
       "morphId": "20202020-f636-435d-ab8d-e1168b375c71"
     },
     {
-      "name": "targetGeneratedDocument",
-      "label": "GeneratedDocument",
-      "description": "GeneratedDocument GeneratedDocument",
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
       "icon": "IconCheckbox",
       "isNullable": true,
       "universalSettings": {
         "relationType": "MANY_TO_ONE",
         "onDelete": "SET_NULL",
-        "joinColumnName": "targetGeneratedDocumentId"
+        "joinColumnName": "targetDocumentId"
       },
       "universalIdentifier": "53ef534f-4151-559e-ba7f-51d18a8efca9",
       "objectUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400",
@@ -1274,15 +1217,15 @@
       "morphId": "20202020-f636-435d-ab8d-e1168b375c71"
     },
     {
-      "name": "targetGeneratedDocument",
-      "label": "GeneratedDocument",
-      "description": "GeneratedDocument GeneratedDocument",
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
       "icon": "IconCheckbox",
       "isNullable": true,
       "universalSettings": {
         "relationType": "MANY_TO_ONE",
         "onDelete": "SET_NULL",
-        "joinColumnName": "targetGeneratedDocumentId"
+        "joinColumnName": "targetDocumentId"
       },
       "universalIdentifier": "8a990352-6fe3-55fa-8462-ac703fabbfef",
       "objectUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1",
@@ -1328,15 +1271,15 @@
       "morphId": "20202020-f636-435d-ab8d-e1168b375c71"
     },
     {
-      "name": "targetGeneratedDocument",
-      "label": "GeneratedDocument",
-      "description": "GeneratedDocument GeneratedDocument",
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
       "icon": "IconFileImport",
       "isNullable": true,
       "universalSettings": {
         "relationType": "MANY_TO_ONE",
         "onDelete": "SET_NULL",
-        "joinColumnName": "targetGeneratedDocumentId"
+        "joinColumnName": "targetDocumentId"
       },
       "universalIdentifier": "ac90ff76-ff25-5d72-8193-44208b471fe3",
       "objectUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a",
@@ -1440,11 +1383,11 @@
           "value": true
         },
         {
-          "flag": "viewGeneratedDocs",
+          "flag": "viewDocuments",
           "value": true
         },
         {
-          "flag": "deleteGeneratedDocs",
+          "flag": "deleteDocuments",
           "value": true
         }
       ],
@@ -1458,14 +1401,231 @@
   "skills": [],
   "agents": [],
   "connectionProviders": [],
-  "logicFunctions": [],
-  "frontComponents": [],
+  "logicFunctions": [
+    {
+      "universalIdentifier": "1fcdb464-9f52-4904-81e4-bdadf3652237",
+      "name": "Render Template",
+      "description": "Render an active document template into HTML using a record context, context overrides, or preview data.",
+      "workflowActionTriggerSettings": {
+        "label": "Render Template",
+        "icon": "IconFileText",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "label": "Template ID"
+              },
+              "primaryObjectType": {
+                "type": "string",
+                "label": "Primary object type"
+              },
+              "primaryRecordId": {
+                "type": "string",
+                "label": "Primary record ID"
+              },
+              "contextOverrides": {
+                "type": "object",
+                "label": "Context overrides"
+              },
+              "previewData": {
+                "type": "object",
+                "label": "Preview data"
+              },
+              "strictMissingVariables": {
+                "type": "boolean",
+                "label": "Strict missing variables"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "html": {
+                "type": "string",
+                "label": "Rendered HTML"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "label": "Warnings"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src/logic-functions/render-template.logic-function.ts",
+      "builtHandlerPath": "src/logic-functions/render-template.logic-function.mjs",
+      "builtHandlerChecksum": "fbdd7313a646dbb4e030d3f78abc6664"
+    },
+    {
+      "universalIdentifier": "97e4bf7b-b731-45e1-9f0c-098d2cdbfc63",
+      "name": "Generate PDF",
+      "description": "Render HTML into a PDF, upload it to Twenty file storage, and attach it to the Document record.",
+      "workflowActionTriggerSettings": {
+        "label": "Generate PDF",
+        "icon": "IconFilePdf",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "html": {
+                "type": "string",
+                "multiline": true,
+                "label": "HTML"
+              },
+              "settings": {
+                "type": "object",
+                "label": "PDF settings"
+              },
+              "fileName": {
+                "type": "string",
+                "label": "File name"
+              },
+              "documentId": {
+                "type": "string",
+                "label": "Document ID"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "pdfUrl": {
+                "type": "string",
+                "label": "PDF URL"
+              },
+              "documentAttachmentId": {
+                "type": "string",
+                "label": "Document Attachment ID"
+              },
+              "status": {
+                "type": "string",
+                "label": "Status"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src/logic-functions/generate-pdf.logic-function.ts",
+      "builtHandlerPath": "src/logic-functions/generate-pdf.logic-function.mjs",
+      "builtHandlerChecksum": "dd3d27643690f3548a2dd41652738d50"
+    },
+    {
+      "universalIdentifier": "9c896b3e-cf3b-4007-b2d9-2c1cdfc0505e",
+      "name": "Save Document",
+      "description": "Persist rendered workflow output as a Document record, including the PDF URL and status.",
+      "workflowActionTriggerSettings": {
+        "label": "Save Document",
+        "icon": "IconDatabaseImport",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "label": "Template ID"
+              },
+              "primaryObjectType": {
+                "type": "string",
+                "label": "Primary object type"
+              },
+              "primaryRecordId": {
+                "type": "string",
+                "label": "Primary record ID"
+              },
+              "renderedHtml": {
+                "type": "string",
+                "multiline": true,
+                "label": "Rendered HTML"
+              },
+              "pdfUrl": {
+                "type": "string",
+                "label": "PDF URL"
+              },
+              "status": {
+                "type": "string",
+                "label": "Status"
+              },
+              "metadata": {
+                "type": "object",
+                "label": "Metadata"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "documentId": {
+                "type": "string",
+                "label": "Document ID"
+              },
+              "pdfUrl": {
+                "type": "string",
+                "label": "PDF URL"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src/logic-functions/save-document.logic-function.ts",
+      "builtHandlerPath": "src/logic-functions/save-document.logic-function.mjs",
+      "builtHandlerChecksum": "abd5273b4aa80e47d0d015c425d03df9"
+    }
+  ],
+  "frontComponents": [
+    {
+      "universalIdentifier": "081e8445-bf9b-4c81-a20e-5d72c3290cad",
+      "name": "generate-document",
+      "description": "Record action to pick a template, preview the rendered document, optionally save it and generate a PDF.",
+      "componentName": "GenerateDocumentComponent",
+      "sourceComponentPath": "src/front-components/generate-document.front-component.tsx",
+      "builtComponentPath": "src/front-components/generate-document.front-component.mjs",
+      "builtComponentChecksum": "1e481654f65ab405b968abef31ab4b65",
+      "isHeadless": false,
+      "usesSdkClient": false
+    },
+    {
+      "universalIdentifier": "56f46af8-ff3b-4a70-875a-a0e8ac78a697",
+      "name": "document-shell",
+      "description": "Record shell showing document history for this record. Use the \"Generate Document\" command menu item to create a new one.",
+      "componentName": "DocumentShellComponent",
+      "sourceComponentPath": "src/front-components/document-shell.front-component.tsx",
+      "builtComponentPath": "src/front-components/document-shell.front-component.mjs",
+      "builtComponentChecksum": "a96baa2f15102b4f8c7f3b45b475c1c0",
+      "isHeadless": false,
+      "usesSdkClient": true
+    },
+    {
+      "universalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371",
+      "name": "template-editor",
+      "description": "HTML/CSS template editor with live preview, preview JSON, and a schema-backed variable browser.",
+      "componentName": "TemplateEditorComponent",
+      "sourceComponentPath": "src/front-components/template-editor.front-component.tsx",
+      "builtComponentPath": "src/front-components/template-editor.front-component.mjs",
+      "builtComponentChecksum": "749251cbecda72e23d28e81ce2a89f69",
+      "isHeadless": false,
+      "usesSdkClient": true
+    }
+  ],
   "publicAssets": [],
   "views": [
     {
       "universalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0",
       "objectUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
-      "name": "Recent Generated Documents",
+      "name": "Recent Documents",
       "type": "TABLE",
       "visibility": "WORKSPACE",
       "position": 41,
@@ -1518,7 +1678,7 @@
     {
       "universalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a",
       "objectUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
-      "name": "Active Templates",
+      "name": "Templates",
       "type": "TABLE",
       "visibility": "WORKSPACE",
       "position": 40,
@@ -1554,8 +1714,8 @@
           "size": 90
         },
         {
-          "universalIdentifier": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-          "fieldMetadataUniversalIdentifier": "28e03c28-abd5-4854-908f-82180df59c10",
+          "universalIdentifier": "a7573e8d-c5cb-44b0-a74a-9d9730cf9293",
+          "fieldMetadataUniversalIdentifier": "3012ab43-b335-4e0a-b3e5-1739b6d08800",
           "position": 5,
           "size": 120
         }
@@ -1564,7 +1724,7 @@
         {
           "universalIdentifier": "95699ab7-f04d-4913-9c89-ec81055423bd",
           "fieldMetadataUniversalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
-          "direction": "ASC"
+          "direction": "DESC"
         }
       ]
     }
@@ -1572,15 +1732,38 @@
   "viewFields": [],
   "navigationMenuItems": [
     {
+      "universalIdentifier": "411a0e2b-ee1d-4fa2-8292-a88eaac39af2",
+      "type": "VIEW",
+      "name": "Documents",
+      "icon": "IconFileText",
+      "position": 0,
+      "folderUniversalIdentifier": "6a7ab786-6ab7-4443-8379-6b9bac687ae4",
+      "viewUniversalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0"
+    },
+    {
       "universalIdentifier": "588cfc4f-41bc-41df-a199-40a998ec5b71",
       "type": "VIEW",
       "name": "Templates",
       "icon": "IconTemplate",
-      "position": 40,
+      "position": 1,
+      "folderUniversalIdentifier": "6a7ab786-6ab7-4443-8379-6b9bac687ae4",
       "viewUniversalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a"
+    },
+    {
+      "universalIdentifier": "6a7ab786-6ab7-4443-8379-6b9bac687ae4",
+      "type": "FOLDER",
+      "name": "Documents & Templates",
+      "icon": "IconFileText",
+      "position": 40
     }
   ],
-  "pageLayouts": [],
+  "pageLayouts": [
+    {
+      "universalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "name": "Document Template",
+      "objectUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04"
+    }
+  ],
   "pageLayoutTabs": [
     {
       "universalIdentifier": "0951a49e-d410-44d8-8b8b-3c450c665d48",
@@ -1650,6 +1833,55 @@
           },
           "configuration": {
             "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "54b1de8e-28ff-4eac-af93-3a3f88b999ef",
+      "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "title": "Editor",
+      "icon": "IconFileText",
+      "position": 1,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "8633de86-2484-4bdf-823b-adc0e4b35d30",
+          "title": "Template Editor",
+          "type": "FRONT_COMPONENT",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "FRONT_COMPONENT",
+            "frontComponentUniversalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "55ae5ffb-8c69-473c-9eb9-55c3b6d3cfe3",
+      "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "title": "Fields",
+      "icon": "IconList",
+      "position": 0,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "cd671d7d-f73d-4f47-9194-6bfc3d3a8007",
+          "title": "Fields",
+          "type": "FIELDS",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "FIELDS"
           }
         }
       ]
@@ -1727,5 +1959,13 @@
       ]
     }
   ],
-  "commandMenuItems": []
+  "commandMenuItems": [
+    {
+      "universalIdentifier": "d141afd3-e12e-4c33-9ffe-ca36e366b3bb",
+      "label": "Generate Document",
+      "shortLabel": "Generate",
+      "availabilityType": "RECORD_SELECTION",
+      "frontComponentUniversalIdentifier": "081e8445-bf9b-4c81-a20e-5d72c3290cad"
+    }
+  ]
 }

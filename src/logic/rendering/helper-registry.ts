@@ -11,6 +11,38 @@ export type HelperRegistry = {
   entries(): ReadonlyMap<string, TemplateHelper>;
 };
 
+/**
+ * Real Handlebars always calls a registered helper with the helper's
+ * positional arguments followed by a trailing `HelperOptions` object
+ * (`{ fn, inverse, hash, data, ... }`). Our helpers are plain functions with
+ * a simpler calling convention (`helper(value, ...args)`), so this adapter
+ * bridges the two: it strips the trailing options object and, only when the
+ * template author actually supplied hash arguments (e.g.
+ * `{{formatDate value weekday="short"}}`), forwards `options.hash` as an
+ * extra trailing positional argument. Helpers that rely on positional
+ * default parameters (e.g. `(value, left = '[', right = ']')`) keep working
+ * unmodified when no hash arguments are present.
+ */
+const isHandlebarsHelperOptions = (
+  value: unknown,
+): value is { hash?: Record<string, unknown>; data?: unknown; fn?: unknown; inverse?: unknown } =>
+  typeof value === 'object' &&
+  value !== null &&
+  'hash' in value &&
+  'lookupProperty' in (value as Record<string, unknown>);
+
+export const adaptHelperForHandlebars = (helper: TemplateHelper): ((...args: unknown[]) => unknown) =>
+  function adaptedHelper(this: TemplateContext, ...callArgs: unknown[]): unknown {
+    const last = callArgs[callArgs.length - 1];
+    if (isHandlebarsHelperOptions(last)) {
+      const positional = callArgs.slice(0, -1);
+      const hash = last.hash ?? {};
+      const finalArgs = Object.keys(hash).length > 0 ? [...positional, hash] : positional;
+      return helper.apply(this, finalArgs as [unknown, ...unknown[]]);
+    }
+    return helper.apply(this, callArgs as [unknown, ...unknown[]]);
+  };
+
 const assertHelperName = (name: string): void => {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
     throw new Error(`Invalid template helper name: ${name}`);
