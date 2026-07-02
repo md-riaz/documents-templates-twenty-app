@@ -39,6 +39,26 @@
   `CoreApiClient`/`RestApiClient`) in the README, plus a `DocumentTemplate` field reference in the
   admin guide.
 
+## 0.2.4
+
+### Removed
+
+- **Deleted the `cssSource` field entirely.** `DocumentTemplate.cssSource` and
+  `TemplateVersion.cssSource` are removed from the object definitions, constants,
+  rendering pipeline, front component (the "CSS" tab in the editor), tests, and docs.
+  Templates should embed `<style>` tags directly in `htmlSource` instead of using a
+  separate CSS field. The `combineCssWithHtml` utility (`css-combiner.ts`) is deleted.
+
+### Added
+
+- **Pre-installed "Opportunity Proposal" template.** A professional, ready-to-use
+  Handlebars template bound to the `opportunity` object, demonstrating deal value,
+  pipeline stage, company, and point-of-contact fields with a polished PDF-ready layout.
+  Created on the live workspace for immediate preview.
+- **Default Opportunity PDF workflow example** in the workflow documentation: a concrete,
+  step-by-step walkthrough of chaining Render Template, Save Document, and Generate PDF
+  in Twenty's workflow builder to produce a proposal PDF from any Opportunity record.
+
 ## 0.2.2
 
 ### Changed
