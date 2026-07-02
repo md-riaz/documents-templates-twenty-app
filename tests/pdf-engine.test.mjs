@@ -10,7 +10,7 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 const expectedFiles = [
   'src/logic/settings/pdf-settings.ts',
   'src/logic/generate-pdf.ts',
-  'src/front-components/pdf-settings.front-component.ts',
+  'src/front-components/pdf-settings.front-component.tsx',
 ];
 
 test('PDF engine and settings modules exist and are publicly exported', () => {

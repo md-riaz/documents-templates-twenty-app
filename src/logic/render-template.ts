@@ -1,11 +1,11 @@
 import {
-  createContextProviderRegistry,
+  ContextProviderRegistry,
+  loadGenericRecordContext,
   type ContextProviderApi,
   type ContextProviderInput,
   type ContextProviderPermissions,
-  type ContextProviderRegistry,
 } from './context/provider-registry';
-import { createDefaultContextProviders } from './context/default-providers';
+import type { MetadataApi } from './metadata/metadata-client';
 import {
   renderHandlebarsTemplate,
   type RenderHandlebarsTemplateOutput,
@@ -51,6 +51,7 @@ export type RenderTemplateLogicInput = {
   permissions?: ContextProviderPermissions;
   currentUser?: Record<string, unknown>;
   workspace?: Record<string, unknown>;
+  metadataApi?: MetadataApi;
 };
 
 export type RenderTemplateLogicOutput = {
@@ -71,7 +72,7 @@ type DocumentTemplateRecord = {
   name?: string;
   htmlSource?: string;
   cssSource?: string | null;
-  provider?: string | null;
+  boundObjectName?: string | null;
   renderer?: string | null;
   status?: string | null;
   isActive?: boolean | null;
@@ -119,16 +120,25 @@ const buildContext = async (
       };
     }
 
-    const registry = input.registry ?? createContextProviderRegistry({ providers: createDefaultContextProviders() });
     const providerInput: ContextProviderInput = {
-      primaryObjectType: template.provider || input.primaryObjectType,
+      // `boundObjectName` holds a real Twenty object name (or is empty/null) by
+      // construction, so it is safe to use directly as the object type; the
+      // ad-hoc `input.primaryObjectType` is the override/fallback for calls not
+      // backed by a saved template.
+      primaryObjectType: template.boundObjectName || input.primaryObjectType,
       primaryRecordId: input.primaryRecordId,
       api: input.api,
       permissions: input.permissions,
       currentUser: input.currentUser,
       workspace: input.workspace,
+      metadataApi: input.metadataApi,
     };
-    const loaded = await registry.load(providerInput);
+    // Use the injected registry when provided; otherwise fall back to the
+    // metadata-enhanced generic loader that now handles every object (standard
+    // or custom) uniformly — no hardcoded per-object providers needed.
+    const loaded = input.registry
+      ? await input.registry.load(providerInput)
+      : await loadGenericRecordContext(providerInput);
     Object.assign(context, loaded.context);
     warnings.push(...loaded.warnings);
   }

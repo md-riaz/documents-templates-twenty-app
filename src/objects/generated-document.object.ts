@@ -5,7 +5,7 @@ import {
   DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
   GENERATED_DOCUMENT_FIELDS,
   GENERATED_DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 enum GeneratedDocumentStatus {
   RENDERED = 'RENDERED',

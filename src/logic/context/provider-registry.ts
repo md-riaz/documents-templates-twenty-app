@@ -1,3 +1,5 @@
+import type { MetadataApi, MetadataObjectField } from '../metadata/metadata-client';
+
 export type ContextProviderApi = {
   getRecord?: (objectName: string, id: string) => Promise<Record<string, unknown> | null | undefined>;
 };
@@ -13,6 +15,14 @@ export type ContextProviderInput = {
   permissions?: ContextProviderPermissions;
   currentUser?: Record<string, unknown>;
   workspace?: Record<string, unknown>;
+  /**
+   * Optional live metadata client. When provided, `loadGenericRecordContext`
+   * uses it to discover which fields are relations and performs a one-level
+   * shallow expansion of them. When NOT provided, behavior is exactly as
+   * before and NO metadata call is made — this keeps latency-sensitive paths
+   * that don't inject a metadata client fast and non-breaking.
+   */
+  metadataApi?: MetadataApi;
 };
 
 export type ContextProviderResult = {
@@ -52,6 +62,78 @@ const filterReadableFields = (
   };
 };
 
+// Candidate fields, in priority order, from which we derive a human-readable
+// label for a shallow-expanded related record.
+const RELATION_LABEL_FIELDS = ['name', 'label', 'title', 'displayName', 'subject'];
+
+const deriveRelationLabel = (record: Record<string, unknown>): string | undefined => {
+  for (const key of RELATION_LABEL_FIELDS) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value;
+    if (value && typeof value === 'object') {
+      const parts = [
+        (value as Record<string, unknown>).firstName,
+        (value as Record<string, unknown>).lastName,
+      ].filter((part): part is string => typeof part === 'string' && part.trim().length > 0);
+      if (parts.length) return parts.join(' ');
+    }
+  }
+  return undefined;
+};
+
+/**
+ * One-level, shallow expansion of relation fields discovered via metadata.
+ * For each relation field with a resolvable raw id (`<field>Id` on the record,
+ * or the field value itself being an id string), we fetch the related record
+ * once (no recursion, no further metadata lookups) and inline it under the
+ * field name, adding a derived `label`. Related records are themselves passed
+ * through `readableFields[targetObjectName]` so relation expansion can never be
+ * used to bypass field-level permissions on the target object either.
+ */
+const expandRelations = async (
+  record: Record<string, unknown>,
+  fields: MetadataObjectField[],
+  input: ContextProviderInput,
+  warnings: string[],
+): Promise<Record<string, unknown>> => {
+  const getRecord = input.api?.getRecord;
+  if (!getRecord) return record;
+
+  const expanded: Record<string, unknown> = { ...record };
+
+  for (const field of fields) {
+    if (!field.isRelation || !field.relationTargetObjectName) continue;
+
+    const joinColumnValue = record[`${field.name}Id`];
+    const inlineValue = record[field.name];
+    const relatedId =
+      typeof joinColumnValue === 'string'
+        ? joinColumnValue
+        : typeof inlineValue === 'string'
+          ? inlineValue
+          : undefined;
+    if (!relatedId) continue;
+
+    const targetObject = normalizeProviderName(field.relationTargetObjectName);
+    try {
+      const related = (await getRecord(targetObject, relatedId)) ?? { id: relatedId };
+      const filteredRelated = filterReadableFields(targetObject, related, input.permissions);
+      warnings.push(...filteredRelated.warnings);
+      const label = deriveRelationLabel(filteredRelated.record);
+      expanded[field.name] = {
+        ...filteredRelated.record,
+        ...(label && !('label' in filteredRelated.record) ? { label } : {}),
+      };
+    } catch (error) {
+      warnings.push(
+        `Could not expand ${targetObject} relation "${field.name}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  return expanded;
+};
+
 export const loadGenericRecordContext = async (input: ContextProviderInput): Promise<ContextProviderResult> => {
   const objectName = normalizeProviderName(input.primaryObjectType);
   const warnings: string[] = [];
@@ -61,6 +143,21 @@ export const loadGenericRecordContext = async (input: ContextProviderInput): Pro
     record = (await input.api?.getRecord?.(objectName, input.primaryRecordId)) ?? { id: input.primaryRecordId };
   } catch (error) {
     warnings.push(`Could not load ${objectName} context: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  // Metadata-driven relation expansion happens BEFORE permission filtering so
+  // that the existing readableFields filter is still the final authority on
+  // which primary-object fields are exposed (dynamically discovered/expanded
+  // relation fields cannot bypass it). Only runs when a MetadataApi is injected.
+  if (input.metadataApi) {
+    try {
+      const fields = await input.metadataApi.getFields(objectName);
+      record = await expandRelations(record, fields, input, warnings);
+    } catch (error) {
+      warnings.push(
+        `Could not load ${objectName} field metadata: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   const filtered = filterReadableFields(objectName, record, input.permissions);

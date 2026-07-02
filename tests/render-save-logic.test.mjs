@@ -52,8 +52,22 @@ const createFixtureApi = () => {
       if (objectName === 'documentTemplate' && id === 'inactive-template') {
         return { id, name: 'Inactive', isActive: false, status: 'ARCHIVED', htmlSource: 'Nope' };
       }
+      if (objectName === 'documentTemplate' && id === 'bound-template') {
+        return {
+          id,
+          name: 'Opportunity Brief',
+          isActive: true,
+          status: 'ACTIVE',
+          renderer: 'HANDLEBARS',
+          boundObjectName: 'opportunity',
+          htmlSource: '<h1>{{opportunity.name}}</h1>',
+        };
+      }
       if (objectName === 'person' && id === 'person-1') {
         return { id, name: { firstName: 'Ada', lastName: 'Lovelace' }, companyId: 'company-1' };
+      }
+      if (objectName === 'opportunity' && id === 'op-1') {
+        return { id, name: 'Big Deal' };
       }
       return null;
     },
@@ -101,6 +115,24 @@ test('renderTemplateLogic loads template, context, renders HTML/CSS and warning 
   assert.deepEqual(output.errors, []);
   assert.match(output.warnings.join('\n'), /Company relation loaded from fixture/);
   assert.equal(output.template.id, 'template-1');
+});
+
+test('renderTemplateLogic uses template.boundObjectName as the object type, overriding input.primaryObjectType', async () => {
+  const api = createFixtureApi();
+  const output = await renderTemplateLogic({
+    templateId: 'bound-template',
+    // Caller passes 'person', but the saved template is bound to 'opportunity';
+    // boundObjectName must win (this is the corrected, sentinel-free behavior).
+    primaryObjectType: 'person',
+    primaryRecordId: 'op-1',
+    principal: generatorPrincipal,
+    api,
+  });
+
+  assert.equal(output.ok, true);
+  assert.match(output.html, /Big Deal/);
+  assert.equal(output.context.opportunity.name, 'Big Deal');
+  assert.equal('person' in output.context, false, 'bound object should override the ad-hoc primaryObjectType');
 });
 
 test('renderTemplateLogic supports previewData with viewTemplates permission only', async () => {

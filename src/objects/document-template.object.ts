@@ -9,7 +9,7 @@ import {
   TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
   TEMPLATE_VERSION_FIELDS,
   TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 enum DocumentTemplateRenderer {
   HANDLEBARS = 'HANDLEBARS',
@@ -19,17 +19,6 @@ enum DocumentTemplateStatus {
   DRAFT = 'DRAFT',
   ACTIVE = 'ACTIVE',
   ARCHIVED = 'ARCHIVED',
-}
-
-enum DocumentTemplateProvider {
-  DEFAULT = 'DEFAULT',
-  COMPANY = 'company',
-  PERSON = 'person',
-  OPPORTUNITY = 'opportunity',
-  TASK = 'task',
-  NOTE = 'note',
-  CALENDAR_EVENT = 'calendarEvent',
-  CUSTOM = 'custom',
 }
 
 export default defineObject({
@@ -72,23 +61,14 @@ export default defineObject({
       options: [{ value: DocumentTemplateRenderer.HANDLEBARS, label: 'Handlebars', position: 0, color: 'blue' }],
     },
     {
-      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.provider,
-      type: FieldType.SELECT,
-      name: 'provider',
-      label: 'Provider',
-      description: 'Context provider for this template',
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName,
+      type: FieldType.TEXT,
+      name: 'boundObjectName',
+      label: 'Bound Object Name',
+      description: 'Twenty object (standard or custom) this template is bound to; validated at write-time against live metadata',
       icon: 'IconPlug',
-      defaultValue: `'${DocumentTemplateProvider.DEFAULT}'`,
-      options: [
-        { value: DocumentTemplateProvider.DEFAULT, label: 'Default', position: 0, color: 'gray' },
-        { value: DocumentTemplateProvider.COMPANY, label: 'Company', position: 1, color: 'blue' },
-        { value: DocumentTemplateProvider.PERSON, label: 'Person', position: 2, color: 'green' },
-        { value: DocumentTemplateProvider.OPPORTUNITY, label: 'Opportunity', position: 3, color: 'purple' },
-        { value: DocumentTemplateProvider.TASK, label: 'Task', position: 4, color: 'orange' },
-        { value: DocumentTemplateProvider.NOTE, label: 'Note', position: 5, color: 'yellow' },
-        { value: DocumentTemplateProvider.CALENDAR_EVENT, label: 'Calendar Event', position: 6, color: 'red' },
-        { value: DocumentTemplateProvider.CUSTOM, label: 'Custom', position: 7, color: 'gray' },
-      ],
+      isNullable: true,
+      defaultValue: null,
     },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: ['PDF'] as string[] },
     {

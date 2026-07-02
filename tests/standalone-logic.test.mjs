@@ -27,7 +27,7 @@ test('standalone logic modules exist and are publicly exported', () => {
 });
 
 const { validateTemplateLogic } = await import('../dist/logic/validate-template.js');
-const { listTemplateVariablesLogic } = await import('../dist/logic/list-template-variables.js');
+const { listTemplateVariablesLogic, listBoundObjectFields } = await import('../dist/logic/list-template-variables.js');
 
 test('validateTemplateLogic reports valid template with no errors', () => {
   const result = validateTemplateLogic({
@@ -90,4 +90,32 @@ test('listTemplateVariablesLogic returns variable info with path and helper flag
 test('listTemplateVariablesLogic handles empty template', () => {
   const result = listTemplateVariablesLogic({ htmlSource: '<p>No vars</p>' });
   assert.equal(result.length, 0);
+});
+
+test('listBoundObjectFields returns schema-backed fields prefixed with the object name', async () => {
+  const fakeMetadataApi = {
+    listObjects: async () => [],
+    getFields: async (objectName) => {
+      assert.equal(objectName, 'company');
+      return [
+        { name: 'name', label: 'Name', type: 'TEXT', isRelation: false },
+        { name: 'employees', label: 'Employees', type: 'RELATION', isRelation: true, relationTargetObjectName: 'person' },
+      ];
+    },
+  };
+
+  const result = await listBoundObjectFields('company', fakeMetadataApi);
+  assert.equal(result.length, 2);
+  assert.deepEqual(result[0], { name: 'company.name', path: ['company', 'name'], isHelper: false });
+  assert.deepEqual(result[1].path, ['company', 'employees']);
+});
+
+test('listBoundObjectFields returns an empty list when no object is bound', async () => {
+  const result = await listBoundObjectFields('', {
+    listObjects: async () => [],
+    getFields: async () => {
+      throw new Error('should not be called without a bound object');
+    },
+  });
+  assert.deepEqual(result, []);
 });

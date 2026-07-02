@@ -4,7 +4,7 @@ import {
   GENERATED_DOCUMENT_FIELDS,
   GENERATED_DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
   GENERATED_DOCUMENT_VIEW_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 export default defineView({
   universalIdentifier: GENERATED_DOCUMENT_VIEW_UNIVERSAL_IDENTIFIER,

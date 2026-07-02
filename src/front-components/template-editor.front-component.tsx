@@ -1,3 +1,17 @@
+import { useEffect, useRef, useState } from 'react';
+
+import { defineFrontComponent } from 'twenty-sdk/define';
+
+import { TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
+
+import type { PdfSettings } from '../logic/settings/pdf-settings';
+import {
+  PdfSettingsFields,
+  createPdfSettingsState,
+  validatePdfSettingsState,
+  type PdfSettingsState,
+} from './pdf-settings.front-component';
+
 export type TemplateEditorTab = 'html' | 'css' | 'preview' | 'settings';
 
 export type TemplateEditorVariable = {
@@ -14,7 +28,7 @@ export type TemplateEditorTemplate = {
   previewData?: Record<string, unknown>;
   variables?: TemplateEditorVariable[];
   renderer?: string;
-  provider?: string;
+  boundObjectName?: string;
   allowedOutputTypes?: string[];
   status?: string;
   version?: number;
@@ -39,6 +53,13 @@ export type TemplateEditorApi = {
   renderPreview(input: { htmlSource: string; cssSource: string; previewData: Record<string, unknown> }): Promise<{ ok: boolean; html: string; warnings: string[]; errors: Array<{ userMessage?: string; message?: string }> }>;
   saveTemplate(input: TemplateEditorTemplate): Promise<TemplateEditorTemplate>;
   createTemplateVersion(input: { templateId: string; versionNumber: number; htmlSource: string; cssSource: string; name: string }): Promise<unknown>;
+  /**
+   * Live, schema-backed field list for the template's bound object (standard
+   * or custom), from the metadata client. Optional — falls back to an empty
+   * list (variable picker then only shows variables already referenced in the
+   * template source).
+   */
+  listFields?(objectNameSingular: string): Promise<TemplateEditorVariable[]>;
 };
 
 const defaultTemplate: TemplateEditorTemplate = {
@@ -48,7 +69,7 @@ const defaultTemplate: TemplateEditorTemplate = {
   previewData: {},
   variables: [],
   renderer: 'HANDLEBARS',
-  provider: 'DEFAULT',
+  boundObjectName: '',
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',
   version: 0,
@@ -69,7 +90,7 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
     previewJson: JSON.stringify(previewData, null, 2),
     variables: template.variables ?? [],
     renderer: template.renderer ?? 'HANDLEBARS',
-    provider: template.provider ?? 'DEFAULT',
+    boundObjectName: template.boundObjectName ?? '',
     allowedOutputTypes: template.allowedOutputTypes ?? ['HTML'],
     status: template.status ?? 'DRAFT',
     version: template.version ?? 0,
@@ -93,6 +114,21 @@ export const validateTemplateEditorState = (state: Pick<TemplateEditorState, 'na
     errors.push('Preview JSON is not valid JSON.');
   }
   return errors;
+};
+
+/**
+ * Merges "already referenced in the template" variables with "available from
+ * the bound object's schema" fields for the variable-insertion picker,
+ * de-duplicated by path (referenced entries take precedence for label/metadata).
+ */
+export const mergeTemplateVariables = (
+  referenced: TemplateEditorVariable[],
+  available: TemplateEditorVariable[],
+): TemplateEditorVariable[] => {
+  const merged = new Map<string, TemplateEditorVariable>();
+  for (const variable of available) merged.set(variable.path, variable);
+  for (const variable of referenced) merged.set(variable.path, variable);
+  return Array.from(merged.values());
 };
 
 export const insertVariableExpression = (value: string, variablePath: string, cursor: number): { value: string; cursor: number } => {
@@ -133,7 +169,7 @@ export const templateEditorFrontComponent = {
 
 export class TemplateEditorController {
   public state: TemplateEditorState;
-  private readonly api: TemplateEditorApi;
+  public readonly api: TemplateEditorApi;
   private readonly debounceMs: number;
   private previewTimer?: ReturnType<typeof setTimeout>;
   private pendingPreview?: Promise<void>;
@@ -206,7 +242,7 @@ export class TemplateEditorController {
       previewData,
       variables: this.state.variables,
       renderer: this.state.renderer,
-      provider: this.state.provider,
+      boundObjectName: this.state.boundObjectName,
       allowedOutputTypes: this.state.allowedOutputTypes,
       status: this.state.status,
       version: nextVersion,
@@ -235,6 +271,10 @@ export class TemplateEditorController {
     return { ok: true, template };
   }
 
+  setActiveTab(tab: TemplateEditorTab): void {
+    this.state = { ...this.state, activeTab: tab };
+  }
+
   static reduceKey(state: TemplateEditorState, event: { key: string; target?: string }): TemplateEditorState {
     if (event.target !== 'tabs') return state;
     const index = tabs.findIndex((tab) => tab.id === state.activeTab);
@@ -245,3 +285,217 @@ export class TemplateEditorController {
     return state;
   }
 }
+
+/**
+ * Fallback preview API used until the real render API (separate workstream) is
+ * injected. Produces a real HTML+CSS document so the live-preview iframe shows
+ * rendered output (without server-side variable interpolation).
+ */
+export const createLocalPreviewTemplateEditorApi = (): TemplateEditorApi => ({
+  renderPreview: async ({ htmlSource, cssSource }) => ({
+    ok: true,
+    html: `<style>${cssSource}</style>${htmlSource}`,
+    warnings: [],
+    errors: [],
+  }),
+  saveTemplate: async (input) => ({ ...input, id: input.id ?? 'unsaved', version: input.version ?? 1 }),
+  createTemplateVersion: async () => ({}),
+});
+
+export type TemplateEditorComponentProps = {
+  /** Injected by the real workstream; falls back to a local HTML+CSS preview. */
+  api?: TemplateEditorApi;
+  template?: Partial<TemplateEditorTemplate>;
+  pdfSettings?: Partial<PdfSettings>;
+};
+
+export const TemplateEditorComponent = ({ api, template, pdfSettings }: TemplateEditorComponentProps) => {
+  const controllerRef = useRef<TemplateEditorController | null>(null);
+  const controller = (controllerRef.current ??= new TemplateEditorController({
+    initialState: createTemplateEditorState({ template }),
+    api: api ?? createLocalPreviewTemplateEditorApi(),
+  }));
+
+  const [state, setState] = useState<TemplateEditorState>(() => controller.state);
+  const [pdf, setPdf] = useState<PdfSettingsState>(() => createPdfSettingsState({ settings: pdfSettings }));
+  const [availableFields, setAvailableFields] = useState<TemplateEditorVariable[]>([]);
+  const sync = (): void => setState(controller.state);
+
+  useEffect(() => {
+    void controller.flushPreview().then(sync);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Refresh the schema-backed field picker whenever the bound object changes.
+  useEffect(() => {
+    let cancelled = false;
+    if (!state.boundObjectName || !controller.api.listFields) {
+      setAvailableFields([]);
+      return;
+    }
+    void controller.api.listFields(state.boundObjectName).then((fields) => {
+      if (!cancelled) setAvailableFields(fields);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.boundObjectName]);
+
+  const updateField = (field: keyof TemplateEditorState, value: unknown): void => {
+    controller.updateField(field, value);
+    sync();
+    void controller.flushPreview().then(sync);
+  };
+
+  const setActiveTab = (tab: TemplateEditorTab): void => {
+    controller.setActiveTab(tab);
+    sync();
+  };
+
+  const onTabKeyDown = (event: { key: string }): void => {
+    controller.state = TemplateEditorController.reduceKey(controller.state, { key: event.key, target: 'tabs' });
+    sync();
+  };
+
+  const onSave = async (): Promise<void> => {
+    await controller.save();
+    sync();
+  };
+
+  const pdfErrors = validatePdfSettingsState(pdf);
+
+  return (
+    <section className="template-editor" aria-label="Template editor" data-responsive-layout="split-stack">
+      <div role="tablist" aria-label="Template editor tabs" onKeyDown={onTabKeyDown}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={state.activeTab === tab.id}
+            data-tab={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <label>
+        Name
+        <input
+          aria-label="Template name"
+          value={state.name}
+          onChange={(event) => updateField('name', event.target.value)}
+        />
+      </label>
+
+      {state.activeTab === 'html' ? (
+        <label>
+          HTML
+          <textarea
+            aria-label="HTML template source"
+            value={state.htmlSource}
+            onChange={(event) => updateField('htmlSource', event.target.value)}
+          />
+        </label>
+      ) : null}
+
+      {state.activeTab === 'css' ? (
+        <label>
+          CSS
+          <textarea
+            aria-label="CSS template source"
+            value={state.cssSource}
+            onChange={(event) => updateField('cssSource', event.target.value)}
+          />
+        </label>
+      ) : null}
+
+      {state.activeTab === 'preview' ? (
+        <label>
+          Preview JSON
+          <textarea
+            aria-label="Preview JSON data"
+            value={state.previewJson}
+            onChange={(event) => updateField('previewJson', event.target.value)}
+          />
+        </label>
+      ) : null}
+
+      {state.activeTab === 'settings' ? (
+        <div aria-label="Template settings">
+          <label>
+            Renderer
+            <select
+              aria-label="Template renderer"
+              value={state.renderer}
+              onChange={(event) => updateField('renderer', event.target.value)}
+            >
+              <option value="HANDLEBARS">Handlebars</option>
+              <option value="MJML">MJML</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select
+              aria-label="Template status"
+              value={state.status}
+              onChange={(event) => updateField('status', event.target.value)}
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="ACTIVE">Active</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </label>
+          <label>
+            Bound object
+            <input
+              aria-label="Bound object name"
+              placeholder="e.g. company, person, or any custom object name"
+              value={state.boundObjectName}
+              onChange={(event) => updateField('boundObjectName', event.target.value)}
+            />
+          </label>
+          <PdfSettingsFields settings={pdf} onChange={(next) => setPdf({ ...next, statusMessage: pdf.statusMessage })} />
+        </div>
+      ) : null}
+
+      <aside role="listbox" aria-label="Available template variables">
+        {mergeTemplateVariables(state.variables, availableFields).map((variable) => (
+          <button
+            key={variable.path}
+            type="button"
+            role="option"
+            aria-selected={false}
+            data-variable={variable.path}
+            onClick={() => updateField('htmlSource', insertVariableExpression(state.htmlSource, variable.path, state.htmlSource.length).value)}
+          >
+            {variable.label ?? variable.path}
+          </button>
+        ))}
+      </aside>
+
+      <iframe
+        aria-label="Template live preview"
+        title="Template live preview"
+        srcDoc={state.previewHtml}
+        style={{ width: '100%', minHeight: '320px', border: '1px solid #ddd' }}
+      />
+
+      <button type="button" onClick={() => void onSave()}>Save template</button>
+
+      <output aria-live="polite">
+        {state.statusMessage || [...state.validationErrors, ...pdfErrors].join(' ')}
+      </output>
+    </section>
+  );
+};
+
+export default defineFrontComponent({
+  universalIdentifier: TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  name: 'template-editor',
+  description: 'HTML/CSS template editor with live preview, preview JSON, variable browser, and PDF settings.',
+  component: TemplateEditorComponent,
+});

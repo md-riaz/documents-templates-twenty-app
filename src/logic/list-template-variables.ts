@@ -1,3 +1,5 @@
+import type { MetadataApi } from './metadata/metadata-client';
+
 export type ListTemplateVariablesInput = {
   htmlSource: string;
 };
@@ -48,4 +50,28 @@ export const listTemplateVariablesLogic = (
     path: name.split('.'),
     isHelper: builtInHelpers.has(name),
   }));
+};
+
+/**
+ * Live, schema-backed field list for a template's bound object (standard or
+ * custom), for the editor's "insert variable" picker. Complements — does not
+ * replace — `listTemplateVariablesLogic`'s regex extraction of variables
+ * already typed into the template: the editor merges "available from schema"
+ * (this function) with "already referenced" (the regex extractor above) so
+ * authors see both.
+ */
+export const listBoundObjectFields = async (
+  objectNameSingular: string,
+  metadataApi: MetadataApi,
+): Promise<TemplateVariableInfo[]> => {
+  if (!objectNameSingular) return [];
+  const fields = await metadataApi.getFields(objectNameSingular);
+  return fields.map((field) => {
+    const path = `${objectNameSingular}.${field.name}`;
+    return {
+      name: path,
+      path: path.split('.'),
+      isHelper: false,
+    };
+  });
 };

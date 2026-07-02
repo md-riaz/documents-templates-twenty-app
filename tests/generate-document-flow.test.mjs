@@ -8,7 +8,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 const expectedFiles = [
-  'src/front-components/generate-document.front-component.ts',
+  'src/front-components/generate-document.front-component.tsx',
 ];
 
 test('generate document record action component exists and is publicly exported', () => {

@@ -4,7 +4,7 @@ import {
   DOCUMENTS_TAB_UNIVERSAL_IDENTIFIERS,
   DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS,
   DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 const RECORD_PAGE_LAYOUTS = {
   company: STANDARD_PAGE_LAYOUT.companyRecordPage.universalIdentifier,

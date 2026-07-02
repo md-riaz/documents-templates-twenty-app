@@ -4,7 +4,7 @@ import {
   DOCUMENT_TEMPLATE_FIELDS,
   DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
   DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 export default defineView({
   universalIdentifier: DOCUMENT_TEMPLATE_VIEW_UNIVERSAL_IDENTIFIER,
@@ -19,7 +19,7 @@ export default defineView({
     { universalIdentifier: 'ac0a7bb6-f9a2-4fa7-9149-d59c6e14f085', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.status, position: 2, size: 120 },
     { universalIdentifier: '28e3ff51-df09-4d66-9f2e-bc9a165b9d50', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.renderer, position: 3, size: 120 },
     { universalIdentifier: '9169b0b1-2e9d-4275-a5df-8f278b7c5ea1', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.version, position: 4, size: 90 },
-    { universalIdentifier: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.provider, position: 5, size: 120 },
+    { universalIdentifier: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName, position: 5, size: 120 },
   ],
   sorts: [
     { universalIdentifier: '95699ab7-f04d-4913-9c89-ec81055423bd', fieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, direction: ViewSortDirection.ASC },

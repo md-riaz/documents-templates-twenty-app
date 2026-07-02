@@ -3,3 +3,4 @@ dist/
 .env
 .codex/
 *.log
+.twenty/output/src/

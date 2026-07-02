@@ -1,4 +1,5 @@
-import { createMissingVariableError, TemplateRenderError } from './render-errors';
+import Handlebars from 'handlebars';
+import { createMissingVariableError, mapTemplateRenderError, TemplateRenderError } from './render-errors';
 
 export type TemplateValidationOptions = {
   strictMissingVariables?: boolean;
@@ -15,7 +16,7 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const hasPath = (context: Record<string, unknown>, path: string): boolean => {
-  if (['this', '.', 'index', 'number'].includes(path)) return true;
+  if (path === 'this' || path === '.') return true;
   const parts = path.split('.');
   let current: unknown = context;
   for (const part of parts) {
@@ -26,98 +27,77 @@ const hasPath = (context: Record<string, unknown>, path: string): boolean => {
   return current !== undefined;
 };
 
-const lineColumnAt = (source: string, index: number): { line: number; column: number } => {
-  const before = source.slice(0, index).split('\n');
-  return { line: before.length, column: before[before.length - 1].length + 1 };
-};
+// Helpers registered by createDefaultHelperRegistry(). Used only to decide
+// whether a bare `{{name}}` mustache with no arguments most likely refers to
+// a helper call (e.g. `{{uppercase}}`) rather than a context variable, since
+// template-validation has no visibility into a caller's custom HelperRegistry.
+const BUILT_IN_HELPER_NAMES = new Set(['formatDate', 'formatCurrency', 'uppercase', 'lowercase', 'default']);
 
-const firstToken = (expression: string): string => {
-  const match = expression.trim().match(/^([^\s]+)/);
-  return match?.[1] ?? '';
-};
+/**
+ * Walks a real Handlebars AST (from `Handlebars.parse`) and collects every
+ * data path referenced by the template: mustache/block/partial arguments,
+ * hash values, and subexpression arguments. Handlebars helper/block names
+ * themselves (the `path` of a MustacheStatement/BlockStatement/SubExpression
+ * that is being *called*, e.g. `if`, `each`, `with`, `uppercase`) are
+ * intentionally excluded, as are `@data` variables (`@index`, `@key`, ...)
+ * which are always supplied by Handlebars rather than the template context.
+ */
+class ReferencedVariableCollector extends Handlebars.Visitor {
+  public readonly variables = new Set<string>();
 
-const builtInHelpers = new Set(['formatDate', 'formatCurrency', 'uppercase', 'lowercase', 'default']);
-const keywords = new Set(['else', 'this', '.', 'true', 'false', 'null']);
+  PathExpression(path: hbs.AST.PathExpression): void {
+    if (path.data) return;
+    if (!path.parts || path.parts.length === 0) return;
+    this.variables.add(path.parts.join('.'));
+  }
+
+  MustacheStatement(mustache: hbs.AST.MustacheStatement): void {
+    const hasArgs = mustache.params.length > 0 || Boolean(mustache.hash?.pairs?.length);
+    const path = mustache.path as hbs.AST.PathExpression;
+    const isLikelyBuiltInHelperCall = path?.type === 'PathExpression' && BUILT_IN_HELPER_NAMES.has(path.original);
+    if (!hasArgs && !isLikelyBuiltInHelperCall) {
+      this.accept(mustache.path);
+    }
+    this.acceptArray(mustache.params);
+    this.acceptKey(mustache, 'hash');
+  }
+
+  BlockStatement(block: hbs.AST.BlockStatement): void {
+    // block.path (if/each/with/unless/...) is a block-helper name, never a
+    // context variable, so it is intentionally not visited here.
+    this.acceptArray(block.params);
+    this.acceptKey(block, 'hash');
+    this.acceptKey(block, 'program');
+    this.acceptKey(block, 'inverse');
+  }
+
+  SubExpression(sexpr: hbs.AST.SubExpression): void {
+    this.acceptArray(sexpr.params);
+    this.acceptKey(sexpr, 'hash');
+  }
+
+  PartialStatement(partial: hbs.AST.PartialStatement): void {
+    this.acceptArray(partial.params);
+    this.acceptKey(partial, 'hash');
+  }
+
+  PartialBlockStatement(partial: hbs.AST.PartialBlockStatement): void {
+    this.acceptArray(partial.params);
+    this.acceptKey(partial, 'hash');
+    this.acceptKey(partial, 'program');
+  }
+
+  // Decorators (`{{* foo}}` / `{{#* foo}}`) are not used by this app; skip
+  // them defensively rather than misreading their name as a variable.
+  Decorator(): void {}
+  DecoratorBlock(): void {}
+}
 
 export const extractReferencedVariables = (source: string): string[] => {
-  const variables = new Set<string>();
-  const tokenPattern = /{{{?\s*([^#/>][^}]*)\s*}?}}/g;
-
-  for (const match of source.matchAll(tokenPattern)) {
-    const expression = match[1].trim();
-    const token = firstToken(expression);
-    if (!token || keywords.has(token) || builtInHelpers.has(token)) continue;
-    if (/^['"-]?\d/.test(token) || token.startsWith('>')) continue;
-    variables.add(token);
-  }
-
-  for (const match of source.matchAll(/{{\s*#(?:if|each)\s+([^}\s]+)[^}]*}}/g)) {
-    const variable = match[1].trim();
-    if (!builtInHelpers.has(variable)) variables.add(variable);
-  }
-
-  return [...variables];
-};
-
-const validateBlockSyntax = (source: string): TemplateRenderError[] => {
-  const errors: TemplateRenderError[] = [];
-  const stack: Array<{ name: string; index: number }> = [];
-  const blockPattern = /{{\s*(#|\/)(if|each)\b[^}]*}}/g;
-
-  for (const match of source.matchAll(blockPattern)) {
-    const [, marker, name] = match;
-    if (marker === '#') {
-      stack.push({ name, index: match.index });
-      continue;
-    }
-
-    const open = stack.pop();
-    if (!open || open.name !== name) {
-      const location = lineColumnAt(source, match.index);
-      errors.push(
-        new TemplateRenderError({
-          code: 'TEMPLATE_SYNTAX_ERROR',
-          message: `Unexpected closing block: ${name}`,
-          userMessage: 'The template syntax is invalid. A Handlebars block is closed without a matching opener.',
-          ...location,
-          phase: 'validation',
-        }),
-      );
-    }
-  }
-
-  for (const open of stack) {
-    const location = lineColumnAt(source, open.index);
-    errors.push(
-      new TemplateRenderError({
-        code: 'TEMPLATE_SYNTAX_ERROR',
-        message: `Unclosed ${open.name} block`,
-        userMessage: `The template syntax is invalid. The {{#${open.name}}} block is missing a closing tag.`,
-        ...location,
-        phase: 'validation',
-      }),
-    );
-  }
-
-  const withoutTriple = source.replace(/{{{[\s\S]*?}}}/g, '');
-  const openTags = source.match(/{{{/g)?.length ?? 0;
-  const closeTags = source.match(/}}}/g)?.length ?? 0;
-  const doubleOpen = withoutTriple.match(/{{(?!{)/g)?.length ?? 0;
-  const doubleClose = withoutTriple.match(/(?<!})}}(?!})/g)?.length ?? 0;
-  if (openTags !== closeTags || doubleOpen !== doubleClose) {
-    errors.push(
-      new TemplateRenderError({
-        code: 'TEMPLATE_SYNTAX_ERROR',
-        message: 'Unbalanced Handlebars delimiters',
-        userMessage: 'The template syntax is invalid. Check for missing {{, }}, {{{, or }}} delimiters.',
-        line: 1,
-        column: 1,
-        phase: 'validation',
-      }),
-    );
-  }
-
-  return errors;
+  const ast = Handlebars.parse(source);
+  const collector = new ReferencedVariableCollector();
+  collector.accept(ast);
+  return [...collector.variables];
 };
 
 export const validateHandlebarsTemplate = (
@@ -125,8 +105,23 @@ export const validateHandlebarsTemplate = (
   context: Record<string, unknown> = {},
   options: TemplateValidationOptions = {},
 ): TemplateValidationResult => {
-  const referencedVariables = extractReferencedVariables(source);
-  const errors = validateBlockSyntax(source);
+  let ast: hbs.AST.Program;
+  try {
+    ast = Handlebars.parse(source);
+  } catch (error) {
+    return {
+      valid: false,
+      errors: [mapTemplateRenderError(error, 'validation')],
+      warnings: [],
+      referencedVariables: [],
+    };
+  }
+
+  const collector = new ReferencedVariableCollector();
+  collector.accept(ast);
+  const referencedVariables = [...collector.variables];
+
+  const errors: TemplateRenderError[] = [];
   const warnings: string[] = [];
 
   for (const variable of referencedVariables) {

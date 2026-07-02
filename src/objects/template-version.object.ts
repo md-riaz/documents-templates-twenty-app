@@ -5,7 +5,7 @@ import {
   DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
   TEMPLATE_VERSION_FIELDS,
   TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
-} from 'src/constants/model-identifiers';
+} from '../constants/model-identifiers';
 
 export default defineObject({
   universalIdentifier: TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,

@@ -19,7 +19,7 @@ const api: DocumentsTemplatesSdkApi = {
 };
 
 const sdk = createDocumentsTemplatesSdk({
-  principal: { permissionScopes: ['viewTemplates', 'generateDocuments', 'sendDocuments'] },
+  principal: { permissionScopes: ['viewTemplates', 'generateDocuments'] },
   api,
   currentUser: { id: 'user-1' },
 });
@@ -57,16 +57,9 @@ const pdf = await sdk.generatePdfFromHtml({
   },
 });
 
-await sdk.generateDocuments({
-  renderedHtml: rendered.html,
-  recipients: ['buyer@example.com'],
-  subjectOverride: 'Your generated document',
-  generatedDocumentId: 'generated-42',
-  adapter: {
-    async sendDocuments() {
-      return { messageId: 'message-42' };
-    },
-  },
-});
+// Sending documents is not part of this app's scope — Twenty's native email
+// handles outbound delivery. The SDK's job ends at rendering HTML and
+// producing a PDF; saving/attaching the result to the source record happens
+// through the "Save Generated Document" workflow step.
 
 console.log({ templates, pdfUrl: pdf.pdfUrl });

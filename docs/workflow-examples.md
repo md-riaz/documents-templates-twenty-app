@@ -1,6 +1,11 @@
 # Workflow examples — Documents & Templates
 
-These examples show how to compose the registered workflow actions in Twenty.
+This app ships its logic as Twenty workflow-builder steps (logic functions carrying
+`workflowActionTriggerSettings`): **Render Template**, **Generate PDF**, and **Save Generated
+Document**. There is no app-internal "workflow action registry" — a step you add in Twenty's
+workflow builder UI is a logic function, and you chain these three steps together directly in
+the builder to go from a template to an attached, audited PDF. The app does not send documents;
+it renders, generates a PDF, attaches it to the source record, and saves an audit record.
 
 ## Example 1: single-record proposal PDF
 
@@ -22,40 +27,23 @@ Trigger: record action or workflow on a Company/Opportunity record.
    - `renderedHtml`: rendered HTML
    - `pdfUrl`: PDF output URL
 
-Expected result: the proposal PDF is attached to the source CRM record, and the record history tab shows audit details with the PDF link.
+Expected result: the proposal PDF is attached to the source CRM record, and the record history tab
+shows audit details with the PDF link.
 
-## Example 2: send templated documents with PDF attachment
-
-Trigger: manual workflow from a Person or Opportunity record.
-
-1. **Render Template** for preview and subject data.
-2. **Generate PDF** if the template allows PDF output.
-3. **Generate Documents**
-   - `templateId`: documents-ready template
-   - `recipients`: validated documents addresses
-   - `subjectOverride`: optional Handlebars subject
-   - `attachPdf`: `true`
-   - `pdfUrl`: generated PDF URL
-4. **Save Generated Document** with status `sent` or error status from the documents action.
-
-Expected result: recipient receives escaped text fallback plus HTML body, and the GeneratedDocument audit fields record send status.
-
-## Example 3: BulkIterator renewal notices
+## Example 2: BulkIterator renewal notices
 
 Trigger: scheduled workflow or filtered list iterator.
 
 1. Use a **BulkIterator** over expiring contracts/opportunities.
-2. For each item, run **Render Template** with the iterator record ID.
-3. Run **Generate Documents** per item.
-4. Run **Save Generated Document** per item with the returned status and message ID.
+2. For each item, chain **Render Template** → **Generate PDF** → **Save Generated Document** with
+   the iterator record ID.
 
 Bulk guidance:
 
 - Keep each iterator output isolated; do not reuse mutable render results between records.
-- Prefer idempotency keys in external transport adapters if available.
-- Capture per-record errors so one failed recipient does not cancel the whole batch.
+- Capture per-record errors so one failed record does not cancel the whole batch.
 
-## Example 4: Global trigger requirements
+## Example 3: Global trigger requirements
 
 For Global triggers, pass all context explicitly:
 
@@ -64,4 +52,5 @@ For Global triggers, pass all context explicitly:
 - `primaryRecordId`
 - any `contextOverrides` required by the selected template
 
-Global triggers do not automatically know which CRM record to load, so missing object type or record ID should be treated as a workflow configuration error.
+Global triggers do not automatically know which CRM record to load, so missing object type or
+record ID should be treated as a workflow configuration error.

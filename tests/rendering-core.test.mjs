@@ -37,14 +37,16 @@ const { combineCssWithHtml } = await import('../dist/logic/rendering/css-combine
 const { createDefaultHelperRegistry } = await import('../dist/logic/rendering/helper-registry.js');
 const { renderHandlebarsTemplate } = await import('../dist/logic/rendering/handlebars-renderer.js');
 const { mapTemplateRenderError, TemplateRenderError } = await import('../dist/logic/rendering/render-errors.js');
-const { validateHandlebarsTemplate } = await import('../dist/logic/rendering/template-validation.js');
+const { validateHandlebarsTemplate, extractReferencedVariables } = await import('../dist/logic/rendering/template-validation.js');
 
 test('Handlebars-style renderer supports variables, loops, conditionals, helpers, and escaping', () => {
   const result = renderHandlebarsTemplate({
     htmlSource: [
       '<h1>{{uppercase company.name}}</h1>',
       '{{#if opportunity.open}}<p>{{default opportunity.stage "Draft"}}</p>{{else}}<p>Closed</p>{{/if}}',
-      '<ul>{{#each items}}<li>{{number}}/{{index}} {{lowercase name}} {{formatCurrency amount currency}}</li>{{/each}}</ul>',
+      // `@index` is real Handlebars' native (0-based) iteration variable —
+      // this app no longer injects a bespoke `index`/`number` field per item.
+      '<ul>{{#each items}}<li>{{@index}} {{lowercase name}} {{formatCurrency amount currency}}</li>{{/each}}</ul>',
       '<p>{{unsafe}}</p><aside>{{{unsafe}}}</aside>',
       '<time>{{formatDate closeDate "en-US"}}</time>',
     ].join(''),
@@ -65,11 +67,53 @@ test('Handlebars-style renderer supports variables, loops, conditionals, helpers
   assert.match(result.html, /<style>h1 \{ color: red; \}<\/style>/);
   assert.match(result.html, /<h1>ACME<\/h1>/);
   assert.match(result.html, /<p>Draft<\/p>/);
-  assert.match(result.html, /<li>1\/0 setup \$12\.50<\/li>/);
-  assert.match(result.html, /<li>2\/1 support \$99\.00<\/li>/);
+  assert.match(result.html, /<li>0 setup \$12\.50<\/li>/);
+  assert.match(result.html, /<li>1 support \$99\.00<\/li>/);
   assert.match(result.html, /&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/);
   assert.match(result.html, /<aside><script>alert\("x"\)<\/script><\/aside>/);
   assert.match(result.html, /<time>1\/2\/2026<\/time>/);
+});
+
+test('renderer is powered by real Handlebars: {{else if}}, {{#with}}, and subexpressions all work', () => {
+  const result = renderHandlebarsTemplate({
+    htmlSource: [
+      '{{#if opportunity.won}}<p>Won</p>{{else if opportunity.lost}}<p>Lost</p>{{else}}<p>Open</p>{{/if}}',
+      '{{#with company}}<h2>{{name}}</h2>{{/with}}',
+      '<p>{{uppercase (default nickname "guest")}}</p>',
+    ].join(''),
+    context: {
+      opportunity: { won: false, lost: true },
+      company: { name: 'Acme' },
+      nickname: '',
+    },
+  });
+
+  assert.equal(result.errors.length, 0);
+  assert.match(result.html, /<p>Lost<\/p>/);
+  assert.match(result.html, /<h2>Acme<\/h2>/);
+  assert.match(result.html, /<p>GUEST<\/p>/);
+});
+
+test('renderer supports real Handlebars partials', () => {
+  const result = renderHandlebarsTemplate({
+    htmlSource: '<div>{{> greeting}}</div>',
+    partials: { greeting: '<span>Hello {{name}}</span>' },
+    context: { name: 'World' },
+  });
+
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.html, '<div><span>Hello World</span></div>');
+});
+
+test('unknown helper calls raise an UNKNOWN_HELPER render error', () => {
+  const result = renderHandlebarsTemplate({
+    htmlSource: '<p>{{shout message}}</p>',
+    context: { message: 'hi' },
+  });
+
+  assert.equal(result.html, '');
+  assert.equal(result.errors.length, 1);
+  assert.equal(result.errors[0].code, 'UNKNOWN_HELPER');
 });
 
 test('helper registry supports custom helpers and duplicate registration protection', () => {
@@ -102,6 +146,30 @@ test('template validation reports syntax errors and strict missing variables', (
 
   const render = renderHandlebarsTemplate({ htmlSource: 'Hello {{person.email}}', context: {}, strictMissingVariables: true });
   assert.equal(render.errors[0].code, 'MISSING_REQUIRED_VARIABLE');
+});
+
+test('extractReferencedVariables walks the full Handlebars AST, including {{else if}} chains, {{#each}} bodies, and subexpressions', () => {
+  const source = [
+    '{{#if opportunity.won}}<p>{{opportunity.amount}}</p>',
+    '{{else if opportunity.lost}}<p>{{opportunity.reason}}</p>{{/if}}',
+    '{{#each items}}<li>{{item.sku}}</li>{{/each}}',
+    '<p>{{uppercase (default nickname "guest")}}</p>',
+    '{{@index}}',
+  ].join('');
+
+  const referenced = extractReferencedVariables(source);
+  assert.deepEqual(
+    referenced.sort(),
+    [
+      'item.sku',
+      'items',
+      'nickname',
+      'opportunity.amount',
+      'opportunity.lost',
+      'opportunity.reason',
+      'opportunity.won',
+    ].sort(),
+  );
 });
 
 test('error mapping returns user-readable render errors', () => {

@@ -1,3 +1,10 @@
+import { useEffect, useRef, useState } from 'react';
+
+import { defineFrontComponent } from 'twenty-sdk/define';
+import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+
+import { GENERATE_DOCUMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
+
 import { hasPermissionScope, type PermissionPrincipal } from '../permissions/permission-guards';
 
 export type GenerateDocumentTemplate = {
@@ -200,6 +207,10 @@ export class GenerateDocumentController {
     this.state = { ...this.state, selectedTemplateId: templateId, errors: [], statusMessage: '' };
   }
 
+  setShouldSave(shouldSave: boolean): void {
+    this.state = { ...this.state, shouldSave };
+  }
+
   async generate(options: { save?: boolean } = {}): Promise<{ ok: boolean; generatedDocumentId?: string; errors?: string[] }> {
     if (!this.state.selectedTemplateId) {
       const errors = ['Select a template before generating a document.'];
@@ -275,3 +286,162 @@ export const generatedDocumentHistoryFrontComponent = {
   description: 'Record tab list filtered by primary object and record ID.',
   component: renderGeneratedDocumentHistoryMarkup,
 };
+
+const NOT_WIRED_MESSAGE = 'Document generation API is not connected in this environment yet.';
+
+/**
+ * Fallback API used until the real Twenty API wiring (separate workstream) is
+ * injected. Keeps the component data-flow intact and compilable.
+ */
+export const createUnavailableGenerateDocumentApi = (): GenerateDocumentApi => ({
+  listTemplates: async () => [],
+  renderTemplate: async () => ({ ok: false, html: '', errors: [{ userMessage: NOT_WIRED_MESSAGE }] }),
+  saveGeneratedDocument: async () => ({ ok: false, errors: [{ userMessage: NOT_WIRED_MESSAGE }] }),
+});
+
+export type GenerateDocumentComponentProps = {
+  /** Injected by the real workstream; falls back to a not-wired stub. */
+  api?: GenerateDocumentApi;
+  /**
+   * Object type of the acting record. The execution context only exposes
+   * record ids, so the caller (page layout / command host) supplies this.
+   */
+  primaryObjectType?: string;
+  principal?: PermissionPrincipal;
+  currentUser?: Record<string, unknown>;
+};
+
+export const GenerateDocumentComponent = ({
+  api,
+  primaryObjectType = '',
+  principal,
+  currentUser,
+}: GenerateDocumentComponentProps) => {
+  const selectedRecordIds = useSelectedRecordIds();
+  const primaryRecordId = selectedRecordIds.length > 0 ? selectedRecordIds[0] : '';
+
+  const controllerRef = useRef<GenerateDocumentController | null>(null);
+  const controller = (controllerRef.current ??= new GenerateDocumentController({
+    api: api ?? createUnavailableGenerateDocumentApi(),
+    principal,
+    currentUser,
+    initialState: createGenerateDocumentState({ primaryObjectType, primaryRecordId }),
+  }));
+
+  const [state, setState] = useState<GenerateDocumentState>(() => controller.state);
+  const [generatePdf, setGeneratePdf] = useState(false);
+  const sync = (): void => setState(controller.state);
+
+  // Keep the controller's record context in sync with the host selection.
+  useEffect(() => {
+    controller.state = { ...controller.state, primaryObjectType, primaryRecordId };
+    sync();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaryObjectType, primaryRecordId]);
+
+  useEffect(() => {
+    void controller.loadTemplates().then(sync);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const selectableTemplates = state.templates.filter(isTemplateSelectable);
+  const canGenerate = !state.isGenerating && Boolean(state.selectedTemplateId) && Boolean(primaryRecordId);
+
+  const onGenerate = async (): Promise<void> => {
+    const result = await controller.generate({ save: state.shouldSave });
+    sync();
+    if (result.ok) {
+      void enqueueSnackbar({ message: state.shouldSave ? 'Document generated and saved.' : 'Document generated.', variant: 'success' });
+    } else {
+      void enqueueSnackbar({ message: result.errors?.[0] ?? 'Document generation failed.', variant: 'error' });
+    }
+  };
+
+  return (
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-label="Generate document"
+      aria-busy={state.isGenerating}
+      data-responsive-layout="stack"
+    >
+      <h2>Generate Document</h2>
+
+      {!primaryRecordId ? (
+        <p role="alert">Select a single record to generate a document.</p>
+      ) : null}
+
+      <label>
+        Template
+        <select
+          aria-label="Document template"
+          name="templateId"
+          value={state.selectedTemplateId}
+          onChange={(event) => {
+            controller.selectTemplate(event.target.value);
+            sync();
+          }}
+        >
+          {selectableTemplates.length === 0 ? (
+            <option value="">No active templates available</option>
+          ) : null}
+          {selectableTemplates.map((template) => (
+            <option key={template.id} value={template.id}>{template.name}</option>
+          ))}
+        </select>
+      </label>
+
+      <label>
+        <input
+          type="checkbox"
+          aria-label="Save generated document"
+          checked={state.shouldSave}
+          onChange={(event) => {
+            controller.setShouldSave(event.target.checked);
+            sync();
+          }}
+        />
+        {' '}Save generated document history
+      </label>
+
+      <label>
+        <input
+          type="checkbox"
+          aria-label="Generate PDF"
+          checked={generatePdf}
+          onChange={(event) => setGeneratePdf(event.target.checked)}
+        />
+        {' '}Also generate PDF
+      </label>
+
+      <iframe
+        aria-label="Rendered document preview"
+        title="Rendered document preview"
+        srcDoc={state.previewHtml}
+        style={{ width: '100%', minHeight: '320px', border: '1px solid #ddd' }}
+      />
+
+      {state.errors.length > 0 ? (
+        <div role="alert">{state.errors.join(' ')}</div>
+      ) : null}
+      {state.warnings.length > 0 ? (
+        <div role="status">{state.warnings.join(' ')}</div>
+      ) : null}
+
+      <button type="button" disabled={!canGenerate} onClick={() => void onGenerate()}>
+        Generate
+      </button>
+
+      <output aria-live="polite">
+        {state.statusMessage || (state.isGenerating ? 'Generating document…' : '')}
+      </output>
+    </section>
+  );
+};
+
+export default defineFrontComponent({
+  universalIdentifier: GENERATE_DOCUMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
+  name: 'generate-document',
+  description: 'Record action to pick a template, preview the rendered document, optionally save it and generate a PDF.',
+  component: GenerateDocumentComponent,
+});

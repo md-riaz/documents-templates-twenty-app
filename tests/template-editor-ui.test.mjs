@@ -8,7 +8,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (path) => readFileSync(join(root, path), 'utf8');
 
 const expectedFiles = [
-  'src/front-components/template-editor.front-component.ts',
+  'src/front-components/template-editor.front-component.tsx',
 ];
 
 test('template editor front component exists and is publicly exported', () => {
@@ -33,7 +33,21 @@ const {
   renderTemplateEditorMarkup,
   validateTemplateEditorState,
   insertVariableExpression,
+  mergeTemplateVariables,
 } = await import('../dist/front-components/template-editor.front-component.js');
+
+test('mergeTemplateVariables de-duplicates by path, preferring already-referenced entries', () => {
+  const referenced = [{ path: 'company.name', label: 'Company name (used)', isHelper: false }];
+  const available = [
+    { path: 'company.name', label: 'Company name (schema)', isHelper: false },
+    { path: 'company.domainName', label: 'Domain', isHelper: false },
+  ];
+
+  const merged = mergeTemplateVariables(referenced, available);
+  assert.equal(merged.length, 2);
+  assert.equal(merged.find((v) => v.path === 'company.name').label, 'Company name (used)');
+  assert.ok(merged.find((v) => v.path === 'company.domainName'));
+});
 
 const createApi = () => {
   const savedTemplates = [];

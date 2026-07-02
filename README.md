@@ -1,6 +1,6 @@
 # Documents & Templates for Twenty CRM
 
-Documents & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, send templated documents, and keep a searchable audit trail.
+Documents & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, and keep a searchable audit trail.
 
 ## Why use this app?
 
@@ -30,15 +30,15 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 2. Create or select a template in the template library.
 3. Add Handlebars HTML, optional CSS, default subject, preview JSON, and allowed outputs.
 4. Use the live preview to validate variables before publishing.
-5. From a supported record page, choose **Generate Document** or **Generate Documents**.
-6. Review the rendered content, optionally generate a PDF, then save or send.
+5. From a supported record page, choose **Generate Document**.
+6. Review the rendered content, optionally generate a PDF, then save.
 7. Generated PDFs attach to the source CRM record when record context is available.
 8. Use the **Documents** record tab to review generated-document audit/history.
 
 ### Template authoring basics
 
 - Use Handlebars expressions such as `{{person.name}}`, `{{company.name}}`, and loops such as `{{#each opportunities}}...{{/each}}`.
-- Add preview JSON that matches the expected CRM context so editors can validate before sending.
+- Add preview JSON that matches the expected CRM context so editors can validate before publishing.
 - Keep unsafe HTML out of user-supplied fields; normal `{{variable}}` output is escaped by default.
 - Use triple-stash only for trusted, sanitized content.
 - Keep templates inactive until preview data, variable coverage, and permissions are reviewed.
@@ -46,7 +46,7 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 ### Common user flows
 
 - **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, attach it to the source record, and save audit history.
-- **Send a follow-up documents:** choose an documents-ready template, verify recipients and rendered subject, optionally attach the generated PDF, then send.
+- **Follow up on a record:** render an updated template against the record's current CRM data, generate a fresh PDF, and let it attach to the source record with a new audit entry — no separate send step required.
 - **Regenerate a document:** open the record history tab, find a previous generated document, and rerun the template with current CRM data.
 - **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its source record.
 
@@ -77,48 +77,38 @@ Marketplace screenshots are tracked as placeholder briefs until final UI capture
 - [Generate document modal](docs/screenshots/03-generate-document-modal.md)
 - [Workflow builder](docs/screenshots/05-workflow-builder.md)
 
-## Adding Documents tab to any record page
+## Generating documents from any record
 
-The app ships with a Documents tab on Company, Person, and Opportunity records. To add a filtered Documents tab to any other record (custom objects, Tasks, Notes, etc.):
+The primary, zero-configuration way to generate a document is the **Generate Document**
+command-menu item. Select any record — on any standard or custom object, no per-object setup
+required — open the command menu, and choose **Generate Document**. This works out of the box
+because it does not depend on a page layout being customized for that object.
 
-### Via Twenty UI
+### Documents history tab (optional, per-object)
 
-1. Open the record page for the object (e.g., Task, custom "Proposal" object)
-2. Click the **+** tab button or go to **Settings → Data Model → [Object] → Page Layout**
-3. Add a new tab, name it "Documents"
-4. Add a **Front Component** widget
-5. Select the **Documents Shell** front component from this app
-6. Save the layout
+The app also ships a Documents widget (a real front component) that shows generated-document
+history filtered by the current record's type and ID. It comes pre-attached to Company, Person,
+and Opportunity record pages. Admins who want the same dedicated tab on another object (a custom
+object, Task, Note, etc.) can attach it manually, per object, through Twenty's own UI:
 
-The widget automatically filters generated documents by the current record's type and ID.
+1. Open the record page for the object (e.g., Task, custom "Proposal" object).
+2. Go to **Settings → Data Model → [Object] → Page Layout** (or use the **+** tab button on the
+   record page).
+3. Add a new tab, name it "Documents".
+4. Add a **Front Component** widget and select the Documents history front component from this
+   app.
+5. Save the layout.
 
-### Via code (for app developers)
+### Why there's no fully dynamic Documents tab
 
-```typescript
-import { definePageLayoutTab, PageLayoutTabLayoutMode, STANDARD_PAGE_LAYOUT } from 'twenty-sdk/define';
-
-// For a standard object (e.g., customTask):
-definePageLayoutTab({
-  universalIdentifier: '<your-unique-uuid>',
-  pageLayoutUniversalIdentifier: STANDARD_PAGE_LAYOUT.customTaskRecordPage.universalIdentifier,
-  title: 'Documents',
-  icon: 'IconFileText',
-  position: 60,
-  layoutMode: PageLayoutTabLayoutMode.GRID,
-  widgets: [{
-    universalIdentifier: '<widget-uuid>',
-    title: 'Generated Documents',
-    type: 'front-component',
-    gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
-    configuration: {
-      configurationType: 'FRONT_COMPONENT',
-      frontComponentUniversalIdentifier: '<DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER>',
-    },
-  }],
-});
-```
-
-For custom objects, use the object's page layout universal identifier from the metadata API or your object definition.
+Twenty's page-layout system is compile-time/static: which tabs and widgets exist on an object's
+record page is defined ahead of time (via the Settings UI or an app's object/page-layout
+definitions), not computed per-request. That means a single Documents *tab* cannot automatically
+appear on every current and future custom object without either rebuilding the app or an admin
+attaching it by hand as described above. The two mechanisms that *do* work without a rebuild for
+an arbitrary object are: the **Generate Document** command-menu item (available everywhere, zero
+configuration) and manually attaching the Documents history widget via the Data Model UI
+(per-object, admin-driven, no rebuild required — just a UI action).
 
 ## PDF Generation
 
