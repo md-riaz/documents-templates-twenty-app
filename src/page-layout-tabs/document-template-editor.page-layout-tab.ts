@@ -28,7 +28,7 @@ export default definePageLayoutTab({
     {
       universalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_EDITOR_WIDGET_UNIVERSAL_IDENTIFIER,
       title: 'Template Editor',
-      type: 'front-component',
+      type: 'FRONT_COMPONENT',
       gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
       configuration: {
         configurationType: 'FRONT_COMPONENT',

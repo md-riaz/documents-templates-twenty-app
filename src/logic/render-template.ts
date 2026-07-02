@@ -112,20 +112,24 @@ const buildContext = async (
   const context = { ...(input.previewData ?? {}) };
   const warnings: string[] = [];
 
-  if (!input.previewData && (input.primaryObjectType || input.primaryRecordId)) {
-    if (!input.primaryObjectType || !input.primaryRecordId) {
+  // `boundObjectName` holds a real Twenty object name (or is empty/null) by
+  // construction, so it is safe to use directly as the object type; the ad-hoc
+  // `input.primaryObjectType` is the override/fallback for calls not backed by
+  // a saved template. A bound template only needs `primaryRecordId` — it must
+  // NOT also require `input.primaryObjectType`, or the whole point of binding
+  // a template to an object is defeated.
+  const effectiveObjectType = template.boundObjectName || input.primaryObjectType;
+
+  if (!input.previewData && (effectiveObjectType || input.primaryRecordId)) {
+    if (!effectiveObjectType || !input.primaryRecordId) {
       return {
         context,
-        warnings: ['Both primaryObjectType and primaryRecordId are required to load record context.'],
+        warnings: ['A bound object (from the template) or primaryObjectType, plus primaryRecordId, are required to load record context.'],
       };
     }
 
     const providerInput: ContextProviderInput = {
-      // `boundObjectName` holds a real Twenty object name (or is empty/null) by
-      // construction, so it is safe to use directly as the object type; the
-      // ad-hoc `input.primaryObjectType` is the override/fallback for calls not
-      // backed by a saved template.
-      primaryObjectType: template.boundObjectName || input.primaryObjectType,
+      primaryObjectType: effectiveObjectType,
       primaryRecordId: input.primaryRecordId,
       api: input.api,
       permissions: input.permissions,

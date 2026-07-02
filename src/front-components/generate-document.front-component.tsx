@@ -37,6 +37,7 @@ export type GenerateDocumentState = {
   errors: string[];
   statusMessage: string;
   generatedDocumentId?: string;
+  pdfUrl?: string;
 };
 
 export type GenerateDocumentApi = {
@@ -66,6 +67,23 @@ export type GenerateDocumentApi = {
   }) => Promise<{
     ok: boolean;
     id?: string;
+    errors?: Array<{ userMessage?: string; message?: string }>;
+  }>;
+  /**
+   * Optional — when supplied, `generate({ generatePdf: true })` calls this
+   * after rendering (and saving, if requested) to produce and attach a PDF.
+   * Omitted from `createUnavailableGenerateDocumentApi`'s stub, matching the
+   * other not-yet-wired-in-this-environment API methods.
+   */
+  generatePdf?: (input: {
+    html: string;
+    generatedDocumentId?: string;
+    sourceObjectName: string;
+    sourceRecordId: string;
+    principal?: PermissionPrincipal;
+  }) => Promise<{
+    ok: boolean;
+    pdfUrl?: string;
     errors?: Array<{ userMessage?: string; message?: string }>;
   }>;
   notify?: (message: { type: 'success' | 'error'; message: string }) => void;
@@ -108,6 +126,7 @@ export const createGenerateDocumentState = (input: Partial<GenerateDocumentState
     errors: input.errors ?? [],
     statusMessage: input.statusMessage ?? '',
     generatedDocumentId: input.generatedDocumentId,
+    pdfUrl: input.pdfUrl,
   };
 };
 
@@ -211,7 +230,7 @@ export class GenerateDocumentController {
     this.state = { ...this.state, shouldSave };
   }
 
-  async generate(options: { save?: boolean } = {}): Promise<{ ok: boolean; generatedDocumentId?: string; errors?: string[] }> {
+  async generate(options: { save?: boolean; generatePdf?: boolean } = {}): Promise<{ ok: boolean; generatedDocumentId?: string; pdfUrl?: string; errors?: string[] }> {
     if (!this.state.selectedTemplateId) {
       const errors = ['Select a template before generating a document.'];
       this.state = { ...this.state, errors };
@@ -258,7 +277,36 @@ export class GenerateDocumentController {
       generatedDocumentId = saved.id;
     }
 
-    const message = shouldSave ? 'Document generated and saved.' : 'Document generated.';
+    let pdfUrl: string | undefined;
+    if (options.generatePdf) {
+      if (!this.api.generatePdf) {
+        const errors = ['PDF generation is not available in this environment.'];
+        this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: errors[0], generatedDocumentId };
+        this.api.notify?.({ type: 'error', message: errors[0] });
+        return { ok: false, generatedDocumentId, errors };
+      }
+      const pdf = await this.api.generatePdf({
+        html: rendered.html,
+        generatedDocumentId,
+        sourceObjectName: this.state.primaryObjectType,
+        sourceRecordId: this.state.primaryRecordId,
+        principal: this.principal,
+      });
+      if (!pdf.ok) {
+        const errors = messagesFromErrors(pdf.errors);
+        const message = errors[0] ?? 'PDF generation failed.';
+        this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: message, generatedDocumentId };
+        this.api.notify?.({ type: 'error', message });
+        return { ok: false, generatedDocumentId, errors };
+      }
+      pdfUrl = pdf.pdfUrl;
+    }
+
+    const message = [
+      'Document generated',
+      shouldSave ? 'and saved' : '',
+      options.generatePdf ? 'with PDF' : '',
+    ].filter(Boolean).join(' ') + '.';
     this.state = {
       ...this.state,
       isGenerating: false,
@@ -267,9 +315,10 @@ export class GenerateDocumentController {
       errors: [],
       statusMessage: message,
       generatedDocumentId,
+      pdfUrl,
     };
     this.api.notify?.({ type: 'success', message });
-    return { ok: true, generatedDocumentId };
+    return { ok: true, generatedDocumentId, pdfUrl };
   }
 }
 
@@ -348,10 +397,10 @@ export const GenerateDocumentComponent = ({
   const canGenerate = !state.isGenerating && Boolean(state.selectedTemplateId) && Boolean(primaryRecordId);
 
   const onGenerate = async (): Promise<void> => {
-    const result = await controller.generate({ save: state.shouldSave });
+    const result = await controller.generate({ save: state.shouldSave, generatePdf });
     sync();
     if (result.ok) {
-      void enqueueSnackbar({ message: state.shouldSave ? 'Document generated and saved.' : 'Document generated.', variant: 'success' });
+      void enqueueSnackbar({ message: controller.state.statusMessage || 'Document generated.', variant: 'success' });
     } else {
       void enqueueSnackbar({ message: result.errors?.[0] ?? 'Document generation failed.', variant: 'error' });
     }
@@ -418,6 +467,7 @@ export const GenerateDocumentComponent = ({
         aria-label="Rendered document preview"
         title="Rendered document preview"
         srcDoc={state.previewHtml}
+        sandbox=""
         style={{ width: '100%', minHeight: '320px', border: '1px solid #ddd' }}
       />
 

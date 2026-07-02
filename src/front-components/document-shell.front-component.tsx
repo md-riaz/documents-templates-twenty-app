@@ -86,6 +86,6 @@ export const DocumentShellComponent = ({
 export default defineFrontComponent({
   universalIdentifier: DOCUMENT_SHELL_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'document-shell',
-  description: 'Record shell showing generated-document history and an inline document generator.',
+  description: 'Record shell showing generated-document history for this record. Use the "Generate Document" command menu item to create a new one.',
   component: DocumentShellComponent,
 });

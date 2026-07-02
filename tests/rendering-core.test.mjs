@@ -148,6 +148,39 @@ test('template validation reports syntax errors and strict missing variables', (
   assert.equal(render.errors[0].code, 'MISSING_REQUIRED_VARIABLE');
 });
 
+test('template validation does not flag each/with-relative variables as missing top-level context', () => {
+  const eachResult = validateHandlebarsTemplate(
+    '{{#each items}}{{name}}{{/each}}',
+    { items: [{ name: 'Ada' }] },
+    { strictMissingVariables: true },
+  );
+  assert.equal(eachResult.valid, true, `expected no false-positive missing variable, got: ${JSON.stringify(eachResult.errors)}`);
+
+  const withResult = validateHandlebarsTemplate(
+    '{{#with company}}{{name}}{{/with}}',
+    { company: { name: 'Acme' } },
+    { strictMissingVariables: true },
+  );
+  assert.equal(withResult.valid, true, `expected no false-positive missing variable, got: ${JSON.stringify(withResult.errors)}`);
+
+  // An explicit `../` escape out of the block scope is still validated normally.
+  const escapedResult = validateHandlebarsTemplate(
+    '{{#each items}}{{../missingTopLevel}}{{/each}}',
+    { items: [{ name: 'Ada' }] },
+    { strictMissingVariables: true },
+  );
+  assert.equal(escapedResult.valid, false);
+  assert.deepEqual(escapedResult.errors.map((error) => error.path), ['missingTopLevel']);
+
+  // A genuinely missing top-level variable outside any block is still caught.
+  const genuinelyMissing = validateHandlebarsTemplate(
+    'Hello {{missing.var}}',
+    {},
+    { strictMissingVariables: true },
+  );
+  assert.equal(genuinelyMissing.valid, false);
+});
+
 test('extractReferencedVariables walks the full Handlebars AST, including {{else if}} chains, {{#each}} bodies, and subexpressions', () => {
   const source = [
     '{{#if opportunity.won}}<p>{{opportunity.amount}}</p>',

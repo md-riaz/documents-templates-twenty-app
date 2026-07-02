@@ -22,7 +22,7 @@ test('logic-function modules exist as source files', () => {
 const renderModule = await import('../dist/logic-functions/render-template.logic-function.js');
 const pdfModule = await import('../dist/logic-functions/generate-pdf.logic-function.js');
 const saveModule = await import('../dist/logic-functions/save-generated-document.logic-function.js');
-const { createCoreRecordApi, coreClientToGraphqlClient } = await import('../dist/logic-functions/core-client-adapters.js');
+const { createCoreRecordApi, createCoreStorageAdapter } = await import('../dist/logic-functions/core-client-adapters.js');
 
 const { runRenderTemplate } = renderModule;
 const { runGeneratePdf } = pdfModule;
@@ -143,17 +143,40 @@ test('CoreApiClient record bridge translates getRecord/createRecord/updateRecord
   assert.deepEqual(client.updates[0], { id: 'generated-1', data: { status: 'PDF_GENERATED' } });
 });
 
-test('coreClientToGraphqlClient forwards raw requests and normalizes the { data } envelope', async () => {
-  const calls = [];
-  const bridged = coreClientToGraphqlClient({
-    query: async (request) => {
-      calls.push(request);
-      return { data: { uploadFile: { id: 'file-1', url: 'twenty://files/x', name: 'x' } } };
+test('createCoreStorageAdapter uploads and attaches PDFs via genql mutations (not a raw-GraphQL bridge)', async () => {
+  const mutations = [];
+  const fakeClient = {
+    async mutation(request) {
+      mutations.push(request);
+      const field = Object.keys(request)[0];
+      if (field === 'uploadFile') {
+        assert.equal(request.uploadFile.__args.file.contentType, 'application/pdf');
+        assert.match(request.uploadFile.__args.file.url, /^data:application\/pdf;base64,/);
+        return { uploadFile: { id: 'file-1', url: 'twenty://files/invoice.pdf', name: 'invoice.pdf' } };
+      }
+      if (field === 'createAttachment') {
+        const data = request.createAttachment.__args.data;
+        assert.deepEqual(data.file, [{ url: 'twenty://files/invoice.pdf', name: 'invoice.pdf', id: 'file-1' }]);
+        assert.equal(data.targetPersonId, 'person-1');
+        return { createAttachment: { id: 'attachment-1', name: 'invoice.pdf' } };
+      }
+      throw new Error(`unexpected mutation field ${field}`);
     },
+  };
+
+  const storage = createCoreStorageAdapter(fakeClient);
+  const uploaded = await storage.uploadFile({
+    key: 'k', fileName: 'invoice.pdf', body: new Uint8Array([37, 80, 68, 70]), contentType: 'application/pdf',
   });
-  const result = await bridged.query({ query: 'mutation UploadFile { ... }', variables: { file: {} } });
-  assert.equal(result.data.uploadFile.id, 'file-1');
-  assert.equal(calls[0].query, 'mutation UploadFile { ... }');
+  assert.equal(uploaded.url, 'twenty://files/invoice.pdf');
+  assert.equal(uploaded.fileId, 'file-1');
+
+  const attached = await storage.attachFileToRecord({
+    objectName: 'person', recordId: 'person-1', fileId: uploaded.fileId, fileUrl: uploaded.url,
+    fileName: 'invoice.pdf', contentType: 'application/pdf',
+  });
+  assert.equal(attached.attachmentId, 'attachment-1');
+  assert.equal(mutations.length, 2);
 });
 
 test('render -> save -> generate PDF chains through the logic function handlers', async () => {

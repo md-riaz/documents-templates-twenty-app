@@ -206,11 +206,9 @@ export {
   WORKFLOW_ACTION_PRINCIPAL,
   createCoreRecordApi,
   createCoreStorageAdapter,
-  coreClientToGraphqlClient,
   type CoreRecordApi,
   type GenqlClientLike,
   type GenqlRequest,
-  type RawGraphqlClient,
 } from './logic-functions/core-client-adapters';
 export {
   createDocumentsTemplatesSdk,

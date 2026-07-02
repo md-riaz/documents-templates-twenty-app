@@ -44,11 +44,25 @@ const BUILT_IN_HELPER_NAMES = new Set(['formatDate', 'formatCurrency', 'uppercas
  */
 class ReferencedVariableCollector extends Handlebars.Visitor {
   public readonly variables = new Set<string>();
+  /**
+   * Names collected while inside a `{{#each}}`/`{{#with}}` block body, at
+   * scope depth 0 (i.e. NOT prefixed with `../`). These are resolved relative
+   * to the current loop item / `with` target at render time (e.g. `{{name}}`
+   * inside `{{#each items}}` refers to `item.name`, not a top-level `name`),
+   * so `validateHandlebarsTemplate` must not flag them as missing top-level
+   * variables — doing so previously broke perfectly valid templates like
+   * `{{#each items}}{{name}}{{/each}}`. An explicit `../foo` still escapes to
+   * the enclosing scope and is validated normally (not added here).
+   */
+  public readonly scopedVariables = new Set<string>();
+  private scopeDepth = 0;
 
   PathExpression(path: hbs.AST.PathExpression): void {
     if (path.data) return;
     if (!path.parts || path.parts.length === 0) return;
-    this.variables.add(path.parts.join('.'));
+    const name = path.parts.join('.');
+    this.variables.add(name);
+    if (this.scopeDepth > 0 && !path.depth) this.scopedVariables.add(name);
   }
 
   MustacheStatement(mustache: hbs.AST.MustacheStatement): void {
@@ -67,7 +81,17 @@ class ReferencedVariableCollector extends Handlebars.Visitor {
     // context variable, so it is intentionally not visited here.
     this.acceptArray(block.params);
     this.acceptKey(block, 'hash');
+
+    const blockName = (block.path as hbs.AST.PathExpression | undefined)?.original;
+    const opensNewScope = blockName === 'each' || blockName === 'with';
+
+    if (opensNewScope) this.scopeDepth += 1;
     this.acceptKey(block, 'program');
+    if (opensNewScope) this.scopeDepth -= 1;
+
+    // `{{else}}` in an `#each`/`#with` block runs in the ORIGINAL (outer)
+    // scope, not the loop item / with-target, so visit it without the extra
+    // scope depth even though it's part of the same block.
     this.acceptKey(block, 'inverse');
   }
 
@@ -125,6 +149,9 @@ export const validateHandlebarsTemplate = (
   const warnings: string[] = [];
 
   for (const variable of referencedVariables) {
+    // Scoped (each/with-relative) variables can't be checked against the
+    // top-level context — see ReferencedVariableCollector.scopedVariables.
+    if (collector.scopedVariables.has(variable)) continue;
     if (!hasPath(context, variable)) {
       const error = createMissingVariableError(variable);
       if (options.strictMissingVariables) errors.push(error);

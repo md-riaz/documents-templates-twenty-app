@@ -40,13 +40,31 @@ export const normalizeProviderName = (name: string): string => {
 
 const providerKey = (name: string): string => normalizeProviderName(name).toLowerCase();
 
+/**
+ * `defaultWhenUnconfigured` controls what happens when the caller has NOT
+ * configured `readableFields[objectName]` at all:
+ *  - 'allow-all' (the primary object the caller explicitly asked to load):
+ *    trust the caller to have configured permissions for what it asked for.
+ *  - 'deny-all' (any object reached only as a side effect, e.g. a relation
+ *    pulled in by expandRelations): the caller never asked for this object,
+ *    so an absent allowlist must NOT be read as "expose everything" — that
+ *    would let relation expansion leak fields the caller never vetted.
+ */
 const filterReadableFields = (
   objectName: string,
   record: Record<string, unknown>,
-  permissions?: ContextProviderPermissions,
+  permissions: ContextProviderPermissions | undefined,
+  defaultWhenUnconfigured: 'allow-all' | 'deny-all',
 ): { record: Record<string, unknown>; warnings: string[] } => {
   const readable = permissions?.readableFields?.[objectName];
-  if (!readable) return { record, warnings: [] };
+
+  if (!readable) {
+    if (defaultWhenUnconfigured === 'allow-all') return { record, warnings: [] };
+    return {
+      record: {},
+      warnings: [`No readableFields configured for ${objectName}; omitted all fields (deny-by-default for relation-expanded objects).`],
+    };
+  }
 
   const allowed = new Set(readable);
   const filtered: Record<string, unknown> = {};
@@ -101,9 +119,8 @@ const expandRelations = async (
 
   const expanded: Record<string, unknown> = { ...record };
 
-  for (const field of fields) {
-    if (!field.isRelation || !field.relationTargetObjectName) continue;
-
+  const relationFields = fields.filter((field) => field.isRelation && field.relationTargetObjectName);
+  const results = await Promise.all(relationFields.map(async (field) => {
     const joinColumnValue = record[`${field.name}Id`];
     const inlineValue = record[field.name];
     const relatedId =
@@ -112,23 +129,37 @@ const expandRelations = async (
         : typeof inlineValue === 'string'
           ? inlineValue
           : undefined;
-    if (!relatedId) continue;
+    if (!relatedId) return null;
 
-    const targetObject = normalizeProviderName(field.relationTargetObjectName);
+    const targetObject = normalizeProviderName(field.relationTargetObjectName!);
     try {
       const related = (await getRecord(targetObject, relatedId)) ?? { id: relatedId };
-      const filteredRelated = filterReadableFields(targetObject, related, input.permissions);
-      warnings.push(...filteredRelated.warnings);
+      // 'deny-all': the caller asked to load `objectName`, not this related
+      // object — an unconfigured readableFields entry here must not expose
+      // the full related record (see filterReadableFields's docstring).
+      const filteredRelated = filterReadableFields(targetObject, related, input.permissions, 'deny-all');
       const label = deriveRelationLabel(filteredRelated.record);
-      expanded[field.name] = {
-        ...filteredRelated.record,
-        ...(label && !('label' in filteredRelated.record) ? { label } : {}),
+      return {
+        fieldName: field.name,
+        warnings: filteredRelated.warnings,
+        value: {
+          ...filteredRelated.record,
+          ...(label && !('label' in filteredRelated.record) ? { label } : {}),
+        },
       };
     } catch (error) {
-      warnings.push(
-        `Could not expand ${targetObject} relation "${field.name}": ${error instanceof Error ? error.message : String(error)}`,
-      );
+      return {
+        fieldName: field.name,
+        warnings: [`Could not expand ${targetObject} relation "${field.name}": ${error instanceof Error ? error.message : String(error)}`],
+        value: undefined,
+      };
     }
+  }));
+
+  for (const result of results) {
+    if (!result) continue;
+    warnings.push(...result.warnings);
+    if (result.value !== undefined) expanded[result.fieldName] = result.value;
   }
 
   return expanded;
@@ -160,7 +191,10 @@ export const loadGenericRecordContext = async (input: ContextProviderInput): Pro
     }
   }
 
-  const filtered = filterReadableFields(objectName, record, input.permissions);
+  // 'allow-all': this is the object the caller explicitly asked to load, so an
+  // unconfigured readableFields entry is treated as "trust the caller" — unlike
+  // relation-expanded objects (see expandRelations), which default to deny-all.
+  const filtered = filterReadableFields(objectName, record, input.permissions, 'allow-all');
   warnings.push(...filtered.warnings);
 
   return {

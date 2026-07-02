@@ -42,21 +42,19 @@
   automatically. The old hardcoded `createDefaultContextProviders`/`loadDefaultRecordContext`
   helpers for a fixed set of standard objects (Company/Person/Opportunity/Task/Note/CalendarEvent)
   have been removed in favor of the generic, metadata-aware path.
+- **Front-component and workflow registration fixed.** The template editor, generate-document
+  modal, PDF settings panel, and document-shell UI are now real React components registered via
+  `defineFrontComponent`; the three workflow steps (Render Template, Generate PDF, Save Generated
+  Document) are registered as Twenty **logic functions** carrying `workflowActionTriggerSettings`
+  (`src/logic-functions/`) — Twenty has no separate "workflow action" registration concept, so the
+  old `src/workflow-actions/` descriptor module has been removed. Verified against a real
+  `twenty dev:build` and a live sync: the built manifest registers all 3 front components, all 3
+  logic functions, the "Generate Document" command-menu item, and the Document Template page
+  layout/tab.
+- **Real Handlebars renderer.** `src/logic/rendering/handlebars-renderer.ts` now delegates to the
+  `handlebars` npm library instead of a hand-rolled subset, giving template authors standard syntax
+  (`{{else if}}`, `{{#with}}`, subexpressions, real partials).
 - Bumped to v0.2.0.
-
-### In progress
-
-These items are visibly underway in the codebase but not yet complete as of this writing. They are
-owned by concurrent workstreams — check back in a future release-notes update once they land:
-
-- **Front-component / workflow-action registration fix**, so the app's UI surfaces and workflow
-  steps reliably appear in Twenty. Workflow steps are being modeled as logic functions carrying
-  `workflowActionTriggerSettings` rather than a separate app-internal "workflow action" concept
-  (`src/logic-functions/` does not exist yet in this checkout; `src/workflow-actions/` still holds
-  the old-style definition).
-- **Real Handlebars renderer.** The `handlebars` npm package is now a declared dependency
-  (`package.json`), but `src/logic/rendering/handlebars-renderer.ts` still implements a hand-rolled
-  Handlebars subset rather than delegating to the library — the swap has not landed yet.
 
 ## 0.1.0
 

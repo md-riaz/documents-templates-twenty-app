@@ -1,16 +1,9 @@
+import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { defineFrontComponent } from 'twenty-sdk/define';
 
 import { TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
-
-import type { PdfSettings } from '../logic/settings/pdf-settings';
-import {
-  PdfSettingsFields,
-  createPdfSettingsState,
-  validatePdfSettingsState,
-  type PdfSettingsState,
-} from './pdf-settings.front-component';
 
 export type TemplateEditorTab = 'html' | 'css' | 'preview' | 'settings';
 
@@ -306,10 +299,9 @@ export type TemplateEditorComponentProps = {
   /** Injected by the real workstream; falls back to a local HTML+CSS preview. */
   api?: TemplateEditorApi;
   template?: Partial<TemplateEditorTemplate>;
-  pdfSettings?: Partial<PdfSettings>;
 };
 
-export const TemplateEditorComponent = ({ api, template, pdfSettings }: TemplateEditorComponentProps) => {
+export const TemplateEditorComponent = ({ api, template }: TemplateEditorComponentProps) => {
   const controllerRef = useRef<TemplateEditorController | null>(null);
   const controller = (controllerRef.current ??= new TemplateEditorController({
     initialState: createTemplateEditorState({ template }),
@@ -317,7 +309,6 @@ export const TemplateEditorComponent = ({ api, template, pdfSettings }: Template
   }));
 
   const [state, setState] = useState<TemplateEditorState>(() => controller.state);
-  const [pdf, setPdf] = useState<PdfSettingsState>(() => createPdfSettingsState({ settings: pdfSettings }));
   const [availableFields, setAvailableFields] = useState<TemplateEditorVariable[]>([]);
   const sync = (): void => setState(controller.state);
 
@@ -363,11 +354,23 @@ export const TemplateEditorComponent = ({ api, template, pdfSettings }: Template
     sync();
   };
 
-  const pdfErrors = validatePdfSettingsState(pdf);
+  const fieldLabelStyle: CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, fontWeight: 500 };
+  const textInputStyle: CSSProperties = { padding: '6px 8px', border: '1px solid #d0d5dd', borderRadius: 4, font: 'inherit' };
+  const textAreaStyle: CSSProperties = { ...textInputStyle, width: '100%', minHeight: 220, fontFamily: 'monospace', fontSize: 13, resize: 'vertical', boxSizing: 'border-box' };
 
   return (
-    <section className="template-editor" aria-label="Template editor" data-responsive-layout="split-stack">
-      <div role="tablist" aria-label="Template editor tabs" onKeyDown={onTabKeyDown}>
+    <section
+      className="template-editor"
+      aria-label="Template editor"
+      data-responsive-layout="split-stack"
+      style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 16, maxWidth: 720 }}
+    >
+      <div
+        role="tablist"
+        aria-label="Template editor tabs"
+        onKeyDown={onTabKeyDown}
+        style={{ display: 'flex', gap: 4, borderBottom: '1px solid #e4e7ec' }}
+      >
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -376,93 +379,111 @@ export const TemplateEditorComponent = ({ api, template, pdfSettings }: Template
             aria-selected={state.activeTab === tab.id}
             data-tab={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            style={{
+              padding: '8px 12px',
+              border: 'none',
+              borderBottom: state.activeTab === tab.id ? '2px solid #4b5eff' : '2px solid transparent',
+              background: 'transparent',
+              fontWeight: state.activeTab === tab.id ? 600 : 400,
+              cursor: 'pointer',
+            }}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <label>
+      <label style={fieldLabelStyle}>
         Name
         <input
           aria-label="Template name"
           value={state.name}
           onChange={(event) => updateField('name', event.target.value)}
+          style={textInputStyle}
         />
       </label>
 
       {state.activeTab === 'html' ? (
-        <label>
+        <label style={fieldLabelStyle}>
           HTML
           <textarea
             aria-label="HTML template source"
             value={state.htmlSource}
             onChange={(event) => updateField('htmlSource', event.target.value)}
+            style={textAreaStyle}
           />
         </label>
       ) : null}
 
       {state.activeTab === 'css' ? (
-        <label>
+        <label style={fieldLabelStyle}>
           CSS
           <textarea
             aria-label="CSS template source"
             value={state.cssSource}
             onChange={(event) => updateField('cssSource', event.target.value)}
+            style={textAreaStyle}
           />
         </label>
       ) : null}
 
       {state.activeTab === 'preview' ? (
-        <label>
+        <label style={fieldLabelStyle}>
           Preview JSON
           <textarea
             aria-label="Preview JSON data"
             value={state.previewJson}
             onChange={(event) => updateField('previewJson', event.target.value)}
+            style={textAreaStyle}
           />
         </label>
       ) : null}
 
       {state.activeTab === 'settings' ? (
-        <div aria-label="Template settings">
-          <label>
+        <div aria-label="Template settings" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <label style={fieldLabelStyle}>
             Renderer
             <select
               aria-label="Template renderer"
               value={state.renderer}
               onChange={(event) => updateField('renderer', event.target.value)}
+              style={textInputStyle}
             >
+              {/* HANDLEBARS is the only renderer supported by the object schema and renderTemplateLogic; do not add options here until a renderer is fully implemented end-to-end. */}
               <option value="HANDLEBARS">Handlebars</option>
-              <option value="MJML">MJML</option>
             </select>
           </label>
-          <label>
+          <label style={fieldLabelStyle}>
             Status
             <select
               aria-label="Template status"
               value={state.status}
               onChange={(event) => updateField('status', event.target.value)}
+              style={textInputStyle}
             >
               <option value="DRAFT">Draft</option>
               <option value="ACTIVE">Active</option>
               <option value="ARCHIVED">Archived</option>
             </select>
           </label>
-          <label>
+          <label style={fieldLabelStyle}>
             Bound object
             <input
               aria-label="Bound object name"
               placeholder="e.g. company, person, or any custom object name"
               value={state.boundObjectName}
               onChange={(event) => updateField('boundObjectName', event.target.value)}
+              style={textInputStyle}
             />
           </label>
-          <PdfSettingsFields settings={pdf} onChange={(next) => setPdf({ ...next, statusMessage: pdf.statusMessage })} />
         </div>
       ) : null}
 
-      <aside role="listbox" aria-label="Available template variables">
+      <aside
+        role="listbox"
+        aria-label="Available template variables"
+        style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}
+      >
         {mergeTemplateVariables(state.variables, availableFields).map((variable) => (
           <button
             key={variable.path}
@@ -471,24 +492,36 @@ export const TemplateEditorComponent = ({ api, template, pdfSettings }: Template
             aria-selected={false}
             data-variable={variable.path}
             onClick={() => updateField('htmlSource', insertVariableExpression(state.htmlSource, variable.path, state.htmlSource.length).value)}
+            style={{ padding: '4px 8px', borderRadius: 999, border: '1px solid #d0d5dd', background: '#f9fafb', fontSize: 12, cursor: 'pointer' }}
           >
             {variable.label ?? variable.path}
           </button>
         ))}
       </aside>
 
-      <iframe
-        aria-label="Template live preview"
-        title="Template live preview"
-        srcDoc={state.previewHtml}
-        style={{ width: '100%', minHeight: '320px', border: '1px solid #ddd' }}
-      />
+      <div style={fieldLabelStyle}>
+        Preview
+        <iframe
+          aria-label="Template live preview"
+          title="Template live preview"
+          srcDoc={state.previewHtml}
+          sandbox=""
+          style={{ width: '100%', height: 320, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
+        />
+      </div>
 
-      <button type="button" onClick={() => void onSave()}>Save template</button>
-
-      <output aria-live="polite">
-        {state.statusMessage || [...state.validationErrors, ...pdfErrors].join(' ')}
-      </output>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button
+          type="button"
+          onClick={() => void onSave()}
+          style={{ padding: '8px 16px', border: 'none', borderRadius: 4, background: '#4b5eff', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+        >
+          Save template
+        </button>
+        <output aria-live="polite" style={{ fontSize: 13, color: state.validationErrors.length ? '#b42318' : '#475467' }}>
+          {state.statusMessage || state.validationErrors.join(' ')}
+        </output>
+      </div>
     </section>
   );
 };
@@ -496,6 +529,6 @@ export const TemplateEditorComponent = ({ api, template, pdfSettings }: Template
 export default defineFrontComponent({
   universalIdentifier: TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'template-editor',
-  description: 'HTML/CSS template editor with live preview, preview JSON, variable browser, and PDF settings.',
+  description: 'HTML/CSS template editor with live preview, preview JSON, and a schema-backed variable browser.',
   component: TemplateEditorComponent,
 });

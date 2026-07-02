@@ -1,5 +1,4 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { createTwentyStorageAdapter } from '../adapters/twenty-storage.adapter';
 import type { PdfStorageAdapter } from '../logic/generate-pdf';
 import type { PermissionPrincipal } from '../permissions/permission-guards';
 
@@ -82,24 +81,87 @@ export const createCoreRecordApi = (client: CoreApiClient): CoreRecordApi => {
 };
 
 /**
- * The existing Twenty storage adapter expects a raw-GraphQL client shaped as
- * `{ query({ query, variables }) => Promise<{ data }> }`. The generated CoreApiClient
- * exposes a genql executor on `client.query`, so we forward the request through and
- * normalize the `{ data }` envelope. See the report note on SDK uncertainty: the exact
- * request shape accepted by the generated client is only known once it is generated on
- * a live Twenty instance; this forwards the adapter's request object unchanged.
+ * PDF storage adapter backed by Twenty's native clients.
+ *
+ * IMPORTANT (confirmed against docs.twenty.com/developers/extend/apps/logic/logic-functions):
+ * `CoreApiClient.query`/`.mutation` are genql-style selection-set executors (NOT a raw
+ * `{ query, variables }` GraphQL client) — an earlier version of this file incorrectly
+ * bridged `client.query` into `../adapters/twenty-storage.adapter.ts`'s raw-GraphQL
+ * `{ query({query, variables}) }` shape, which would fail at runtime. `MetadataApiClient`
+ * is the client Twenty documents for file uploads (`uploadFile(buffer, filename, mimeType,
+ * fieldUniversalIdentifier)`), but that method uploads into a FILES-type *field* on an
+ * object — this app's `GeneratedDocument` object stores `pdfUrl` as plain TEXT and attaches
+ * via Twenty's generic, polymorphic Attachment entity instead (matching the mutation shapes
+ * already used in `../adapters/twenty-storage.adapter.ts`'s raw-GraphQL implementation), so
+ * we use `CoreApiClient.upload` (the client's own file-upload member, generated per-workspace
+ * and typed `any` in the SDK) for the upload step and `CoreApiClient.mutation` for creating
+ * the Attachment record, re-expressing the same `uploadFile`/`createAttachment` argument
+ * shapes as genql calls instead of raw GraphQL documents.
+ *
+ * `CoreApiClient.upload`'s exact generated signature cannot be confirmed from package types
+ * alone (it depends on the workspace's introspected schema) — this should be verified
+ * against a live Twenty instance before relying on it in production.
  */
-export type RawGraphqlClient = {
-  query: (input: { query: string; variables?: Record<string, unknown> }) => Promise<{ data: Record<string, unknown> }>;
+const RECORD_TYPE_FIELD_MAP: Record<string, string> = {
+  company: 'targetCompanyId',
+  person: 'targetPersonId',
+  opportunity: 'targetOpportunityId',
+  task: 'targetTaskId',
+  note: 'targetNoteId',
+  calendarEvent: 'targetCalendarEventId',
+  generatedDocument: 'targetGeneratedDocumentId',
+  documentTemplate: 'targetDocumentTemplateId',
+  workflow: 'targetWorkflowId',
+  workflowVersion: 'targetWorkflowVersionId',
+  workflowRun: 'targetWorkflowRunId',
+  dashboard: 'targetDashboardId',
 };
 
-export const coreClientToGraphqlClient = (client: CoreApiClient): RawGraphqlClient => ({
-  async query(request) {
-    const execute = client.query as unknown as (input: unknown) => Promise<unknown>;
-    const result = await execute(request);
-    return (result ?? { data: {} }) as { data: Record<string, unknown> };
-  },
-});
+const getAttachmentField = (objectName: string): string | undefined => RECORD_TYPE_FIELD_MAP[objectName.toLowerCase()];
 
-export const createCoreStorageAdapter = (client: CoreApiClient): PdfStorageAdapter =>
-  createTwentyStorageAdapter(coreClientToGraphqlClient(client));
+export const createCoreStorageAdapter = (client: CoreApiClient): PdfStorageAdapter => {
+  const genql = asGenql(client);
+
+  return {
+    async uploadFile({ fileName, body, contentType }) {
+      const base64 = Buffer.from(body).toString('base64');
+      const dataUrl = `data:${contentType};base64,${base64}`;
+      // Generic (non-field-scoped) upload mutation, matching the shape already used by
+      // ../adapters/twenty-storage.adapter.ts, re-expressed as a genql selection. This is
+      // distinct from CoreApiClient's own `uploadFile()` convenience method, which uploads
+      // into a specific FILES-type *field* via `fieldMetadataUniversalIdentifier` — this app
+      // has no such field on GeneratedDocument and instead attaches PDFs via Twenty's
+      // generic, polymorphic Attachment entity (see attachFileToRecord below).
+      const result = await genql.mutation({
+        uploadFile: {
+          __args: { file: { name: fileName, url: dataUrl, contentType } },
+          id: true,
+          url: true,
+          name: true,
+        },
+      });
+      const uploaded = result?.uploadFile as { id: string; url: string; name: string } | undefined;
+      if (!uploaded) throw new Error('uploadFile mutation returned no result.');
+      return { url: uploaded.url, fileId: uploaded.id };
+    },
+
+    async attachFileToRecord({ objectName, recordId, fileId, fileUrl, fileName }) {
+      const attachmentField = getAttachmentField(objectName);
+      const attachmentData: Record<string, unknown> = {
+        name: fileName,
+        file: [{ url: fileUrl, name: fileName, id: fileId }],
+        ...(attachmentField ? { [attachmentField]: recordId } : {}),
+      };
+
+      const result = await genql.mutation({
+        createAttachment: {
+          __args: { data: attachmentData },
+          id: true,
+          name: true,
+        },
+      });
+      const attached = result?.createAttachment as { id: string; name: string } | undefined;
+      return { attachmentId: attached?.id };
+    },
+  };
+};

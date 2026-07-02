@@ -135,6 +135,23 @@ test('renderTemplateLogic uses template.boundObjectName as the object type, over
   assert.equal('person' in output.context, false, 'bound object should override the ad-hoc primaryObjectType');
 });
 
+test('renderTemplateLogic loads context for a bound template given only primaryRecordId (no primaryObjectType at all)', async () => {
+  const api = createFixtureApi();
+  const output = await renderTemplateLogic({
+    templateId: 'bound-template',
+    // This is the primary motivating use case for boundObjectName: the caller
+    // only has a record id, and relies entirely on the template's own binding
+    // to resolve the object type. Must NOT be rejected for lacking primaryObjectType.
+    primaryRecordId: 'op-1',
+    principal: generatorPrincipal,
+    api,
+  });
+
+  assert.equal(output.ok, true);
+  assert.match(output.html, /Big Deal/);
+  assert.equal(output.context.opportunity.name, 'Big Deal');
+});
+
 test('renderTemplateLogic supports previewData with viewTemplates permission only', async () => {
   const api = createFixtureApi();
   const output = await renderTemplateLogic({

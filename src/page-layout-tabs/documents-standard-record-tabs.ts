@@ -23,7 +23,7 @@ const makeDocumentsPageLayoutTab = (object: keyof typeof DOCUMENTS_TAB_UNIVERSAL
     {
       universalIdentifier: DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS[object],
       title: 'Generated Documents',
-      type: 'front-component',
+      type: 'FRONT_COMPONENT',
       gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
       configuration: {
         configurationType: 'FRONT_COMPONENT',

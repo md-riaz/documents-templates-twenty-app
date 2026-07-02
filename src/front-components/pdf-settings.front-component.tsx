@@ -17,7 +17,6 @@ const escapeAttribute = (value: unknown): string =>
 
 export const createPdfSettingsState = (input: { settings?: PdfSettingsInput; statusMessage?: string } = {}): PdfSettingsState => ({
   ...normalizePdfSettings({ defaults: DEFAULT_PDF_SETTINGS, override: input.settings }),
-  ...(input.settings ?? {}),
   statusMessage: input.statusMessage ?? '',
 } as PdfSettingsState);
 

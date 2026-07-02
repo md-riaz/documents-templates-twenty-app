@@ -51,10 +51,13 @@ const RELATION_TYPES = new Set(['RELATION', 'MORPH_RELATION']);
  * `objects.__args` is required by the schema (paging + filter are non-optional),
  * so we request the active objects and their `fieldsList`, resolving each
  * relation's target object name via `relation.targetObjectMetadata.nameSingular`.
+ * `filter.isActive` is confirmed (via the real generated schema's `ObjectFilter`
+ * type) to be the only relevant scoping filter available — an empty `filter: {}`
+ * would also return inactive/archived objects.
  */
 const OBJECTS_QUERY = {
   objects: {
-    __args: { paging: { first: 1000 }, filter: {} },
+    __args: { paging: { first: 1000 }, filter: { isActive: { eq: true } } },
     edges: {
       node: {
         nameSingular: true,
@@ -136,6 +139,13 @@ export const createMetadataApi = (client?: MetadataQueryClient): MetadataApi => 
 
   return {
     listObjects: fetchObjects,
+    // NOTE: cannot be scoped to a single object server-side — confirmed against
+    // the real generated metadata schema that `ObjectFilter` only supports
+    // `id`/`isRemote`/`isActive`/`isSystem`/`isUIEditable`/`isUICreatable`/
+    // `isUIReadOnly`/`isSearchable` (no name-based filter), and the schema's
+    // singular `object` query takes a UUID `id`, not a `nameSingular` — which
+    // callers here don't have. Wrap this `MetadataApi` in `createCachedMetadataApi`
+    // to avoid repeated whole-catalog fetches on hot paths.
     async getFields(objectNameSingular: string): Promise<MetadataObjectField[]> {
       const objects = await fetchObjects();
       const match = objects.find((object) => object.nameSingular === objectNameSingular);

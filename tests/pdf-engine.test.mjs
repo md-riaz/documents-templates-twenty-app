@@ -106,9 +106,19 @@ test('PDF settings UI exposes accessible admin fields and validation', () => {
   assert.match(markup, /aria-live="polite"/);
 
   assert.deepEqual(validatePdfSettingsState(state), []);
-  const validationErrors = validatePdfSettingsState(createPdfSettingsState({ settings: { marginTop: '-1px', format: 'Receipt' } })).join('\n');
+
+  // validatePdfSettingsState must be checked against RAW (non-normalized) input
+  // here — createPdfSettingsState always normalizes invalid values to safe
+  // defaults (that's the point of normalization), so it can never surface an
+  // "unsupported format" error itself.
+  const validationErrors = validatePdfSettingsState({ marginTop: '-1px', format: 'Receipt' }).join('\n');
   assert.match(validationErrors, /Unsupported PDF format/);
   assert.match(validationErrors, /Margin top must be a positive CSS length/);
+
+  // createPdfSettingsState normalizes invalid values instead of passing them through.
+  const normalizedFromInvalid = createPdfSettingsState({ settings: { marginTop: '-1px', format: 'Receipt' } });
+  assert.deepEqual(validatePdfSettingsState(normalizedFromInvalid), []);
+  assert.equal(normalizedFromInvalid.format, DEFAULT_PDF_SETTINGS.format);
 });
 
 test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to source record, and updates GeneratedDocument', async () => {

@@ -67,6 +67,15 @@ export const runSaveGeneratedDocument = async (
     principal: deps.principal ?? WORKFLOW_ACTION_PRINCIPAL,
   });
 
+  if (!saved.ok) {
+    // Throw so the workflow step actually surfaces as failed, rather than
+    // returning a success-shaped output with an undefined generatedDocumentId
+    // — the audit record was never created, and the workflow author needs to
+    // see that, not a silently "successful" step.
+    const message = saved.errors.map((error) => error.userMessage || error.message).join('; ') || 'Failed to save generated document.';
+    throw new Error(message);
+  }
+
   return {
     generatedDocumentId: saved.id,
     pdfUrl: input.pdfUrl ?? undefined,
