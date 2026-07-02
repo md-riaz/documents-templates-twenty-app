@@ -1595,7 +1595,7 @@
       "componentName": "TemplateEditorComponent",
       "sourceComponentPath": "src/front-components/template-editor.front-component.tsx",
       "builtComponentPath": "src/front-components/template-editor.front-component.mjs",
-      "builtComponentChecksum": "f96fe6bb045d79c7c5b6f5519d277d8b",
+      "builtComponentChecksum": "d8e28b2bef594809af8c92c1394f91c2",
       "isHeadless": false,
       "usesSdkClient": true
     }
