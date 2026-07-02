@@ -512,13 +512,13 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   }
 
   return (
-    <section aria-label="Template preview" style={{ padding: 16, height: '100%' }}>
+    <section aria-label="Template preview" style={{ padding: 16, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)', minHeight: 480 }}>
       <iframe
         aria-label="Template preview"
         title="Template preview"
         srcDoc={previewHtml}
         sandbox=""
-        style={{ width: '100%', height: '100%', minHeight: 480, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
+        style={{ width: '100%', flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
       />
       {errorMessage ? (
         <output aria-live="polite" style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#b42318' }}>
