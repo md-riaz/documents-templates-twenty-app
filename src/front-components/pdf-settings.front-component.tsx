@@ -61,7 +61,7 @@ export const renderPdfSettingsMarkup = (state: PdfSettingsState): string => {
 export const pdfSettingsFrontComponent = {
   name: 'pdf-settings',
   label: 'PDF Settings',
-  description: 'Workspace defaults for generated document PDFs.',
+  description: 'Workspace defaults for document PDFs.',
   component: renderPdfSettingsMarkup,
 };
 

@@ -3,9 +3,9 @@ export { default as defaultRole } from './default-role';
 export { default as documentTemplateObject } from './objects/document-template.object';
 export { default as templateCategoryObject } from './objects/template-category.object';
 export { default as templateVersionObject } from './objects/template-version.object';
-export { default as generatedDocumentObject } from './objects/generated-document.object';
+export { default as documentObject } from './objects/document.object';
 export { default as documentTemplateView } from './menu/document-template.view';
-export { default as generatedDocumentView } from './menu/generated-document.view';
+export { default as documentView } from './menu/document.view';
 export { default as documentsTemplatesNavigationMenuItem } from './menu/documents-templates.navigation-menu-item';
 export {
   default as documentShellFrontComponent,
@@ -34,13 +34,13 @@ export {
   GenerateDocumentController,
   createGenerateDocumentState,
   createUnavailableGenerateDocumentApi,
-  filterGeneratedDocumentHistory,
+  filterDocumentHistory,
   generateDocumentFrontComponent,
-  generatedDocumentHistoryFrontComponent,
+  documentHistoryFrontComponent,
   isGenerateDocumentActionVisible,
-  renderGeneratedDocumentHistoryMarkup,
+  renderDocumentHistoryMarkup,
   renderGenerateDocumentModalMarkup,
-  type GeneratedDocumentHistoryRecord,
+  type DocumentHistoryRecord,
   type GenerateDocumentApi,
   type GenerateDocumentComponentProps,
   type GenerateDocumentState,
@@ -142,13 +142,13 @@ export {
   type TemplateVariableInfo,
 } from './logic/list-template-variables';
 export {
-  buildGeneratedDocumentRecord,
-  saveGeneratedDocumentLogic,
-  type GeneratedDocumentRepositoryApi,
-  type GeneratedDocumentStatus,
-  type SaveGeneratedDocumentInput,
-  type SaveGeneratedDocumentOutput,
-} from './logic/save-generated-document';
+  buildDocumentRecord,
+  saveDocumentLogic,
+  type DocumentRepositoryApi,
+  type DocumentStatus,
+  type SaveDocumentInput,
+  type SaveDocumentOutput,
+} from './logic/save-document';
 export {
   DEFAULT_PDF_SETTINGS,
   mapPdfSettingsToBrowserOptions,
@@ -161,26 +161,23 @@ export {
 export {
   createPdfStorageKey,
   generatePdfFromHtmlLogic,
-  type GeneratedDocumentUpdateApi,
+  type DocumentUpdateApi,
   type GeneratePdfFromHtmlInput,
   type GeneratePdfFromHtmlOutput,
   type HtmlToPdfAdapter,
   type PdfStorageAdapter,
-  type SourceRecordAttachmentResult,
+  type RecordAttachmentResult,
 } from './logic/generate-pdf';
 export {
   createPdfAdapter,
   pdfAdapter,
 } from './adapters/pdf.adapter';
 export {
-  createTwentyStorageAdapter,
-} from './adapters/twenty-storage.adapter';
-export {
   ACCEPTANCE_SCENARIOS,
   renderRtlSmokeFixture,
   runAcceptanceScenario,
-  sanitizeGeneratedDocumentHtml,
-  validateGeneratedDocumentAuditTrail,
+  sanitizeDocumentHtml,
+  validateDocumentAuditTrail,
   type AcceptanceContext,
   type AcceptanceScenario,
   type AcceptanceScenarioId,
@@ -197,11 +194,11 @@ export {
   type RenderTemplateActionInput,
 } from './logic-functions/render-template.logic-function';
 export {
-  runSaveGeneratedDocument,
-  type SaveGeneratedDocumentActionDeps,
-  type SaveGeneratedDocumentActionInput,
-  type SaveGeneratedDocumentActionOutput,
-} from './logic-functions/save-generated-document.logic-function';
+  runSaveDocument,
+  type SaveDocumentActionDeps,
+  type SaveDocumentActionInput,
+  type SaveDocumentActionOutput,
+} from './logic-functions/save-document.logic-function';
 export {
   WORKFLOW_ACTION_PRINCIPAL,
   createCoreRecordApi,

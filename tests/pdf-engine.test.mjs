@@ -121,7 +121,7 @@ test('PDF settings UI exposes accessible admin fields and validation', () => {
   assert.equal(normalizedFromInvalid.format, DEFAULT_PDF_SETTINGS.format);
 });
 
-test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to source record, and updates GeneratedDocument', async () => {
+test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, and attaches it only to the Document record', async () => {
   const calls = [];
   const adapter = {
     async renderHtmlToPdf(input) {
@@ -137,39 +137,33 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to 
     async uploadFile(input) {
       calls.push({ type: 'upload', input });
       assert.equal(input.contentType, 'application/pdf');
-      assert.match(input.fileName, /^generated-document-generated-1-.*\.pdf$/);
-      assert.match(input.key, /^generated-documents\/generated-1\/.*\.pdf$/);
+      assert.match(input.fileName, /^document-generated-1-.*\.pdf$/);
+      assert.match(input.key, /^documents\/generated-1\/.*\.pdf$/);
       assert.match(input.body.toString('utf8'), /%PDF-1.4/);
       return { url: `twenty://files/${input.key}`, fileId: 'file-1' };
     },
     async attachFileToRecord(input) {
       calls.push({ type: 'attach', input });
-      assert.ok(['person', 'generatedDocument'].includes(input.objectName));
-      assert.equal(input.recordId, input.objectName === 'person' ? 'person-1' : 'generated-1');
+      assert.equal(input.objectName, 'document');
+      assert.equal(input.recordId, 'generated-1');
       assert.equal(input.fileId, 'file-1');
-      assert.match(input.fileName, /^generated-document-generated-1-.*\.pdf$/);
+      assert.match(input.fileName, /^document-generated-1-.*\.pdf$/);
       assert.equal(input.contentType, 'application/pdf');
-      return { attachmentId: input.objectName === 'person' ? 'attachment-1' : 'attachment-2' };
+      return { attachmentId: 'attachment-1' };
     },
   };
   const api = {
     async updateRecord(objectName, id, data) {
       calls.push({ type: 'update', objectName, id, data });
-      assert.equal(objectName, 'generatedDocument');
+      assert.equal(objectName, 'document');
       assert.equal(id, 'generated-1');
       assert.equal(data.status, 'PDF_GENERATED');
-      assert.match(data.pdfUrl, /^twenty:\/\/files\/generated-documents\/generated-1\//);
-      assert.deepEqual(data.metadata.sourceAttachment, {
-        objectName: 'person',
-        recordId: 'person-1',
-        fileId: 'file-1',
-        attachmentId: 'attachment-1',
-      });
+      assert.match(data.pdfUrl, /^twenty:\/\/files\/documents\/generated-1\//);
       assert.deepEqual(data.metadata.documentAttachment, {
-        objectName: 'generatedDocument',
+        objectName: 'document',
         recordId: 'generated-1',
         fileId: 'file-1',
-        attachmentId: 'attachment-2',
+        attachmentId: 'attachment-1',
       });
       return { id, ...data };
     },
@@ -177,10 +171,8 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to 
 
   const output = await generatePdfFromHtmlLogic({
     html: '<!doctype html><html><body><h1>Hello PDF</h1></body></html>',
-    generatedDocumentId: 'generated-1',
-    sourceObjectName: 'person',
-    sourceRecordId: 'person-1',
-    fileName: 'Generated Document #1.pdf',
+    documentId: 'generated-1',
+    fileName: 'Document #1.pdf',
     principal: generatorPrincipal,
     adapter,
     storage,
@@ -189,22 +181,19 @@ test('generatePdfFromHtmlLogic renders simple HTML, uploads PDF, attaches it to 
   });
 
   assert.equal(output.ok, true);
-  assert.match(output.pdfUrl, /^twenty:\/\/files\/generated-documents\/generated-1\//);
+  assert.match(output.pdfUrl, /^twenty:\/\/files\/documents\/generated-1\//);
   assert.equal(output.status, 'PDF_GENERATED');
   assert.equal(output.bytes, Buffer.byteLength('%PDF-1.4\nHello PDF\n%%EOF'));
-  assert.deepEqual(output.sourceAttachment, {
-    objectName: 'person', recordId: 'person-1', fileId: 'file-1', attachmentId: 'attachment-1',
-  });
   assert.deepEqual(output.documentAttachment, {
-    objectName: 'generatedDocument', recordId: 'generated-1', fileId: 'file-1', attachmentId: 'attachment-2',
+    objectName: 'document', recordId: 'generated-1', fileId: 'file-1', attachmentId: 'attachment-1',
   });
   const callTypes = calls.map((call) => call.type);
   assert.equal(callTypes[0], 'render');
   assert.equal(callTypes.at(-1), 'update');
-  // One upload per attach target (source + generatedDocument) — a single
-  // uploaded file cannot back two Attachments, so each target gets its own.
-  assert.equal(callTypes.filter((type) => type === 'upload').length, 2);
-  assert.equal(callTypes.filter((type) => type === 'attach').length, 2);
+  // Exactly one upload and one attach — the PDF is no longer duplicated onto
+  // a second (source-record) Attachment.
+  assert.equal(callTypes.filter((type) => type === 'upload').length, 1);
+  assert.equal(callTypes.filter((type) => type === 'attach').length, 1);
 });
 
 test('generatePdfFromHtmlLogic enforces permissions and reports adapter/storage failures', async () => {
@@ -220,13 +209,13 @@ test('generatePdfFromHtmlLogic enforces permissions and reports adapter/storage 
 
   const failed = await generatePdfFromHtmlLogic({
     html: '<p>Broken</p>',
-    generatedDocumentId: 'generated-2',
+    documentId: 'generated-2',
     principal: generatorPrincipal,
     adapter: { async renderHtmlToPdf() { throw new Error('Chromium executable missing'); } },
     storage: { async uploadFile() { return { url: 'never' }; } },
     api: {
       async updateRecord(objectName, id, data) {
-        assert.equal(objectName, 'generatedDocument');
+        assert.equal(objectName, 'document');
         assert.equal(id, 'generated-2');
         assert.equal(data.status, 'FAILED');
         assert.match(data.errorMessage, /Chromium executable missing/);
@@ -242,11 +231,11 @@ test('generatePdfFromHtmlLogic enforces permissions and reports adapter/storage 
 
 test('createPdfStorageKey creates safe deterministic storage paths for uploads', () => {
   assert.equal(
-    createPdfStorageKey({ generatedDocumentId: 'generated/1', fileName: 'ACME Invoice #42.pdf', now: new Date('2026-02-03T04:05:06Z') }),
-    'generated-documents/generated-1/2026-02-03T04-05-06-000Z-acme-invoice-42.pdf',
+    createPdfStorageKey({ documentId: 'generated/1', fileName: 'ACME Invoice #42.pdf', now: new Date('2026-02-03T04:05:06Z') }),
+    'documents/generated-1/2026-02-03T04-05-06-000Z-acme-invoice-42.pdf',
   );
   assert.equal(
     createPdfStorageKey({ fileName: '', now: new Date('2026-02-03T04:05:06Z') }),
-    'generated-documents/unsaved/2026-02-03T04-05-06-000Z-document.pdf',
+    'documents/unsaved/2026-02-03T04-05-06-000Z-document.pdf',
   );
 });

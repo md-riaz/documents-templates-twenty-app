@@ -6,7 +6,7 @@ import { GENERATE_PDF_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from '../constants/m
 import { createPdfAdapter } from '../adapters/pdf.adapter';
 import {
   generatePdfFromHtmlLogic,
-  type GeneratedDocumentUpdateApi,
+  type DocumentUpdateApi,
   type HtmlToPdfAdapter,
   type PdfStorageAdapter,
 } from '../logic/generate-pdf';
@@ -21,19 +21,15 @@ import {
 export type GeneratePdfActionInput = {
   html: string;
   settings?: PdfSettingsInput;
-  sourceObjectName?: string;
-  sourceRecordId?: string;
   fileName?: string;
-  generatedDocumentId?: string;
+  documentId?: string;
   metadata?: Record<string, unknown>;
 };
 
 export type GeneratePdfActionOutput = {
   /** Best-effort cache of a signed download URL that expires (~24h) — prefer documentAttachmentId for durable retrieval. */
   pdfUrl?: string;
-  /** Attachment on the source record (e.g. the Company the document was generated from). */
-  attachmentId?: string;
-  /** Attachment on the GeneratedDocument record itself; fetch via its Files tab/`attachments` relation using only a generatedDocumentId. */
+  /** Attachment on the Document record itself; fetch via its Files tab/`attachments` relation using only a documentId. */
   documentAttachmentId?: string;
   status: 'PDF_GENERATED' | 'FAILED';
 };
@@ -42,7 +38,7 @@ export type GeneratePdfActionDeps = {
   client?: CoreApiClient;
   adapter?: HtmlToPdfAdapter;
   storage?: PdfStorageAdapter;
-  api?: GeneratedDocumentUpdateApi;
+  api?: DocumentUpdateApi;
   principal?: PermissionPrincipal;
 };
 
@@ -51,10 +47,8 @@ const inputSchema = jsonSchemaToInputSchema({
   properties: {
     html: { type: 'string', multiline: true, label: 'HTML' },
     settings: { type: 'object', label: 'PDF settings' },
-    sourceObjectName: { type: 'string', label: 'Source object name' },
-    sourceRecordId: { type: 'string', label: 'Source record ID' },
     fileName: { type: 'string', label: 'File name' },
-    generatedDocumentId: { type: 'string', label: 'Generated document ID' },
+    documentId: { type: 'string', label: 'Document ID' },
   },
   required: ['html'],
 });
@@ -63,7 +57,6 @@ const outputSchema = jsonSchemaToInputSchema({
   type: 'object',
   properties: {
     pdfUrl: { type: 'string', label: 'PDF URL' },
-    attachmentId: { type: 'string', label: 'Attachment ID' },
     documentAttachmentId: { type: 'string', label: 'Document Attachment ID' },
     status: { type: 'string', label: 'Status' },
   },
@@ -85,10 +78,8 @@ export const runGeneratePdf = async (
   const result = await generatePdfFromHtmlLogic({
     html: input.html,
     settings: input.settings,
-    sourceObjectName: input.sourceObjectName,
-    sourceRecordId: input.sourceRecordId,
     fileName: input.fileName,
-    generatedDocumentId: input.generatedDocumentId,
+    documentId: input.documentId,
     metadata: input.metadata,
     adapter,
     storage,
@@ -98,7 +89,6 @@ export const runGeneratePdf = async (
 
   return {
     pdfUrl: result.pdfUrl,
-    attachmentId: result.sourceAttachment?.attachmentId,
     documentAttachmentId: result.documentAttachment?.attachmentId,
     status: result.status,
   };
@@ -110,7 +100,7 @@ export const runGeneratePdf = async (
 export default defineLogicFunction({
   universalIdentifier: GENERATE_PDF_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
   name: 'Generate PDF',
-  description: 'Render HTML into a PDF, upload it to Twenty file storage, and attach it to the source record and/or the GeneratedDocument record.',
+  description: 'Render HTML into a PDF, upload it to Twenty file storage, and attach it to the Document record.',
   workflowActionTriggerSettings: {
     label: 'Generate PDF',
     icon: 'IconFilePdf',

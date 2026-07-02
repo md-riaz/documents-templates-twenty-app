@@ -8,7 +8,7 @@ import { TWENTY_ATTACHMENT_FILE_FIELD_UNIVERSAL_IDENTIFIER } from '../constants/
  * Logic functions run inside Twenty with an already-authorized workspace context
  * (the app's default role gates whether the workflow step is available at all).
  * The injected logic (renderTemplateLogic / generatePdfFromHtmlLogic /
- * saveGeneratedDocumentLogic) still asserts a principal, so we supply one carrying
+ * saveDocumentLogic) still asserts a principal, so we supply one carrying
  * the scopes those functions require.
  */
 export const WORKFLOW_ACTION_PRINCIPAL: PermissionPrincipal = {
@@ -34,8 +34,8 @@ const capitalize = (value: string): string => (value ? `${value.charAt(0).toUppe
  * Bridges the generated CoreApiClient into the record-repository interface shared by
  * the injected logic:
  *  - `getRecord`      -> TemplateRepositoryApi (render-template) + context providers
- *  - `createRecord`   -> GeneratedDocumentRepositoryApi (save-generated-document)
- *  - `updateRecord`   -> GeneratedDocumentUpdateApi (generate-pdf)
+ *  - `createRecord`   -> DocumentRepositoryApi (save-document)
+ *  - `updateRecord`   -> DocumentUpdateApi (generate-pdf)
  *
  * All three read/write generic records via genql-style selections. `__scalar: true`
  * selects every scalar field of the object so we can return an untyped record.

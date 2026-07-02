@@ -44,7 +44,7 @@ const rendered = await sdk.renderTemplate({
 
 const pdf = await sdk.generatePdfFromHtml({
   html: rendered.html,
-  generatedDocumentId: 'generated-42',
+  documentId: 'generated-42',
   adapter: {
     async renderHtmlToPdf({ html }) {
       return new TextEncoder().encode(html);
@@ -59,7 +59,7 @@ const pdf = await sdk.generatePdfFromHtml({
 
 // Sending documents is not part of this app's scope — Twenty's native email
 // handles outbound delivery. The SDK's job ends at rendering HTML and
-// producing a PDF; saving/attaching the result to the source record happens
-// through the "Save Generated Document" workflow step.
+// producing a PDF; saving the result as a Document record happens through
+// the "Save Document" workflow step.
 
 console.log({ templates, pdfUrl: pdf.pdfUrl });

@@ -121,7 +121,7 @@ test('SDK wrappers render templates and generate PDFs through typed runtime adap
 
   const pdf = await sdk.generatePdfFromHtml({
     html: rendered.html,
-    generatedDocumentId: 'generated-1',
+    documentId: 'generated-1',
     fileName: 'Invoice Ada',
   });
   assert.equal(pdf.ok, true);

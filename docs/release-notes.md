@@ -1,5 +1,31 @@
 # Release notes — Documents & Templates
 
+## 0.2.2
+
+### Changed
+
+- **`GeneratedDocument` renamed to `Document`.** The app's two core object types now plainly read
+  as **Template** and **Document** — `nameSingular`/`namePlural`/labels, every constant, file,
+  logic function, front-component export, and permission scope (`viewGeneratedDocs`/
+  `deleteGeneratedDocs` → `viewDocuments`/`deleteDocuments`) were renamed accordingly. Object and
+  field universal identifiers are unchanged (only their JS constant names changed) — this is a
+  pure rename, not a new schema.
+- **Removed the duplicate PDF attachment.** `generatePdfFromHtmlLogic` previously uploaded and
+  attached the generated PDF to *two* records: the source CRM record (e.g. a Company) and the
+  Document audit record itself. Since a record's "Documents" tab already lists its related
+  Document records, attaching to the source record too was a redundant second copy of the same
+  file. The PDF now attaches only to the Document record.
+- **Added a "View Document" link to the Documents tab.** Removing the duplicate attachment would
+  otherwise have made the PDF harder to reach from the source CRM record — there was previously no
+  way to navigate from that tab to a Document record's own page (only a direct link to the signed,
+  ~24h-expiring `pdfUrl`). `document-shell.front-component.tsx` now links to the Document record's
+  own page (`/object/document/{id}`, built from `twenty-sdk/front-component`'s exported `AppPath`
+  enum) alongside the existing quick-view PDF link.
+- Deleted `src/adapters/twenty-storage.adapter.ts` — confirmed dead (no callers besides its own
+  `index.ts` re-export) and independently broken (a fictional `uploadFile` GraphQL mutation, a
+  fictional `Attachment.file` shape, and a `RECORD_TYPE_FIELD_MAP` lookup whose casing never
+  matched its own keys). Superseded entirely by `createCoreStorageAdapter`.
+
 ## 0.2.1
 
 ### Fixed

@@ -9,7 +9,7 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 
 const expectedFiles = [
   'src/logic/render-template.ts',
-  'src/logic/save-generated-document.ts',
+  'src/logic/save-document.ts',
 ];
 
 test('render/save logic function modules exist and are publicly exported', () => {
@@ -20,9 +20,9 @@ test('render/save logic function modules exist and are publicly exported', () =>
   const index = read('src/index.ts');
   for (const exportName of [
     'renderTemplateLogic',
-    'saveGeneratedDocumentLogic',
+    'saveDocumentLogic',
     'RenderTemplateLogicInput',
-    'SaveGeneratedDocumentInput',
+    'SaveDocumentInput',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
@@ -31,7 +31,7 @@ test('render/save logic function modules exist and are publicly exported', () =>
 const { PermissionDeniedError } = await import('../dist/permissions/permission-guards.js');
 const { createContextProviderRegistry } = await import('../dist/logic/context/provider-registry.js');
 const { renderTemplateLogic } = await import('../dist/logic/render-template.js');
-const { saveGeneratedDocumentLogic } = await import('../dist/logic/save-generated-document.js');
+const { saveDocumentLogic } = await import('../dist/logic/save-document.js');
 
 const createFixtureApi = () => {
   const created = [];
@@ -72,7 +72,7 @@ const createFixtureApi = () => {
       return null;
     },
     async createRecord(objectName, data) {
-      assert.equal(objectName, 'generatedDocument');
+      assert.equal(objectName, 'document');
       const record = { id: `generated-${created.length + 1}`, ...data };
       created.push(record);
       return record;
@@ -193,9 +193,9 @@ test('renderTemplateLogic rejects missing permission, inactive templates, and re
   assert.match(missingStrict.errors.map((error) => error.message).join('\n'), /Missing required template variable/);
 });
 
-test('saveGeneratedDocumentLogic persists generatedDocument records through the Twenty API adapter', async () => {
+test('saveDocumentLogic persists document records through the Twenty API adapter', async () => {
   const api = createFixtureApi();
-  const saved = await saveGeneratedDocumentLogic({
+  const saved = await saveDocumentLogic({
     templateId: 'template-1',
     primaryObjectType: 'person',
     primaryRecordId: 'person-1',
@@ -214,7 +214,7 @@ test('saveGeneratedDocumentLogic persists generatedDocument records through the 
   assert.equal(api.created.length, 1);
   assert.deepEqual(api.created[0], {
     id: 'generated-1',
-    name: 'Generated document for person person-1',
+    name: 'Document for person person-1',
     templateId: 'template-1',
     primaryObjectType: 'person',
     primaryRecordId: 'person-1',
@@ -228,9 +228,9 @@ test('saveGeneratedDocumentLogic persists generatedDocument records through the 
   });
 });
 
-test('saveGeneratedDocumentLogic enforces generateDocuments permission and surfaces API errors', async () => {
+test('saveDocumentLogic enforces generateDocuments permission and surfaces API errors', async () => {
   await assert.rejects(
-    () => saveGeneratedDocumentLogic({
+    () => saveDocumentLogic({
       templateId: 'template-1',
       renderedHtml: '<p>Nope</p>',
       principal: viewerPrincipal,
@@ -239,7 +239,7 @@ test('saveGeneratedDocumentLogic enforces generateDocuments permission and surfa
     PermissionDeniedError,
   );
 
-  const failed = await saveGeneratedDocumentLogic({
+  const failed = await saveDocumentLogic({
     templateId: 'template-1',
     renderedHtml: '<p>Nope</p>',
     principal: generatorPrincipal,

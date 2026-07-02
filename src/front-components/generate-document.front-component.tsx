@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { defineFrontComponent } from 'twenty-sdk/define';
-import { enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
+import { AppPath, enqueueSnackbar, useSelectedRecordIds } from 'twenty-sdk/front-component';
 
 import { GENERATE_DOCUMENT_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
+
+// `getAppPath` (the SDK's own path builder) is declared but not part of
+// `twenty-sdk/front-component`'s public export surface — only the `AppPath`
+// enum is exported. Build the URL ourselves from its confirmed template
+// string (`AppPath.RecordShowPage === '/object/:objectNameSingular/:objectRecordId'`).
+const recordShowPath = (objectNameSingular: string, objectRecordId: string): string =>
+  AppPath.RecordShowPage
+    .replace(':objectNameSingular', encodeURIComponent(objectNameSingular))
+    .replace(':objectRecordId', encodeURIComponent(objectRecordId));
 
 import { hasPermissionScope, type PermissionPrincipal } from '../permissions/permission-guards';
 
@@ -14,7 +23,7 @@ export type GenerateDocumentTemplate = {
   allowedOutputTypes?: string[];
 };
 
-export type GeneratedDocumentHistoryRecord = {
+export type DocumentHistoryRecord = {
   id: string;
   primaryObjectType?: string | null;
   primaryRecordId?: string | null;
@@ -36,7 +45,7 @@ export type GenerateDocumentState = {
   warnings: string[];
   errors: string[];
   statusMessage: string;
-  generatedDocumentId?: string;
+  documentId?: string;
   pdfUrl?: string;
 };
 
@@ -55,7 +64,7 @@ export type GenerateDocumentApi = {
     errors?: Array<{ userMessage?: string; message?: string }>;
     template?: { id: string; name?: string };
   }>;
-  saveGeneratedDocument: (input: {
+  saveDocument: (input: {
     templateId: string;
     primaryObjectType: string;
     primaryRecordId: string;
@@ -77,9 +86,7 @@ export type GenerateDocumentApi = {
    */
   generatePdf?: (input: {
     html: string;
-    generatedDocumentId?: string;
-    sourceObjectName: string;
-    sourceRecordId: string;
+    documentId?: string;
     principal?: PermissionPrincipal;
   }) => Promise<{
     ok: boolean;
@@ -125,7 +132,7 @@ export const createGenerateDocumentState = (input: Partial<GenerateDocumentState
     warnings: input.warnings ?? [],
     errors: input.errors ?? [],
     statusMessage: input.statusMessage ?? '',
-    generatedDocumentId: input.generatedDocumentId,
+    documentId: input.documentId,
     pdfUrl: input.pdfUrl,
   };
 };
@@ -137,11 +144,11 @@ export const isGenerateDocumentActionVisible = (input: {
 }): boolean =>
   Boolean(input.primaryObjectType && input.primaryRecordId && hasPermissionScope(input.principal, 'generateDocuments'));
 
-export const filterGeneratedDocumentHistory = (input: {
+export const filterDocumentHistory = (input: {
   primaryObjectType: string;
   primaryRecordId: string;
-  records: GeneratedDocumentHistoryRecord[];
-}): GeneratedDocumentHistoryRecord[] => {
+  records: DocumentHistoryRecord[];
+}): DocumentHistoryRecord[] => {
   const objectType = input.primaryObjectType.toLowerCase();
   return input.records
     .filter((record) =>
@@ -151,28 +158,29 @@ export const filterGeneratedDocumentHistory = (input: {
     .sort((left, right) => String(right.generatedAt ?? '').localeCompare(String(left.generatedAt ?? '')));
 };
 
-export const renderGeneratedDocumentHistoryMarkup = (input: {
+export const renderDocumentHistoryMarkup = (input: {
   primaryObjectType: string;
   primaryRecordId: string;
-  records: GeneratedDocumentHistoryRecord[];
+  records: DocumentHistoryRecord[];
 }): string => {
-  const records = filterGeneratedDocumentHistory(input);
+  const records = filterDocumentHistory(input);
   return `
-<section aria-label="Generated document history">
-  <h2>Generated Documents</h2>
+<section aria-label="Document history">
+  <h2>Documents</h2>
   <table>
-    <thead><tr><th>Template</th><th>Status</th><th>Generated</th><th>PDF</th></tr></thead>
+    <thead><tr><th>Template</th><th>Status</th><th>Generated</th><th>Document</th><th>PDF</th></tr></thead>
     <tbody>
       ${records.map((record) => `
-        <tr data-generated-document-id="${escapeHtml(record.id)}">
-          <td>${escapeHtml(record.templateName ?? 'Generated document')}</td>
+        <tr data-document-id="${escapeHtml(record.id)}">
+          <td>${escapeHtml(record.templateName ?? 'Document')}</td>
           <td>${escapeHtml(record.status ?? 'RENDERED')}</td>
           <td>${escapeHtml(record.generatedAt ?? '')}</td>
+          <td><a href="${escapeHtml(recordShowPath('document', record.id))}">View Document</a></td>
           <td>${record.pdfUrl ? `<a href="${escapeHtml(record.pdfUrl)}">Open PDF</a>` : '—'}</td>
         </tr>`).join('')}
     </tbody>
   </table>
-  ${records.length === 0 ? '<p>No generated documents for this record yet.</p>' : ''}
+  ${records.length === 0 ? '<p>No documents for this record yet.</p>' : ''}
 </section>`;
 };
 
@@ -188,7 +196,7 @@ export const renderGenerateDocumentModalMarkup = (state: GenerateDocumentState):
       ${selectableTemplates.map((template) => `<option value="${escapeHtml(template.id)}"${template.id === state.selectedTemplateId ? ' selected' : ''}>${escapeHtml(template.name)}</option>`).join('')}
     </select>
   </label>
-  <label><input type="checkbox" aria-label="Save generated document"${saveChecked}> Save generated document history</label>
+  <label><input type="checkbox" aria-label="Save document"${saveChecked}> Save document history</label>
   <div aria-label="Rendered document preview">${state.previewHtml}</div>
   ${state.errors.length ? `<div role="alert">${escapeHtml(state.errors.join(' '))}</div>` : ''}
   ${state.warnings.length ? `<div role="status">${escapeHtml(state.warnings.join(' '))}</div>` : ''}
@@ -230,7 +238,7 @@ export class GenerateDocumentController {
     this.state = { ...this.state, shouldSave };
   }
 
-  async generate(options: { save?: boolean; generatePdf?: boolean } = {}): Promise<{ ok: boolean; generatedDocumentId?: string; pdfUrl?: string; errors?: string[] }> {
+  async generate(options: { save?: boolean; generatePdf?: boolean } = {}): Promise<{ ok: boolean; documentId?: string; pdfUrl?: string; errors?: string[] }> {
     if (this.state.isGenerating) {
       const errors = ['Document generation is already in progress.'];
       return { ok: false, errors };
@@ -260,9 +268,9 @@ export class GenerateDocumentController {
     }
 
     const shouldSave = options.save ?? this.state.shouldSave;
-    let generatedDocumentId: string | undefined;
+    let documentId: string | undefined;
     if (shouldSave) {
-      const saved = await this.api.saveGeneratedDocument({
+      const saved = await this.api.saveDocument({
         templateId: this.state.selectedTemplateId,
         primaryObjectType: this.state.primaryObjectType,
         primaryRecordId: this.state.primaryRecordId,
@@ -274,35 +282,33 @@ export class GenerateDocumentController {
       });
       if (!saved.ok) {
         const errors = messagesFromErrors(saved.errors);
-        const message = errors[0] ?? 'Generated document could not be saved.';
+        const message = errors[0] ?? 'Document could not be saved.';
         this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: message };
         this.api.notify?.({ type: 'error', message });
         return { ok: false, errors };
       }
-      generatedDocumentId = saved.id;
+      documentId = saved.id;
     }
 
     let pdfUrl: string | undefined;
     if (options.generatePdf) {
       if (!this.api.generatePdf) {
         const errors = ['PDF generation is not available in this environment.'];
-        this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: errors[0], generatedDocumentId };
+        this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: errors[0], documentId };
         this.api.notify?.({ type: 'error', message: errors[0] });
-        return { ok: false, generatedDocumentId, errors };
+        return { ok: false, documentId, errors };
       }
       const pdf = await this.api.generatePdf({
         html: rendered.html,
-        generatedDocumentId,
-        sourceObjectName: this.state.primaryObjectType,
-        sourceRecordId: this.state.primaryRecordId,
+        documentId,
         principal: this.principal,
       });
       if (!pdf.ok) {
         const errors = messagesFromErrors(pdf.errors);
         const message = errors[0] ?? 'PDF generation failed.';
-        this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: message, generatedDocumentId };
+        this.state = { ...this.state, isGenerating: false, previewHtml: rendered.html, warnings: rendered.warnings ?? [], errors, statusMessage: message, documentId };
         this.api.notify?.({ type: 'error', message });
-        return { ok: false, generatedDocumentId, errors };
+        return { ok: false, documentId, errors };
       }
       pdfUrl = pdf.pdfUrl;
     }
@@ -319,11 +325,11 @@ export class GenerateDocumentController {
       warnings: rendered.warnings ?? [],
       errors: [],
       statusMessage: message,
-      generatedDocumentId,
+      documentId,
       pdfUrl,
     };
     this.api.notify?.({ type: 'success', message });
-    return { ok: true, generatedDocumentId, pdfUrl };
+    return { ok: true, documentId, pdfUrl };
   }
 }
 
@@ -334,11 +340,11 @@ export const generateDocumentFrontComponent = {
   component: renderGenerateDocumentModalMarkup,
 };
 
-export const generatedDocumentHistoryFrontComponent = {
-  name: 'generated-document-history',
-  label: 'Generated Document History',
+export const documentHistoryFrontComponent = {
+  name: 'document-history',
+  label: 'Document History',
   description: 'Record tab list filtered by primary object and record ID.',
-  component: renderGeneratedDocumentHistoryMarkup,
+  component: renderDocumentHistoryMarkup,
 };
 
 const NOT_WIRED_MESSAGE = 'Document generation API is not connected in this environment yet.';
@@ -350,7 +356,7 @@ const NOT_WIRED_MESSAGE = 'Document generation API is not connected in this envi
 export const createUnavailableGenerateDocumentApi = (): GenerateDocumentApi => ({
   listTemplates: async () => [],
   renderTemplate: async () => ({ ok: false, html: '', errors: [{ userMessage: NOT_WIRED_MESSAGE }] }),
-  saveGeneratedDocument: async () => ({ ok: false, errors: [{ userMessage: NOT_WIRED_MESSAGE }] }),
+  saveDocument: async () => ({ ok: false, errors: [{ userMessage: NOT_WIRED_MESSAGE }] }),
 });
 
 export type GenerateDocumentComponentProps = {
@@ -450,14 +456,14 @@ export const GenerateDocumentComponent = ({
       <label>
         <input
           type="checkbox"
-          aria-label="Save generated document"
+          aria-label="Save document"
           checked={state.shouldSave}
           onChange={(event) => {
             controller.setShouldSave(event.target.checked);
             sync();
           }}
         />
-        {' '}Save generated document history
+        {' '}Save document history
       </label>
 
       <label>

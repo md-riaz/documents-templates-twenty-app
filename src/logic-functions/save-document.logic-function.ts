@@ -1,36 +1,36 @@
 import { defineLogicFunction } from 'twenty-sdk/define';
 import { jsonSchemaToInputSchema } from 'twenty-sdk/logic-function';
 import { CoreApiClient } from 'twenty-client-sdk/core';
-import { SAVE_GENERATED_DOCUMENT_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
+import { SAVE_DOCUMENT_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
 import {
-  saveGeneratedDocumentLogic,
-  type GeneratedDocumentRepositoryApi,
-  type GeneratedDocumentStatus,
-} from '../logic/save-generated-document';
+  saveDocumentLogic,
+  type DocumentRepositoryApi,
+  type DocumentStatus,
+} from '../logic/save-document';
 import type { PermissionPrincipal } from '../permissions/permission-guards';
 import {
   WORKFLOW_ACTION_PRINCIPAL,
   createCoreRecordApi,
 } from './core-client-adapters';
 
-export type SaveGeneratedDocumentActionInput = {
+export type SaveDocumentActionInput = {
   templateId: string;
   primaryObjectType?: string;
   primaryRecordId?: string;
   renderedHtml: string;
   pdfUrl?: string | null;
-  status?: GeneratedDocumentStatus;
+  status?: DocumentStatus;
   metadata?: Record<string, unknown>;
 };
 
-export type SaveGeneratedDocumentActionOutput = {
-  generatedDocumentId?: string;
+export type SaveDocumentActionOutput = {
+  documentId?: string;
   pdfUrl?: string | null;
 };
 
-export type SaveGeneratedDocumentActionDeps = {
+export type SaveDocumentActionDeps = {
   client?: CoreApiClient;
-  api?: GeneratedDocumentRepositoryApi;
+  api?: DocumentRepositoryApi;
   principal?: PermissionPrincipal;
 };
 
@@ -51,17 +51,17 @@ const inputSchema = jsonSchemaToInputSchema({
 const outputSchema = jsonSchemaToInputSchema({
   type: 'object',
   properties: {
-    generatedDocumentId: { type: 'string', label: 'Generated document ID' },
+    documentId: { type: 'string', label: 'Document ID' },
     pdfUrl: { type: 'string', label: 'PDF URL' },
   },
 });
 
-export const runSaveGeneratedDocument = async (
-  input: SaveGeneratedDocumentActionInput,
-  deps: SaveGeneratedDocumentActionDeps = {},
-): Promise<SaveGeneratedDocumentActionOutput> => {
+export const runSaveDocument = async (
+  input: SaveDocumentActionInput,
+  deps: SaveDocumentActionDeps = {},
+): Promise<SaveDocumentActionOutput> => {
   const api = deps.api ?? createCoreRecordApi(deps.client ?? new CoreApiClient());
-  const saved = await saveGeneratedDocumentLogic({
+  const saved = await saveDocumentLogic({
     ...input,
     api,
     principal: deps.principal ?? WORKFLOW_ACTION_PRINCIPAL,
@@ -69,15 +69,15 @@ export const runSaveGeneratedDocument = async (
 
   if (!saved.ok) {
     // Throw so the workflow step actually surfaces as failed, rather than
-    // returning a success-shaped output with an undefined generatedDocumentId
-    // — the audit record was never created, and the workflow author needs to
-    // see that, not a silently "successful" step.
-    const message = saved.errors.map((error) => error.userMessage || error.message).join('; ') || 'Failed to save generated document.';
+    // returning a success-shaped output with an undefined documentId — the
+    // audit record was never created, and the workflow author needs to see
+    // that, not a silently "successful" step.
+    const message = saved.errors.map((error) => error.userMessage || error.message).join('; ') || 'Failed to save document.';
     throw new Error(message);
   }
 
   return {
-    generatedDocumentId: saved.id,
+    documentId: saved.id,
     pdfUrl: input.pdfUrl ?? undefined,
   };
 };
@@ -86,14 +86,14 @@ export const runSaveGeneratedDocument = async (
 // `export default defineXxx({...})` expression — it must be inline (not a
 // re-exported reference to a named const) or the entity is silently skipped.
 export default defineLogicFunction({
-  universalIdentifier: SAVE_GENERATED_DOCUMENT_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
-  name: 'Save Generated Document',
-  description: 'Persist rendered workflow output as a GeneratedDocument record, including the PDF URL and status.',
+  universalIdentifier: SAVE_DOCUMENT_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER,
+  name: 'Save Document',
+  description: 'Persist rendered workflow output as a Document record, including the PDF URL and status.',
   workflowActionTriggerSettings: {
-    label: 'Save Generated Document',
+    label: 'Save Document',
     icon: 'IconDatabaseImport',
     inputSchema,
     outputSchema,
   },
-  handler: (input: SaveGeneratedDocumentActionInput) => runSaveGeneratedDocument(input),
+  handler: (input: SaveDocumentActionInput) => runSaveDocument(input),
 });

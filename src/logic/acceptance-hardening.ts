@@ -22,7 +22,7 @@ export type AcceptanceContext = {
   objectsRegistered?: string[];
   settingsPersist?: boolean;
   templatePreviewOk?: boolean;
-  generatedDocumentSaved?: boolean;
+  documentSaved?: boolean;
   pdfGenerated?: boolean;
   bulkResultsSaved?: number;
   workflowActionsRegistered?: string[];
@@ -51,8 +51,8 @@ export const ACCEPTANCE_SCENARIOS: AcceptanceScenario[] = [
   {
     id: 'document-generation-single-pdf-save-bulk',
     title: 'Single and bulk document generation save HTML/PDF history',
-    requiredPermissions: ['generateDocuments', 'viewGeneratedDocs'],
-    requiredSignals: ['generatedDocumentSaved', 'pdfGenerated', 'bulkResultsSaved'],
+    requiredPermissions: ['generateDocuments', 'viewDocuments'],
+    requiredSignals: ['documentSaved', 'pdfGenerated', 'bulkResultsSaved'],
   },
   {
     id: 'workflow-registration-context-error-handling',
@@ -97,7 +97,7 @@ export const runAcceptanceScenario = async (
   for (const signal of scenario.requiredSignals) {
     if (signal === 'objectsRegistered') {
       const objects = new Set(context.objectsRegistered ?? []);
-      const required = ['DocumentTemplate', 'TemplateCategory', 'GeneratedDocument'];
+      const required = ['DocumentTemplate', 'TemplateCategory', 'Document'];
       const absent = required.filter((objectName) => !objects.has(objectName));
       if (absent.length) missing.push(`objects not registered: ${absent.join(', ')}`);
       else evidence.push('required custom objects registered');
@@ -112,7 +112,7 @@ export const runAcceptanceScenario = async (
 
     if (signal === 'workflowActionsRegistered') {
       const actions = new Set(context.workflowActionsRegistered ?? []);
-      const required = ['Render Template', 'Generate PDF', 'Save Generated Document'];
+      const required = ['Render Template', 'Generate PDF', 'Save Document'];
       const absent = required.filter((actionName) => !actions.has(actionName));
       if (absent.length) missing.push(`workflow actions not registered: ${absent.join(', ')}`);
       else evidence.push('workflow actions registered');
@@ -126,7 +126,7 @@ export const runAcceptanceScenario = async (
   return { ok: missing.length === 0, scenarioId: id, evidence, missing };
 };
 
-export const sanitizeGeneratedDocumentHtml = (html: string): string => html
+export const sanitizeDocumentHtml = (html: string): string => html
   .replace(/<script[\s\S]*?<\/script>/gi, '')
   .replace(/\s+on[a-z]+=("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
   .replace(/href\s*=\s*("|')\s*javascript:[^"']*\1/gi, 'href="#blocked"');
@@ -150,7 +150,7 @@ export const renderRtlSmokeFixture = (input: {
   };
 };
 
-export const validateGeneratedDocumentAuditTrail = (
+export const validateDocumentAuditTrail = (
   record: Record<string, unknown>,
 ): { ok: boolean; missing: string[] } => {
   const required = ['templateId', 'primaryObjectType', 'primaryRecordId', 'renderedHtml', 'status', 'generatedBy', 'generatedAt'];

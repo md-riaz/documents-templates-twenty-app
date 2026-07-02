@@ -12,9 +12,9 @@ Grant the default app role only to users who need document automation.
 | --- | --- | --- |
 | `viewTemplates` | Sales, success, operations | Browse and preview active templates. |
 | `manageTemplates` | Template owners/admins | Create, edit, deactivate, and version templates. |
-| `generateDocuments` | Sales, success, operations | Render documents, generate PDFs, and save generated records. |
-| `viewGeneratedDocs` | Record collaborators | View generated-document history. |
-| `deleteGeneratedDocs` | Admins/compliance owners | Remove generated records where policy allows. |
+| `generateDocuments` | Sales, success, operations | Render documents, generate PDFs, and save document records. |
+| `viewDocuments` | Record collaborators | View document history. |
+| `deleteDocuments` | Admins/compliance owners | Remove document records where policy allows. |
 
 UI visibility is convenience only; logic functions enforce permissions server-side.
 
@@ -29,9 +29,9 @@ UI visibility is convenience only; logic functions enforce permissions server-si
 
 - Keep templates inactive until preview data and permission coverage have been reviewed.
 - Prefer escaped Handlebars expressions for user data.
-- Treat generated PDFs attached to source CRM records as customer-facing files subject to retention policy.
-- Treat GeneratedDocument records as audit/history metadata, not the primary file location.
-- Audit PDF-generation errors from generated-document statuses.
+- Treat generated PDFs, attached to their Document record, as customer-facing files subject to retention policy.
+- Document records ARE the primary file location (via their own Files tab) — not just audit/history metadata.
+- Audit PDF-generation errors from document statuses.
 
 ## Release checklist
 
@@ -48,4 +48,4 @@ UI visibility is convenience only; logic functions enforce permissions server-si
 - **Cannot reach Twenty server:** start the local Twenty server before `yarn twenty dev --once --dry-run`.
 - **Template renders missing data:** check bound object/context provider name, record type, permissions, and preview JSON.
 - **PDF generation fails:** verify browser/PDF adapter availability and storage upload configuration.
-- **Attachment missing on source record:** verify the storage adapter is configured and the triggering record context (object/record ID) was passed to the workflow steps.
+- **Attachment missing on the Document record:** verify the storage adapter is configured and a Document record was saved (via Save Document) before Generate PDF ran, since the PDF attaches to that record's ID.

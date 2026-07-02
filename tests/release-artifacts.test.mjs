@@ -11,7 +11,7 @@ const exists = (path) => existsSync(join(root, path));
 const requiredDocs = [
   ['README.md', ['Documents & Templates', 'User guide', 'Quick start', 'Marketplace readiness']],
   ['docs/admin-guide.md', ['Admin guide', 'Permissions', 'Configuration', 'Release checklist']],
-  ['docs/workflow-examples.md', ['Workflow examples', 'Render Template', 'Generate PDF', 'Save Generated Document', 'BulkIterator']],
+  ['docs/workflow-examples.md', ['Workflow examples', 'Render Template', 'Generate PDF', 'Save Document', 'BulkIterator']],
   ['docs/release-notes.md', ['Release notes', '0.1.0', 'Known limitations', 'Verification']],
   ['docs/ci-commands.md', ['CI commands', 'typescript', 'npm test', 'twenty dev --once --dry-run']],
 ];

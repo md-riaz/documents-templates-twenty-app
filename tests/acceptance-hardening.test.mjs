@@ -21,8 +21,8 @@ test('acceptance hardening module exists and is publicly exported', () => {
     'ACCEPTANCE_SCENARIOS',
     'runAcceptanceScenario',
     'renderRtlSmokeFixture',
-    'validateGeneratedDocumentAuditTrail',
-    'sanitizeGeneratedDocumentHtml',
+    'validateDocumentAuditTrail',
+    'sanitizeDocumentHtml',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
@@ -31,13 +31,13 @@ test('acceptance hardening module exists and is publicly exported', () => {
 const { PermissionDeniedError } = await import('../dist/permissions/permission-guards.js');
 const { renderHandlebarsTemplate } = await import('../dist/logic/rendering/handlebars-renderer.js');
 const { generatePdfFromHtmlLogic } = await import('../dist/logic/generate-pdf.js');
-const { buildGeneratedDocumentRecord } = await import('../dist/logic/save-generated-document.js');
+const { buildDocumentRecord } = await import('../dist/logic/save-document.js');
 const {
   ACCEPTANCE_SCENARIOS,
   runAcceptanceScenario,
   renderRtlSmokeFixture,
-  sanitizeGeneratedDocumentHtml,
-  validateGeneratedDocumentAuditTrail,
+  sanitizeDocumentHtml,
+  validateDocumentAuditTrail,
 } = await import('../dist/logic/acceptance-hardening.js');
 const {
   renderGenerateDocumentModalMarkup,
@@ -48,7 +48,7 @@ const {
   createTemplateEditorState,
 } = await import('../dist/front-components/template-editor.front-component.js');
 
-const generatorPrincipal = { permissionScopes: ['viewTemplates', 'manageTemplates', 'generateDocuments', 'viewGeneratedDocs'] };
+const generatorPrincipal = { permissionScopes: ['viewTemplates', 'manageTemplates', 'generateDocuments', 'viewDocuments'] };
 const viewerPrincipal = { permissionScopes: ['viewTemplates'] };
 
 const fixtureTemplate = {
@@ -67,11 +67,11 @@ const createFixtureApi = () => ({
     return null;
   },
   async createRecord(objectName, data) {
-    assert.equal(objectName, 'generatedDocument');
+    assert.equal(objectName, 'document');
     return { id: 'generated-acceptance-1', ...data };
   },
   async updateRecord(objectName, id, data) {
-    assert.equal(objectName, 'generatedDocument');
+    assert.equal(objectName, 'document');
     return { id, ...data };
   },
 });
@@ -91,13 +91,13 @@ test('acceptance scenarios cover install, permissions, template preview, generat
   const executed = await runAcceptanceScenario('document-generation-single-pdf-save-bulk', {
     permissions: generatorPrincipal.permissionScopes,
     appInstalled: true,
-    objectsRegistered: ['DocumentTemplate', 'TemplateCategory', 'GeneratedDocument'],
+    objectsRegistered: ['DocumentTemplate', 'TemplateCategory', 'Document'],
     settingsPersist: true,
     templatePreviewOk: true,
-    generatedDocumentSaved: true,
+    documentSaved: true,
     pdfGenerated: true,
     bulkResultsSaved: 2,
-    workflowActionsRegistered: ['Render Template', 'Generate PDF', 'Save Generated Document'],
+    workflowActionsRegistered: ['Render Template', 'Generate PDF', 'Save Document'],
     uiAccessible: true,
     securityEscapingOk: true,
   });
@@ -163,26 +163,26 @@ test('UTF-8 and RTL smoke fixtures render through HTML and PDF metadata without 
   const pdfCalls = [];
   const pdf = await generatePdfFromHtmlLogic({
     html: rtl.html,
-    generatedDocumentId: 'generated-utf8',
+    documentId: 'document-utf8',
     fileName: 'مرحبا café.pdf',
     principal: generatorPrincipal,
     adapter: { async renderHtmlToPdf(input) { pdfCalls.push(input); return Buffer.from('%PDF-1.4\nمرحبا café\n%%EOF', 'utf8'); } },
     storage: { async uploadFile(input) {
       assert.equal(input.contentType, 'application/pdf');
-      assert.equal(input.metadata.generatedDocumentId, 'generated-utf8');
+      assert.equal(input.metadata.documentId, 'document-utf8');
       assert.match(Buffer.from(input.body).toString('utf8'), /مرحبا café/);
-      return { url: 'twenty://files/generated-utf8.pdf' };
+      return { url: 'twenty://files/document-utf8.pdf' };
     } },
   });
   assert.equal(pdf.ok, true);
   assert.match(pdfCalls[0].html, /שלום עולם/);
 });
 
-test('security hardening checks escaping and generated-document audit trail', async () => {
-  const sanitized = sanitizeGeneratedDocumentHtml('<h1>Hi</h1><script>alert(1)</script><a href="javascript:alert(2)">bad</a><p onclick="x">ok</p>');
+test('security hardening checks escaping and document audit trail', async () => {
+  const sanitized = sanitizeDocumentHtml('<h1>Hi</h1><script>alert(1)</script><a href="javascript:alert(2)">bad</a><p onclick="x">ok</p>');
   assert.equal(sanitized, '<h1>Hi</h1><a href="#blocked">bad</a><p>ok</p>');
 
-  const auditRecord = buildGeneratedDocumentRecord({
+  const auditRecord = buildDocumentRecord({
     templateId: fixtureTemplate.id,
     primaryObjectType: 'person',
     primaryRecordId: 'person-1',
@@ -193,11 +193,11 @@ test('security hardening checks escaping and generated-document audit trail', as
     currentUser: { id: 'user-1' },
     metadata: { source: 'acceptance-hardening' },
   });
-  const audit = validateGeneratedDocumentAuditTrail(auditRecord);
+  const audit = validateDocumentAuditTrail(auditRecord);
   assert.equal(audit.ok, true);
   assert.deepEqual(audit.missing, []);
 
-  const missingAudit = validateGeneratedDocumentAuditTrail({ templateId: fixtureTemplate.id, renderedHtml: '<p>missing</p>' });
+  const missingAudit = validateDocumentAuditTrail({ templateId: fixtureTemplate.id, renderedHtml: '<p>missing</p>' });
   assert.equal(missingAudit.ok, false);
   assert.deepEqual(missingAudit.missing.sort(), ['generatedAt', 'generatedBy', 'primaryObjectType', 'primaryRecordId', 'status']);
 });

@@ -10,7 +10,7 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 const expectedFiles = [
   'src/logic-functions/render-template.logic-function.ts',
   'src/logic-functions/generate-pdf.logic-function.ts',
-  'src/logic-functions/save-generated-document.logic-function.ts',
+  'src/logic-functions/save-document.logic-function.ts',
 ];
 
 test('logic-function modules exist as source files', () => {
@@ -21,12 +21,12 @@ test('logic-function modules exist as source files', () => {
 
 const renderModule = await import('../dist/logic-functions/render-template.logic-function.js');
 const pdfModule = await import('../dist/logic-functions/generate-pdf.logic-function.js');
-const saveModule = await import('../dist/logic-functions/save-generated-document.logic-function.js');
+const saveModule = await import('../dist/logic-functions/save-document.logic-function.js');
 const { createCoreRecordApi, createCoreStorageAdapter } = await import('../dist/logic-functions/core-client-adapters.js');
 
 const { runRenderTemplate } = renderModule;
 const { runGeneratePdf } = pdfModule;
-const { runSaveGeneratedDocument } = saveModule;
+const { runSaveDocument } = saveModule;
 
 // The modules are compiled to CommonJS; Node's ESM interop nests the TS `export default`
 // under the synthesized namespace default (module.exports.default).
@@ -58,14 +58,14 @@ const createFakeCoreClient = () => {
     },
     async mutation(request) {
       const field = Object.keys(request)[0];
-      if (field === 'createGeneratedDocument') {
+      if (field === 'createDocument') {
         const record = { id: `generated-${created.length + 1}`, ...request[field].__args.data };
         created.push(record);
-        return { createGeneratedDocument: record };
+        return { createDocument: record };
       }
-      if (field === 'updateGeneratedDocument') {
+      if (field === 'updateDocument') {
         updates.push(request[field].__args);
-        return { updateGeneratedDocument: { id: request[field].__args.id, ...request[field].__args.data } };
+        return { updateDocument: { id: request[field].__args.id, ...request[field].__args.data } };
       }
       throw new Error(`unexpected mutation field ${field}`);
     },
@@ -113,7 +113,7 @@ test('logic functions register valid workflow actions with expected labels, icon
       pdf.config.workflowActionTriggerSettings.label,
       save.config.workflowActionTriggerSettings.label,
     ],
-    ['Render Template', 'Generate PDF', 'Save Generated Document'],
+    ['Render Template', 'Generate PDF', 'Save Document'],
   );
 
   assert.equal(render.config.universalIdentifier, '1fcdb464-9f52-4904-81e4-bdadf3652237');
@@ -134,11 +134,11 @@ test('CoreApiClient record bridge translates getRecord/createRecord/updateRecord
   assert.deepEqual(await api.getRecord('documentTemplate', 'template-1'), templateRecord);
   assert.equal(await api.getRecord('documentTemplate', 'missing'), null);
 
-  const created = await api.createRecord('generatedDocument', { name: 'Doc' });
+  const created = await api.createRecord('document', { name: 'Doc' });
   assert.equal(created.id, 'generated-1');
   assert.equal(client.created.length, 1);
 
-  const updated = await api.updateRecord('generatedDocument', 'generated-1', { status: 'PDF_GENERATED' });
+  const updated = await api.updateRecord('document', 'generated-1', { status: 'PDF_GENERATED' });
   assert.equal(updated.status, 'PDF_GENERATED');
   assert.deepEqual(client.updates[0], { id: 'generated-1', data: { status: 'PDF_GENERATED' } });
 });
@@ -197,7 +197,7 @@ test('render -> save -> generate PDF chains through the logic function handlers'
   assert.match(render.html, /Total \$42\.00/);
   assert.equal(render.template.id, 'template-1');
 
-  const saved = await runSaveGeneratedDocument(
+  const saved = await runSaveDocument(
     {
       templateId: 'template-1',
       primaryObjectType: 'person',
@@ -207,45 +207,35 @@ test('render -> save -> generate PDF chains through the logic function handlers'
     },
     { client },
   );
-  assert.equal(saved.generatedDocumentId, 'generated-1');
+  assert.equal(saved.documentId, 'generated-1');
   assert.equal(client.created[0].renderedHtml, render.html);
 
   const pdfFixture = createPdfFixture();
   const pdf = await runGeneratePdf(
     {
       html: render.html,
-      generatedDocumentId: saved.generatedDocumentId,
-      sourceObjectName: 'person',
-      sourceRecordId: 'person-1',
+      documentId: saved.documentId,
       fileName: 'Invoice Ada',
     },
     { adapter: pdfFixture.adapter, storage: pdfFixture.storage, api: createCoreRecordApi(client) },
   );
 
   assert.equal(pdf.status, 'PDF_GENERATED');
-  assert.match(pdf.pdfUrl, /generated-document-generated-1-invoice-ada\.pdf$/);
-  assert.equal(pdf.attachmentId, 'attachment-1');
-  assert.equal(pdf.documentAttachmentId, 'attachment-2');
-  assert.equal(pdfFixture.attachments.length, 2);
-  assert.deepEqual(pdfFixture.attachments.find((a) => a.objectName === 'person'), {
-    objectName: 'person',
-    recordId: 'person-1',
-    fileId: 'file-1',
-    fileUrl: pdf.pdfUrl,
-    fileName: 'generated-document-generated-1-invoice-ada.pdf',
-    contentType: 'application/pdf',
-    metadata: { generatedDocumentId: saved.generatedDocumentId },
-  });
-  assert.deepEqual(pdfFixture.attachments.find((a) => a.objectName === 'generatedDocument'), {
-    objectName: 'generatedDocument',
+  assert.match(pdf.pdfUrl, /document-generated-1-invoice-ada\.pdf$/);
+  assert.equal(pdf.documentAttachmentId, 'attachment-1');
+  // Only ONE attachment is created (on the Document record) — not a second,
+  // duplicate upload/attach to the source record.
+  assert.equal(pdfFixture.attachments.length, 1);
+  assert.deepEqual(pdfFixture.attachments[0], {
+    objectName: 'document',
     recordId: 'generated-1',
     fileId: 'file-1',
     fileUrl: pdf.pdfUrl,
-    fileName: 'generated-document-generated-1-invoice-ada.pdf',
+    fileName: 'document-generated-1-invoice-ada.pdf',
     contentType: 'application/pdf',
-    metadata: { generatedDocumentId: saved.generatedDocumentId },
+    metadata: { documentId: saved.documentId },
   });
-  // The generatedDocument record was updated to PDF_GENERATED through the genql bridge.
+  // The document record was updated to PDF_GENERATED through the genql bridge.
   assert.equal(client.updates.at(-1).data.status, 'PDF_GENERATED');
 });
 

@@ -11,7 +11,7 @@ const objectFiles = [
   ['src/objects/document-template.object.ts', 'DocumentTemplate'],
   ['src/objects/template-category.object.ts', 'TemplateCategory'],
   ['src/objects/template-version.object.ts', 'TemplateVersion'],
-  ['src/objects/generated-document.object.ts', 'GeneratedDocument'],
+  ['src/objects/document.object.ts', 'Document'],
 ];
 
 test('custom objects and relations are defined for document lifecycle records', () => {
@@ -28,18 +28,18 @@ test('custom objects and relations are defined for document lifecycle records', 
   }
   assert.match(template, /TemplateCategory/);
   assert.match(template, /TemplateVersion/);
-  assert.match(template, /GeneratedDocument/);
+  assert.match(template, /DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER/, 'DocumentTemplate should reference the Document object it relates to');
 
-  const generated = read('src/objects/generated-document.object.ts');
+  const document = read('src/objects/document.object.ts');
   for (const field of ['primaryObjectType', 'primaryRecordId', 'renderedHtml', 'pdfUrl', 'status', 'generatedAt']) {
-    assert.match(generated, new RegExp(field), `GeneratedDocument should define ${field}`);
+    assert.match(document, new RegExp(field), `Document should define ${field}`);
   }
 });
 
 test('navigation saved views command menu and page tab shells are registered', () => {
   for (const path of [
     'src/menu/document-template.view.ts',
-    'src/menu/generated-document.view.ts',
+    'src/menu/document.view.ts',
     'src/menu/documents-templates.navigation-menu-item.ts',
     'src/page-layout-tabs/documents-standard-record-tabs.ts',
   ]) {
@@ -51,9 +51,9 @@ test('navigation saved views command menu and page tab shells are registered', (
     'documentTemplateObject',
     'templateCategoryObject',
     'templateVersionObject',
-    'generatedDocumentObject',
+    'documentObject',
     'documentTemplateView',
-    'generatedDocumentView',
+    'documentView',
     'documentsTemplatesNavigationMenuItem',
     'companyDocumentsPageLayoutTab',
     'personDocumentsPageLayoutTab',

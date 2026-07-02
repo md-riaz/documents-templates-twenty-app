@@ -6,8 +6,8 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 
 - **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.
 - **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.
-- **Record-first file management:** generated PDFs attach to the originating CRM record so users find them where they already work.
-- **Auditability:** GeneratedDocument records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.
+- **Record-first file management:** the CRM record you generated from links straight to its Document record, whose Files tab holds the PDF — no duplicate copies.
+- **Auditability:** Document records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.
 - **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.
 
 ## Reusable business scenarios
@@ -32,11 +32,12 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 4. Use the live preview to validate variables before publishing.
 5. From a supported record page, choose **Generate Document**.
 6. Review the rendered content, optionally generate a PDF, then save.
-7. Generated PDFs attach to the source CRM record when record context is available, and
-   separately to the GeneratedDocument audit record itself — so the PDF can always be
+7. Generated PDFs attach to the Document audit record itself — so the PDF can always be
    retrieved later from that record's own Files tab using only its ID, even after the
-   cached `pdfUrl` (a signed link that expires) goes stale.
-8. Use the **Documents** record tab to review generated-document audit/history.
+   cached `pdfUrl` (a signed link that expires) goes stale. The source CRM record reaches
+   the same file through its **Documents** tab's "View Document" link, so nothing is
+   duplicated.
+8. Use the **Documents** record tab to review document audit/history.
 
 ### Template authoring basics
 
@@ -48,10 +49,10 @@ Documents & Templates turns Twenty CRM records into reusable business documents:
 
 ### Common user flows
 
-- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, attach it to the source record, and save audit history.
-- **Follow up on a record:** render an updated template against the record's current CRM data, generate a fresh PDF, and let it attach to the source record with a new audit entry — no separate send step required.
-- **Regenerate a document:** open the record history tab, find a previous generated document, and rerun the template with current CRM data.
-- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its source record.
+- **Create a proposal:** select a Company or Opportunity template, preview CRM fields, generate a PDF, and save audit history — the PDF attaches to the new Document record, reachable from the source record's Documents tab.
+- **Follow up on a record:** render an updated template against the record's current CRM data, generate a fresh PDF, and get a new Document record with a new audit entry — no separate send step required.
+- **Regenerate a document:** open the record's Documents tab, find a previous document, and rerun the template with current CRM data.
+- **Run a bulk workflow:** iterate over filtered records, render one document per item, and keep each output isolated on its own Document record.
 
 ## Documentation links
 
@@ -89,8 +90,9 @@ because it does not depend on a page layout being customized for that object.
 
 ### Documents history tab (optional, per-object)
 
-The app also ships a Documents widget (a real front component) that shows generated-document
-history filtered by the current record's type and ID. It comes pre-attached to Company, Person,
+The app also ships a Documents widget (a real front component) that shows document history
+filtered by the current record's type and ID, with a link to each Document record's own Files
+tab. It comes pre-attached to Company, Person,
 and Opportunity record pages. Admins who want the same dedicated tab on another object (a custom
 object, Task, Note, etc.) can attach it manually, per object, through Twenty's own UI:
 
