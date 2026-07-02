@@ -33,6 +33,19 @@ For admins/integrators authoring templates programmatically (see the README's
 | `allowedOutputTypes` | ARRAY | No (default `['PDF']`) | Informational; does not currently gate `Generate PDF`. |
 | `status` | SELECT | No (default `ACTIVE`) | `DRAFT` / `ACTIVE` / `ARCHIVED` — only `ACTIVE` templates appear in **Generate Document**. |
 
+## Starter templates
+
+The app ships five ready-to-use templates: Sales Proposal, Company Invoice, Welcome
+Letter, Meeting Summary, and Task Handover. To seed them into a workspace:
+
+1. Run the **Seed Starter Templates** logic function from a workflow or programmatically.
+2. Templates are created with status `DRAFT` — review and activate the ones you want users
+   to see.
+3. The seeder is idempotent: re-running skips templates that already exist (by name).
+
+Users can duplicate a starter template via Twenty's native "Duplicate" record action, then
+customize the copy.
+
 ## Configuration
 
 1. Confirm the app package uses `twenty-sdk` and `twenty-client-sdk` versions compatible with the installed workspace.

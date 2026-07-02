@@ -22,6 +22,8 @@ test('template editor front component exists and is publicly exported', () => {
     'createTemplateEditorState',
     'renderTemplateEditorMarkup',
     'TemplateEditorController',
+    'VariablePicker',
+    'groupVariablesForPicker',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
@@ -34,6 +36,7 @@ const {
   validateTemplateEditorState,
   insertVariableExpression,
   mergeTemplateVariables,
+  groupVariablesForPicker,
   fetchDocumentTemplate,
   createCoreTemplateEditorApi,
 } = await import('../dist/front-components/template-editor.front-component.js');
@@ -310,4 +313,40 @@ test('TemplateEditorController.save rejects an invalid boundObjectName before pe
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /not a valid Twenty object name/);
   assert.equal(saveTemplateCalls.length, 0, 'save must not persist when boundObjectName is invalid');
+});
+
+test('groupVariablesForPicker groups variables by object prefix and marks referenced ones', () => {
+  const available = [
+    { path: 'opportunity.name', label: 'opportunity.name' },
+    { path: 'opportunity.stage', label: 'opportunity.stage' },
+    { path: 'opportunity.closeDate', label: 'opportunity.closeDate' },
+    { path: 'opportunity.company.name', label: 'opportunity.company.name' },
+    { path: 'opportunity.company.domainName', label: 'opportunity.company.domainName' },
+    { path: 'opportunity.pointOfContact.name.firstName', label: 'opportunity.pointOfContact.name.firstName' },
+  ];
+  const referenced = new Set(['opportunity.name', 'opportunity.company.name']);
+
+  const groups = groupVariablesForPicker(available, referenced);
+
+  assert.ok(groups.length >= 2, 'should produce multiple groups');
+
+  const oppGroup = groups.find((g) => g.label === 'opportunity');
+  assert.ok(oppGroup, 'should have an "opportunity" group');
+  assert.ok(oppGroup.variables.some((v) => v.path === 'opportunity.name' && v.referenced === true));
+  assert.ok(oppGroup.variables.some((v) => v.path === 'opportunity.stage' && v.referenced === false));
+
+  const companyGroup = groups.find((g) => g.label === 'opportunity.company');
+  assert.ok(companyGroup, 'should have an "opportunity.company" group');
+  assert.ok(companyGroup.variables.some((v) => v.path === 'opportunity.company.name' && v.referenced === true));
+  assert.ok(companyGroup.variables.some((v) => v.path === 'opportunity.company.domainName' && v.referenced === false));
+});
+
+test('groupVariablesForPicker handles single-segment variables', () => {
+  const available = [
+    { path: 'today', label: 'today' },
+    { path: 'company.name', label: 'company.name' },
+  ];
+  const groups = groupVariablesForPicker(available, new Set());
+  assert.ok(groups.some((g) => g.label === 'today'), 'single-segment variable should create its own group');
+  assert.ok(groups.some((g) => g.label === 'company'), 'dotted variable should group by prefix');
 });

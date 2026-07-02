@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, type CSSProperties } from 'react';
 
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useSelectedRecordIds } from 'twenty-sdk/front-component';
@@ -8,6 +8,7 @@ import { TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constan
 import { renderHandlebarsTemplate } from '../logic/rendering/handlebars-renderer';
 import { createMetadataApi, type MetadataApi } from '../logic/metadata/metadata-client';
 import { listBoundObjectFields } from '../logic/list-template-variables';
+import { listTemplateVariablesLogic } from '../logic/list-template-variables';
 
 export type TemplateEditorTab = 'html' | 'preview';
 
@@ -423,6 +424,191 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
   },
 });
 
+export type VariableGroup = {
+  label: string;
+  variables: Array<{ path: string; label: string; referenced: boolean }>;
+};
+
+export const groupVariablesForPicker = (
+  available: TemplateEditorVariable[],
+  referencedPaths: Set<string>,
+): VariableGroup[] => {
+  const groups = new Map<string, VariableGroup>();
+  for (const variable of available) {
+    const parts = variable.path.split('.');
+    const groupKey = parts.length > 1 ? parts.slice(0, -1).join('.') : parts[0];
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, { label: groupKey, variables: [] });
+    }
+    groups.get(groupKey)!.variables.push({
+      path: variable.path,
+      label: parts[parts.length - 1],
+      referenced: referencedPaths.has(variable.path),
+    });
+  }
+  return Array.from(groups.values());
+};
+
+const pickerStyles = {
+  container: {
+    width: 220,
+    minWidth: 180,
+    borderRight: '1px solid #e4e4e7',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    background: '#fafafa',
+  } satisfies CSSProperties,
+  header: {
+    padding: '10px 12px 8px',
+    borderBottom: '1px solid #e4e4e7',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  } satisfies CSSProperties,
+  title: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#344054',
+    letterSpacing: '0.02em',
+  } satisfies CSSProperties,
+  search: {
+    margin: '8px 10px 4px',
+    padding: '5px 8px',
+    fontSize: 12,
+    border: '1px solid #d0d5dd',
+    borderRadius: 4,
+    outline: 'none',
+    width: 'calc(100% - 20px)',
+    background: '#fff',
+  } satisfies CSSProperties,
+  list: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '4px 0',
+  } satisfies CSSProperties,
+  groupLabel: {
+    fontSize: 10,
+    fontWeight: 600,
+    color: '#667085',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    padding: '10px 12px 4px',
+  } satisfies CSSProperties,
+  variableButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    width: '100%',
+    padding: '4px 12px 4px 16px',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    textAlign: 'left' as const,
+    fontSize: 12,
+    color: '#344054',
+    borderRadius: 0,
+    lineHeight: 1.5,
+  } satisfies CSSProperties,
+  referencedDot: {
+    width: 5,
+    height: 5,
+    borderRadius: '50%',
+    background: '#3b82f6',
+    flexShrink: 0,
+  } satisfies CSSProperties,
+  copiedToast: {
+    position: 'fixed' as const,
+    bottom: 16,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: '#1d2939',
+    color: '#fff',
+    fontSize: 12,
+    padding: '6px 14px',
+    borderRadius: 6,
+    zIndex: 9999,
+    pointerEvents: 'none' as const,
+    whiteSpace: 'nowrap' as const,
+  } satisfies CSSProperties,
+  emptyState: {
+    padding: '16px 12px',
+    fontSize: 12,
+    color: '#98a2b3',
+    textAlign: 'center' as const,
+    lineHeight: 1.6,
+  } satisfies CSSProperties,
+};
+
+export type VariablePickerProps = {
+  groups: VariableGroup[];
+  onCopy: (path: string) => void;
+  filter: string;
+  onFilterChange: (value: string) => void;
+};
+
+export const VariablePicker = ({ groups, onCopy, filter, onFilterChange }: VariablePickerProps) => {
+  const lowerFilter = filter.toLowerCase();
+  const filtered = groups
+    .map((group) => ({
+      ...group,
+      variables: group.variables.filter(
+        (v) => v.path.toLowerCase().includes(lowerFilter) || v.label.toLowerCase().includes(lowerFilter),
+      ),
+    }))
+    .filter((group) => group.variables.length > 0);
+
+  return (
+    <nav aria-label="Template variables" style={pickerStyles.container}>
+      <div style={pickerStyles.header}>
+        <span style={pickerStyles.title}>Variables</span>
+      </div>
+      <input
+        type="search"
+        placeholder="Filter fields…"
+        value={filter}
+        onChange={(e) => onFilterChange(e.target.value)}
+        style={pickerStyles.search}
+        aria-label="Filter variables"
+      />
+      <div style={pickerStyles.list} role="list">
+        {filtered.length === 0 ? (
+          <p style={pickerStyles.emptyState}>
+            {filter ? 'No matching fields.' : 'Set Bound Object in the Fields tab to see available variables.'}
+          </p>
+        ) : (
+          filtered.map((group) => (
+            <div key={group.label} role="group" aria-label={group.label}>
+              <div style={pickerStyles.groupLabel}>{group.label}</div>
+              {group.variables.map((variable) => (
+                <button
+                  key={variable.path}
+                  role="listitem"
+                  type="button"
+                  style={pickerStyles.variableButton}
+                  onClick={() => onCopy(variable.path)}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = '#f0f0f3';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  }}
+                  title={`Copy {{${variable.path}}} to clipboard`}
+                  aria-label={`Copy ${variable.path}`}
+                >
+                  {variable.referenced ? <span style={pickerStyles.referencedDot} aria-label="Referenced" /> : null}
+                  <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{variable.label}</span>
+                </button>
+              ))}
+            </div>
+          ))
+        )}
+      </div>
+    </nav>
+  );
+};
+
 export type TemplateEditorComponentProps = {
   /**
    * Test/override hook — when supplied, the component skips its own record
@@ -448,6 +634,18 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const [previewHtml, setPreviewHtml] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [variableGroups, setVariableGroups] = useState<VariableGroup[]>([]);
+  const [variableFilter, setVariableFilter] = useState('');
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(true);
+
+  const handleCopyVariable = useCallback((path: string) => {
+    const expression = `{{${path}}}`;
+    void navigator.clipboard.writeText(expression).then(() => {
+      setCopiedPath(path);
+      setTimeout(() => setCopiedPath(null), 1500);
+    });
+  }, []);
 
   useEffect(() => {
     if (!recordId && !template) {
@@ -477,6 +675,36 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         if (!rendered.ok) {
           setErrorMessage(rendered.errors.map((e) => e.userMessage ?? e.message ?? '').join(' '));
         }
+
+        const referencedVars = listTemplateVariablesLogic({ htmlSource: tmpl.htmlSource });
+        const referencedPaths = new Set(referencedVars.map((v) => v.name));
+
+        if (tmpl.boundObjectName && resolvedApi.listFields) {
+          try {
+            const schemaFields = await resolvedApi.listFields(tmpl.boundObjectName);
+            const merged = mergeTemplateVariables(
+              referencedVars.map((v) => ({ path: v.name, label: v.name })),
+              schemaFields,
+            );
+            if (!cancelled) {
+              setVariableGroups(groupVariablesForPicker(merged, referencedPaths));
+            }
+          } catch {
+            if (!cancelled) {
+              const groups = groupVariablesForPicker(
+                referencedVars.map((v) => ({ path: v.name, label: v.name })),
+                referencedPaths,
+              );
+              setVariableGroups(groups);
+            }
+          }
+        } else {
+          const groups = groupVariablesForPicker(
+            referencedVars.map((v) => ({ path: v.name, label: v.name })),
+            referencedPaths,
+          );
+          if (!cancelled) setVariableGroups(groups);
+        }
       } catch (err) {
         if (!cancelled) {
           setIsLoading(false);
@@ -505,18 +733,56 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   }
 
   return (
-    <section aria-label="Template preview" style={{ padding: 16, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)', minHeight: 480 }}>
-      <iframe
-        aria-label="Template preview"
-        title="Template preview"
-        srcDoc={previewHtml}
-        sandbox=""
-        style={{ width: '100%', flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
-      />
-      {errorMessage ? (
-        <output aria-live="polite" style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#b42318' }}>
-          {errorMessage}
-        </output>
+    <section aria-label="Template preview" style={{ display: 'flex', height: 'calc(100vh - 160px)', minHeight: 480 }}>
+      {showPicker ? (
+        <VariablePicker
+          groups={variableGroups}
+          onCopy={handleCopyVariable}
+          filter={variableFilter}
+          onFilterChange={setVariableFilter}
+        />
+      ) : null}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => setShowPicker((prev) => !prev)}
+            style={{
+              padding: '4px 10px',
+              fontSize: 12,
+              border: '1px solid #d0d5dd',
+              borderRadius: 4,
+              background: showPicker ? '#f0f0f3' : '#fff',
+              cursor: 'pointer',
+              color: '#344054',
+              fontWeight: 500,
+            }}
+            aria-label={showPicker ? 'Hide variable picker' : 'Show variable picker'}
+            title={showPicker ? 'Hide variable picker' : 'Show variable picker'}
+          >
+            {showPicker ? 'Hide Variables' : 'Show Variables'}
+          </button>
+          <span style={{ fontSize: 12, color: '#98a2b3' }}>
+            Click a variable to copy its Handlebars expression
+          </span>
+        </div>
+        <iframe
+          aria-label="Template preview"
+          title="Template preview"
+          srcDoc={previewHtml}
+          sandbox=""
+          style={{ width: '100%', flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
+        />
+        {errorMessage ? (
+          <output aria-live="polite" style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#b42318' }}>
+            {errorMessage}
+          </output>
+        ) : null}
+      </div>
+      {copiedPath ? (
+        <div style={pickerStyles.copiedToast} role="status" aria-live="polite">
+          Copied {`{{${copiedPath}}}`}
+        </div>
       ) : null}
     </section>
   );

@@ -51,8 +51,12 @@ Every template is a `DocumentTemplate` record. Here is what each field does:
    listed above. The **HTML Source** field has a large editing area at the bottom of this
    tab, so you can write Handlebars markup directly here.
 
-   **Preview tab** — a rich editor with a variable picker (showing fields from the bound
-   object's schema) and a live rendered preview of your template against the Preview Data.
+   **Preview tab** — a live rendered preview of your template against the Preview Data,
+   plus a **variable picker** sidebar. The picker lists every available field from the
+   bound object's schema (grouped by object/relation), and clicking a variable copies its
+   Handlebars expression (e.g. `{{opportunity.company.name}}`) to your clipboard so you
+   can paste it into the HTML Source field. Variables already referenced in the template
+   are marked with a blue dot. Use the search box to filter long field lists.
 
 4. Fill in the key fields:
    - **Name** — give the template a descriptive name (e.g. "Opportunity Proposal").
@@ -140,8 +144,9 @@ notation — no extra configuration needed:
 ```
 
 The available relation paths depend on the object's schema in your workspace. Use the
-**variable picker** in the Preview tab to browse all available fields and relations for
-the bound object — click any field to insert its `{{path}}` automatically.
+**variable picker** sidebar in the Preview tab to browse all available fields and
+relations for the bound object — click any field to copy its `{{path}}` expression to
+your clipboard, then paste it into the HTML Source field on the Fields tab.
 
 #### Conditionals
 

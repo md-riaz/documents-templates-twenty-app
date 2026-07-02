@@ -39,6 +39,20 @@
   `CoreApiClient`/`RestApiClient`) in the README, plus a `DocumentTemplate` field reference in the
   admin guide.
 
+## 0.3.0
+
+### Added
+
+- **Variable picker sidebar in the Preview tab.** The template preview now shows a
+  collapsible sidebar listing every available field from the bound object's schema, grouped
+  by object/relation. Clicking a variable copies its Handlebars expression to the clipboard.
+  Already-referenced variables are marked with a blue dot. Includes a search/filter input.
+- **Starter template gallery.** Five ready-to-use templates ship with the app and can be
+  seeded into any workspace via the `Seed Starter Templates` logic function: Sales Proposal
+  (opportunity), Company Invoice (company), Welcome Letter (person), Meeting Summary
+  (calendarEvent), and Task Handover (task). Each demonstrates different Handlebars
+  features and has realistic preview data.
+
 ## 0.2.5
 
 ### Removed
