@@ -1610,12 +1610,12 @@
     },
     {
       "universalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371",
-      "name": "template-editor",
-      "description": "HTML/CSS template editor with live preview, preview JSON, and a schema-backed variable browser.",
+      "name": "template-preview",
+      "description": "Renders a live preview of the document template using its HTML source and preview data.",
       "componentName": "TemplateEditorComponent",
       "sourceComponentPath": "src/front-components/template-editor.front-component.tsx",
       "builtComponentPath": "src/front-components/template-editor.front-component.mjs",
-      "builtComponentChecksum": "749251cbecda72e23d28e81ce2a89f69",
+      "builtComponentChecksum": "04b4528190e801705d5715575b81cfe3",
       "isHeadless": false,
       "usesSdkClient": true
     }
@@ -1840,8 +1840,8 @@
     {
       "universalIdentifier": "54b1de8e-28ff-4eac-af93-3a3f88b999ef",
       "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
-      "title": "Editor",
-      "icon": "IconFileText",
+      "title": "Preview",
+      "icon": "IconEye",
       "position": 1,
       "layoutMode": "GRID",
       "widgets": [
