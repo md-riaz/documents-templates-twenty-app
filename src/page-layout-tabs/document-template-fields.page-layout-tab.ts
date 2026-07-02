@@ -1,24 +1,18 @@
 import { definePageLayoutTab, PageLayoutTabLayoutMode } from 'twenty-sdk/define';
 
 import {
+  DOCUMENT_TEMPLATE_FIELDS,
   DOCUMENT_TEMPLATE_PAGE_LAYOUT_FIELDS_TAB_UNIVERSAL_IDENTIFIER,
   DOCUMENT_TEMPLATE_PAGE_LAYOUT_FIELDS_WIDGET_UNIVERSAL_IDENTIFIER,
+  DOCUMENT_TEMPLATE_PAGE_LAYOUT_HTML_SOURCE_WIDGET_UNIVERSAL_IDENTIFIER,
   DOCUMENT_TEMPLATE_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER,
 } from '../constants/model-identifiers';
 
 /**
- * "Fields" tab on the app's own DocumentTemplate record page (see
- * `src/page-layouts/document-template.page-layout.ts`), showing Twenty's
- * native field editor (General/System groups) for Name, Category,
- * Description, Renderer, Bound Object Name, Status, etc. — the same
- * experience every other object gets by default. The "Editor" tab (see
- * `document-template-editor.page-layout-tab.ts`) is reserved for what a
- * native field can't do: HTML/CSS/Preview JSON with live preview.
- *
- * NOTE: the Twenty CLI discovers entities via static analysis of the
- * `export default defineXxx({...})` expression — it must be inline (not a
- * re-exported reference to a named const), and one entity per file, or the
- * entity is silently skipped.
+ * "Fields" tab on the DocumentTemplate record page, combining Twenty's native
+ * field editor (General/System groups) with a dedicated large editing area for
+ * HTML Source below it — matching the pattern Task/Note use for their body
+ * field (FIELDS widget + a dedicated field widget on the same tab).
  */
 export default definePageLayoutTab({
   universalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_FIELDS_TAB_UNIVERSAL_IDENTIFIER,
@@ -35,6 +29,17 @@ export default definePageLayoutTab({
       gridPosition: { row: 0, column: 0, rowSpan: 4, columnSpan: 4 },
       configuration: {
         configurationType: 'FIELDS',
+      },
+    },
+    {
+      universalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_HTML_SOURCE_WIDGET_UNIVERSAL_IDENTIFIER,
+      title: 'HTML Source',
+      type: 'FIELD',
+      gridPosition: { row: 4, column: 0, rowSpan: 4, columnSpan: 4 },
+      configuration: {
+        configurationType: 'FIELD',
+        fieldMetadataId: DOCUMENT_TEMPLATE_FIELDS.htmlSource,
+        fieldDisplayMode: 'EDITOR',
       },
     },
   ],
