@@ -70,6 +70,13 @@ export const DOCUMENTS_TAB_WIDGET_UNIVERSAL_IDENTIFIERS = {
   opportunity: '45436271-3b58-449f-8f7b-0fb4ca866401',
 } as const;
 
+// Twenty's built-in Attachment object's `file` field (FILES type), confirmed
+// live via the Metadata API against a real workspace. Not app-owned — this is
+// a system field universal identifier, stable across every Twenty workspace,
+// required by `MetadataApiClient.uploadFile(...)` to upload bytes destined
+// for an Attachment (see core-client-adapters.ts's storage adapter).
+export const TWENTY_ATTACHMENT_FILE_FIELD_UNIVERSAL_IDENTIFIER = '20202020-15db-460e-8166-c7b5d87ad4be';
+
 export const RENDER_TEMPLATE_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER = '1fcdb464-9f52-4904-81e4-bdadf3652237';
 export const GENERATE_PDF_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER = '97e4bf7b-b731-45e1-9f0c-098d2cdbfc63';
 export const SAVE_GENERATED_DOCUMENT_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER = '9c896b3e-cf3b-4007-b2d9-2c1cdfc0505e';

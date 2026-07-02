@@ -143,40 +143,46 @@ test('CoreApiClient record bridge translates getRecord/createRecord/updateRecord
   assert.deepEqual(client.updates[0], { id: 'generated-1', data: { status: 'PDF_GENERATED' } });
 });
 
-test('createCoreStorageAdapter uploads and attaches PDFs via genql mutations (not a raw-GraphQL bridge)', async () => {
+test('createCoreStorageAdapter uploads via MetadataApiClient.uploadFile and attaches via createAttachment(file: [{fileId, label}])', async () => {
   const mutations = [];
-  const fakeClient = {
+  const uploadCalls = [];
+  const fakeCoreClient = {
     async mutation(request) {
       mutations.push(request);
       const field = Object.keys(request)[0];
-      if (field === 'uploadFile') {
-        assert.equal(request.uploadFile.__args.file.contentType, 'application/pdf');
-        assert.match(request.uploadFile.__args.file.url, /^data:application\/pdf;base64,/);
-        return { uploadFile: { id: 'file-1', url: 'twenty://files/invoice.pdf', name: 'invoice.pdf' } };
-      }
       if (field === 'createAttachment') {
         const data = request.createAttachment.__args.data;
-        assert.deepEqual(data.file, [{ url: 'twenty://files/invoice.pdf', name: 'invoice.pdf', id: 'file-1' }]);
+        assert.deepEqual(data.file, [{ fileId: 'file-1', label: 'invoice.pdf' }]);
         assert.equal(data.targetPersonId, 'person-1');
         return { createAttachment: { id: 'attachment-1', name: 'invoice.pdf' } };
       }
       throw new Error(`unexpected mutation field ${field}`);
     },
   };
+  const fakeMetadataClient = {
+    async uploadFile(buffer, filename, contentType, fieldMetadataUniversalIdentifier) {
+      uploadCalls.push({ buffer, filename, contentType, fieldMetadataUniversalIdentifier });
+      assert.equal(contentType, 'application/pdf');
+      assert.ok(Buffer.isBuffer(buffer));
+      return { id: 'file-1', path: 'files-field/x/file-1.pdf', size: buffer.length, createdAt: '2026-01-01T00:00:00Z', url: 'twenty://files/invoice.pdf' };
+    },
+  };
 
-  const storage = createCoreStorageAdapter(fakeClient);
+  const storage = createCoreStorageAdapter(fakeCoreClient, fakeMetadataClient);
   const uploaded = await storage.uploadFile({
     key: 'k', fileName: 'invoice.pdf', body: new Uint8Array([37, 80, 68, 70]), contentType: 'application/pdf',
   });
   assert.equal(uploaded.url, 'twenty://files/invoice.pdf');
   assert.equal(uploaded.fileId, 'file-1');
+  assert.equal(uploadCalls.length, 1);
+  assert.equal(uploadCalls[0].fieldMetadataUniversalIdentifier, '20202020-15db-460e-8166-c7b5d87ad4be');
 
   const attached = await storage.attachFileToRecord({
     objectName: 'person', recordId: 'person-1', fileId: uploaded.fileId, fileUrl: uploaded.url,
     fileName: 'invoice.pdf', contentType: 'application/pdf',
   });
   assert.equal(attached.attachmentId, 'attachment-1');
-  assert.equal(mutations.length, 2);
+  assert.equal(mutations.length, 1);
 });
 
 test('render -> save -> generate PDF chains through the logic function handlers', async () => {

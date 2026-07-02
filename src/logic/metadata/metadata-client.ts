@@ -53,11 +53,14 @@ const RELATION_TYPES = new Set(['RELATION', 'MORPH_RELATION']);
  * relation's target object name via `relation.targetObjectMetadata.nameSingular`.
  * `filter.isActive` is confirmed (via the real generated schema's `ObjectFilter`
  * type) to be the only relevant scoping filter available — an empty `filter: {}`
- * would also return inactive/archived objects.
+ * would also return inactive/archived objects. Confirmed live against a real
+ * workspace that `isActive` is a `BooleanFieldComparison`, which only supports
+ * `is`/`isNot` (NOT `eq`/`neq` — the server rejects `eq` with "Field \"eq\" is
+ * not defined by type \"BooleanFieldComparison\"").
  */
 const OBJECTS_QUERY = {
   objects: {
-    __args: { paging: { first: 1000 }, filter: { isActive: { eq: true } } },
+    __args: { paging: { first: 1000 }, filter: { isActive: { is: true } } },
     edges: {
       node: {
         nameSingular: true,

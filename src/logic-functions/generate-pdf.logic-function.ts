@@ -1,6 +1,7 @@
 import { defineLogicFunction } from 'twenty-sdk/define';
 import { jsonSchemaToInputSchema } from 'twenty-sdk/logic-function';
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import { MetadataApiClient } from 'twenty-client-sdk/metadata';
 import { GENERATE_PDF_LOGIC_FUNCTION_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
 import { createPdfAdapter } from '../adapters/pdf.adapter';
 import {
@@ -69,9 +70,11 @@ export const runGeneratePdf = async (
 ): Promise<GeneratePdfActionOutput> => {
   let cachedClient: CoreApiClient | undefined = deps.client;
   const resolveClient = (): CoreApiClient => (cachedClient ??= new CoreApiClient());
+  let cachedMetadataClient: MetadataApiClient | undefined;
+  const resolveMetadataClient = (): MetadataApiClient => (cachedMetadataClient ??= new MetadataApiClient());
 
   const adapter = deps.adapter ?? createPdfAdapter();
-  const storage = deps.storage ?? createCoreStorageAdapter(resolveClient());
+  const storage = deps.storage ?? createCoreStorageAdapter(resolveClient(), resolveMetadataClient());
   const api = deps.api ?? createCoreRecordApi(resolveClient());
 
   const result = await generatePdfFromHtmlLogic({

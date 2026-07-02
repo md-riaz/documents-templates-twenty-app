@@ -1,5 +1,41 @@
 # Release notes — Documents & Templates
 
+## 0.2.1
+
+### Fixed
+
+Found and fixed by deploying the app to a real Twenty workspace and exercising render → PDF
+generation end-to-end for the first time — these bugs were invisible to unit tests because they
+only used mocked API clients, not the real Twenty GraphQL schema.
+
+- **`htmlSource`/`cssSource`/`renderedHtml`/`errorMessage` were `RICH_TEXT`, not `TEXT`.**
+  `RICH_TEXT` is a composite `{ blocknote, markdown }` type in Twenty's schema — genql's
+  `__scalar: true` (used by the generic record-repository bridge) silently omits composite
+  fields, so `DocumentTemplate.htmlSource` was never actually retrievable at runtime and every
+  render would fail with "Document template has no HTML source." Changed to plain `TEXT` on
+  `DocumentTemplate`, `TemplateVersion`, and `GeneratedDocument`.
+- **`MetadataApi`'s `isActive` filter used `eq`, which doesn't exist.** `BooleanFieldComparison`
+  only supports `is`/`isNot`; the server rejects `eq` outright. Fixed in
+  `src/logic/metadata/metadata-client.ts`.
+- **PDF upload/attach used entirely fictional mutations.** There is no generic `uploadFile`
+  GraphQL mutation on Twenty's Core API, and `AttachmentCreateInput.file` is `[{ fileId, label }]`
+  (referencing an already-uploaded file), not `{ url, name, id }`. The real, documented path is
+  `MetadataApiClient.uploadFile(buffer, filename, contentType, fieldMetadataUniversalIdentifier)`
+  targeting Twenty's built-in `Attachment.file` FILES-type field, then `createAttachment` with the
+  returned `fileId`. Rewrote `createCoreStorageAdapter` (`src/logic-functions/core-client-adapters.ts`)
+  accordingly; it now takes both a `CoreApiClient` and a `MetadataApiClient`. Verified live: a
+  real PDF renders, uploads, and attaches to a real CRM record.
+- Removed `src/adapters/puppeteer-pdf.adapter.ts` — an unused, unwired duplicate of
+  `pdf.adapter.ts` missing the container-safe `--no-sandbox` launch flags.
+
+### Known limitation
+
+The uploaded file's `url` is a signed download link that expires in 24 hours (a JWT `exp` claim),
+so persisting it long-term in `GeneratedDocument.pdfUrl` is not durable — treat that field as a
+best-effort cache, not a permanent reference. Fetching the file via the `Attachment` relation
+(re-signed on every query) is the durable path; see the open discussion about also attaching
+generated PDFs to the `GeneratedDocument` record's own Files tab for retrieval by document ID.
+
 ## 0.2.0
 
 ### Added

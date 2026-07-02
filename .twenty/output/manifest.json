@@ -71,7 +71,7 @@
         },
         {
           "universalIdentifier": "d4c14004-d87b-4feb-860f-e0c37ad703c6",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "renderedHtml",
           "label": "Rendered HTML",
           "description": "Rendered HTML snapshot",
@@ -123,7 +123,7 @@
         },
         {
           "universalIdentifier": "50e010d9-ac5c-488e-b04c-c6b9b886b89e",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "errorMessage",
           "label": "Error Message",
           "description": "Failure reason",
@@ -352,7 +352,7 @@
         },
         {
           "universalIdentifier": "a45b67ab-a09e-42e4-b288-5cc34b9339a2",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "htmlSource",
           "label": "HTML Source",
           "description": "Handlebars HTML source",
@@ -360,7 +360,7 @@
         },
         {
           "universalIdentifier": "eeb4c5ed-1637-4773-ad12-af628cfb43d7",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "cssSource",
           "label": "CSS Source",
           "description": "Template CSS source",
@@ -890,7 +890,7 @@
         },
         {
           "universalIdentifier": "4aed6acb-7e9f-45fa-b8b1-9509a4dc79c4",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "htmlSource",
           "label": "HTML Source",
           "description": "Snapshot of HTML source",
@@ -898,7 +898,7 @@
         },
         {
           "universalIdentifier": "4a746fc6-10c8-4ec4-b7b9-3979da39140c",
-          "type": "RICH_TEXT",
+          "type": "TEXT",
           "name": "cssSource",
           "label": "CSS Source",
           "description": "Snapshot of CSS source",

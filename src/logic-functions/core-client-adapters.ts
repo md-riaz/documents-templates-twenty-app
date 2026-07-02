@@ -1,6 +1,8 @@
 import { CoreApiClient } from 'twenty-client-sdk/core';
+import type { MetadataApiClient } from 'twenty-client-sdk/metadata';
 import type { PdfStorageAdapter } from '../logic/generate-pdf';
 import type { PermissionPrincipal } from '../permissions/permission-guards';
+import { TWENTY_ATTACHMENT_FILE_FIELD_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
 
 /**
  * Logic functions run inside Twenty with an already-authorized workspace context
@@ -83,24 +85,25 @@ export const createCoreRecordApi = (client: CoreApiClient): CoreRecordApi => {
 /**
  * PDF storage adapter backed by Twenty's native clients.
  *
- * IMPORTANT (confirmed against docs.twenty.com/developers/extend/apps/logic/logic-functions):
- * `CoreApiClient.query`/`.mutation` are genql-style selection-set executors (NOT a raw
- * `{ query, variables }` GraphQL client) — an earlier version of this file incorrectly
- * bridged `client.query` into `../adapters/twenty-storage.adapter.ts`'s raw-GraphQL
- * `{ query({query, variables}) }` shape, which would fail at runtime. `MetadataApiClient`
- * is the client Twenty documents for file uploads (`uploadFile(buffer, filename, mimeType,
- * fieldUniversalIdentifier)`), but that method uploads into a FILES-type *field* on an
- * object — this app's `GeneratedDocument` object stores `pdfUrl` as plain TEXT and attaches
- * via Twenty's generic, polymorphic Attachment entity instead (matching the mutation shapes
- * already used in `../adapters/twenty-storage.adapter.ts`'s raw-GraphQL implementation), so
- * we use `CoreApiClient.upload` (the client's own file-upload member, generated per-workspace
- * and typed `any` in the SDK) for the upload step and `CoreApiClient.mutation` for creating
- * the Attachment record, re-expressing the same `uploadFile`/`createAttachment` argument
- * shapes as genql calls instead of raw GraphQL documents.
+ * CONFIRMED LIVE against a real workspace (this is not a guess from package types):
+ * there is NO generic `uploadFile`/file-upload mutation on the Core GraphQL API — the
+ * only file-upload entry points are `MetadataApiClient.uploadFile(buffer, filename,
+ * contentType, fieldMetadataUniversalIdentifier)` (documented at
+ * docs.twenty.com/developers/extend/apps/logic/logic-functions), which uploads bytes
+ * into a specific FILES-type *field* and returns `{ id, path, size, createdAt, url }`.
+ * An earlier version of this file invented a fictional `Mutation.uploadFile` genql call
+ * (copied from a pre-existing, never-verified `../adapters/twenty-storage.adapter.ts`)
+ * which fails at runtime with "type Mutation does not have a field uploadFile".
  *
- * `CoreApiClient.upload`'s exact generated signature cannot be confirmed from package types
- * alone (it depends on the workspace's introspected schema) — this should be verified
- * against a live Twenty instance before relying on it in production.
+ * The correct two-step flow, confirmed live:
+ *  1. `metadataClient.uploadFile(buffer, fileName, contentType,
+ *     TWENTY_ATTACHMENT_FILE_FIELD_UNIVERSAL_IDENTIFIER)` — Twenty's built-in
+ *     `Attachment.file` field is itself FILES-type, so we upload into that field's
+ *     bucket (not one of our own objects) to get a `fileId`.
+ *  2. `coreClient.mutation({ createAttachment: { data: { file: [{ fileId, label }],
+ *     ... } } })` — `AttachmentCreateInput.file` is `[FileItemInput]` = `{ fileId,
+ *     label }` (NOT `{ url, name, id }`, which is also a fictional shape from the
+ *     same unverified adapter).
  */
 const RECORD_TYPE_FIELD_MAP: Record<string, string> = {
   company: 'targetCompanyId',
@@ -119,37 +122,38 @@ const RECORD_TYPE_FIELD_MAP: Record<string, string> = {
 
 const getAttachmentField = (objectName: string): string | undefined => RECORD_TYPE_FIELD_MAP[objectName.toLowerCase()];
 
-export const createCoreStorageAdapter = (client: CoreApiClient): PdfStorageAdapter => {
+export type MetadataUploadClientLike = {
+  uploadFile: (
+    fileBuffer: Buffer,
+    filename: string,
+    contentType: string | undefined,
+    fieldMetadataUniversalIdentifier: string,
+  ) => Promise<{ id: string; path: string; size: number; createdAt: string; url: string }>;
+};
+
+export const createCoreStorageAdapter = (
+  client: CoreApiClient,
+  metadataClient: MetadataApiClient | MetadataUploadClientLike,
+): PdfStorageAdapter => {
   const genql = asGenql(client);
 
   return {
     async uploadFile({ fileName, body, contentType }) {
-      const base64 = Buffer.from(body).toString('base64');
-      const dataUrl = `data:${contentType};base64,${base64}`;
-      // Generic (non-field-scoped) upload mutation, matching the shape already used by
-      // ../adapters/twenty-storage.adapter.ts, re-expressed as a genql selection. This is
-      // distinct from CoreApiClient's own `uploadFile()` convenience method, which uploads
-      // into a specific FILES-type *field* via `fieldMetadataUniversalIdentifier` — this app
-      // has no such field on GeneratedDocument and instead attaches PDFs via Twenty's
-      // generic, polymorphic Attachment entity (see attachFileToRecord below).
-      const result = await genql.mutation({
-        uploadFile: {
-          __args: { file: { name: fileName, url: dataUrl, contentType } },
-          id: true,
-          url: true,
-          name: true,
-        },
-      });
-      const uploaded = result?.uploadFile as { id: string; url: string; name: string } | undefined;
-      if (!uploaded) throw new Error('uploadFile mutation returned no result.');
+      const uploaded = await metadataClient.uploadFile(
+        Buffer.from(body),
+        fileName,
+        contentType,
+        TWENTY_ATTACHMENT_FILE_FIELD_UNIVERSAL_IDENTIFIER,
+      );
       return { url: uploaded.url, fileId: uploaded.id };
     },
 
-    async attachFileToRecord({ objectName, recordId, fileId, fileUrl, fileName }) {
+    async attachFileToRecord({ objectName, recordId, fileId, fileName }) {
       const attachmentField = getAttachmentField(objectName);
+      if (!fileId) throw new Error('attachFileToRecord requires a fileId from a prior uploadFile call.');
       const attachmentData: Record<string, unknown> = {
         name: fileName,
-        file: [{ url: fileUrl, name: fileName, id: fileId }],
+        file: [{ fileId, label: fileName }],
         ...(attachmentField ? { [attachmentField]: recordId } : {}),
       };
 

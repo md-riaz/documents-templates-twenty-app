@@ -46,8 +46,8 @@ export default defineObject({
       universalSettings: { relationType: RelationType.MANY_TO_ONE, onDelete: OnDeleteAction.SET_NULL, joinColumnName: 'categoryId' },
     },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.description, type: FieldType.RICH_TEXT, name: 'description', label: 'Description', description: 'Template description', icon: 'IconNotes', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.RICH_TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.cssSource, type: FieldType.RICH_TEXT, name: 'cssSource', label: 'CSS Source', description: 'Template CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.cssSource, type: FieldType.TEXT, name: 'cssSource', label: 'CSS Source', description: 'Template CSS source', icon: 'IconCodeDots', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.variables, type: FieldType.RAW_JSON, name: 'variables', label: 'Variables', description: 'Variable schema as JSON', icon: 'IconBraces', isNullable: true, defaultValue: null },
     {
