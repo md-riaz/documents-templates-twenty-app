@@ -14,7 +14,8 @@ declare global {
   }
 }
 
-const TINYMCE_CDN_URL = 'https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js';
+const TINYMCE_CDN_BASE = 'https://cdn.jsdelivr.net/npm/tinymce@7';
+const TINYMCE_CDN_URL = `${TINYMCE_CDN_BASE}/tinymce.min.js`;
 
 /**
  * Loads TinyMCE from the CDN exactly once per page, regardless of how many
@@ -430,23 +431,21 @@ export type TemplateEditorComponentProps = {
 const buildTinyMceConfig = (target: HTMLTextAreaElement, onReady: (editor: any) => void) => ({
   target,
   height: 500,
+  base_url: TINYMCE_CDN_BASE,
+  suffix: '.min',
+  skin_url: `${TINYMCE_CDN_BASE}/skins/ui/oxide`,
+  content_css: false as unknown as string,
   menubar: false,
   resize: false,
   plugins: 'code lists table link image searchreplace fullscreen',
   toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | table link | code fullscreen',
   promotion: false,
   branding: false,
-  // Templates are raw Handlebars-flavored HTML fragments (not just "rich
-  // text") — allow every tag/attribute and don't let TinyMCE "clean up"
-  // markup it doesn't recognize, so hand-authored HTML/CSS round-trips
-  // untouched.
   valid_elements: '*[*]',
   extended_valid_elements: '*[*]',
   verify_html: false,
   entity_encoding: 'raw',
   convert_urls: false,
-  // Handlebars `{{expressions}}` aren't valid HTML on their own; protect them
-  // from the HTML parser/serializer so they survive visual-mode edits intact.
   protect: [/\{\{[\s\S]*?\}\}/g],
   content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
   setup: (editor: any) => {
@@ -481,6 +480,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const [statusMessage, setStatusMessage] = useState('');
   const [statusIsError, setStatusIsError] = useState(false);
 
+  const [editorLoading, setEditorLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<any>(null);
   const textareaElRef = useRef<HTMLTextAreaElement | null>(null);
@@ -542,9 +542,11 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
 
     let cancelled = false;
     let resizeObserver: ResizeObserver | undefined;
+    setEditorLoading(true);
 
-    void loadTinyMce()
-      .then(() => {
+    void (async () => {
+      try {
+        await loadTinyMce();
         if (cancelled) return;
         const container = containerRef.current;
         const tinymceGlobal = typeof window !== 'undefined' ? window.tinymce : undefined;
@@ -556,11 +558,12 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         container.appendChild(textarea);
         textareaElRef.current = textarea;
 
-        tinymceGlobal.init(
+        const editors = await tinymceGlobal.init(
           buildTinyMceConfig(textarea, (editor: any) => {
             editorRef.current = editor;
             editor.on('init', () => {
               if (cancelled) return;
+              setEditorLoading(false);
               editor.setContent(htmlSourceRef.current || '');
               const editorContainer = editor.getContainer();
               if (editorContainer && container) {
@@ -575,13 +578,18 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
             });
           }),
         );
-      })
-      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (!editors || editors.length === 0) {
+          throw new Error('TinyMCE init returned no editor instances.');
+        }
+      } catch (err: unknown) {
         if (!cancelled) {
+          setEditorLoading(false);
           setStatusIsError(true);
           setStatusMessage(err instanceof Error ? err.message : 'Failed to load the WYSIWYG editor.');
         }
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -728,13 +736,20 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         </output>
       ) : null}
 
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {activeTab === 'visual' ? (
-          <div
-            ref={containerRef}
-            aria-label="Visual template editor"
-            style={{ flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, overflow: 'hidden' }}
-          />
+          <>
+            {editorLoading ? (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', zIndex: 1, borderRadius: 4 }}>
+                <span style={{ color: '#475467', fontSize: 14 }}>Loading editor…</span>
+              </div>
+            ) : null}
+            <div
+              ref={containerRef}
+              aria-label="Visual template editor"
+              style={{ flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, overflow: 'hidden' }}
+            />
+          </>
         ) : (
           <textarea
             aria-label="Template HTML source"
