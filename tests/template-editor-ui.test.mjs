@@ -167,7 +167,7 @@ test('template editor supports keyboard tab navigation and variable insertion', 
   state = TemplateEditorController.reduceKey(state, { key: 'End', target: 'tabs' });
   assert.equal(state.activeTab, 'source');
   state = TemplateEditorController.reduceKey(state, { key: 'Home', target: 'tabs' });
-  assert.equal(state.activeTab, 'html');
+  assert.equal(state.activeTab, 'visual');
 
   const validation = validateTemplateEditorState({ ...state, name: '', htmlSource: '', previewJson: '{bad' });
   assert.match(validation.join('\n'), /Set a Name in the Fields tab before saving/);
