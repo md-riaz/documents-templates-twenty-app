@@ -429,7 +429,7 @@ export type TemplateEditorComponentProps = {
 /** TinyMCE configuration shared by every editor instance this widget creates. */
 const buildTinyMceConfig = (target: HTMLTextAreaElement, onReady: (editor: any) => void) => ({
   target,
-  height: '100%',
+  height: 500,
   menubar: false,
   resize: false,
   plugins: 'code lists table link image searchreplace fullscreen',
@@ -541,6 +541,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
     if (isLoading || loadError || activeTab !== 'visual') return undefined;
 
     let cancelled = false;
+    let resizeObserver: ResizeObserver | undefined;
 
     void loadTinyMce()
       .then(() => {
@@ -561,6 +562,16 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
             editor.on('init', () => {
               if (cancelled) return;
               editor.setContent(htmlSourceRef.current || '');
+              const editorContainer = editor.getContainer();
+              if (editorContainer && container) {
+                const syncHeight = () => {
+                  const h = container.clientHeight;
+                  if (h > 0) editorContainer.style.height = `${h}px`;
+                };
+                syncHeight();
+                resizeObserver = new ResizeObserver(syncHeight);
+                resizeObserver.observe(container);
+              }
             });
           }),
         );
@@ -574,6 +585,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
 
     return () => {
       cancelled = true;
+      if (resizeObserver) resizeObserver.disconnect();
       const editor = editorRef.current;
       if (editor) {
         try {
@@ -666,20 +678,9 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   return (
     <section
       aria-label="Template editor"
-      style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)', minHeight: 480, padding: 16, boxSizing: 'border-box' }}
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 480, padding: 16, boxSizing: 'border-box' }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 240px', minWidth: 200 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#344054' }}>Name</span>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Template name"
-            aria-label="Template name"
-            style={{ padding: '6px 10px', fontSize: 14, border: '1px solid #d0d5dd', borderRadius: 4, outline: 'none' }}
-          />
-        </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={handleToggleTab}
