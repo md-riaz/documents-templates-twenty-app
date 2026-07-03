@@ -422,7 +422,7 @@ export type TemplateEditorComponentProps = {
 
 const buildTinyMceConfig = (target: HTMLTextAreaElement, onReady: (editor: any) => void) => ({
   target,
-  height: 500,
+  height: '100%',
   license_key: TINYMCE_LICENSE_KEY,
   skin: false as unknown as string,
   content_css: false as unknown as string,
@@ -658,7 +658,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   return (
     <section
       aria-label="Template editor"
-      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 480, padding: 16, boxSizing: 'border-box' }}
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 'max(480px, calc(100dvh - 200px))', padding: 16, boxSizing: 'border-box' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <button
