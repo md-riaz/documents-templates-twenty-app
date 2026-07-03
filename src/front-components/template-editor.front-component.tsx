@@ -8,42 +8,34 @@ import { TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constan
 import { renderHandlebarsTemplate } from '../logic/rendering/handlebars-renderer';
 import { createMetadataApi, type MetadataApi } from '../logic/metadata/metadata-client';
 
-declare global {
-  interface Window {
-    tinymce: any;
-  }
-}
-
-const TINYMCE_CDN_BASE = 'https://cdn.jsdelivr.net/npm/tinymce@7';
-const TINYMCE_CDN_URL = `${TINYMCE_CDN_BASE}/tinymce.min.js`;
 const TINYMCE_LICENSE_KEY = 'gpl';
 
-/**
- * Loads TinyMCE from the CDN exactly once per page, regardless of how many
- * times the editor mounts/unmounts (e.g. the record page tab switching away
- * and back). Cached at module scope rather than in component state so the
- * promise survives component remounts.
- */
-let tinyMceLoadPromise: Promise<void> | null = null;
-
-const loadTinyMce = (): Promise<void> => {
-  if (typeof window !== 'undefined' && window.tinymce) {
-    return Promise.resolve();
-  }
-  if (tinyMceLoadPromise) return tinyMceLoadPromise;
-
-  tinyMceLoadPromise = new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = TINYMCE_CDN_URL;
-    script.referrerPolicy = 'origin';
-    script.onload = () => resolve();
-    script.onerror = () => {
-      tinyMceLoadPromise = null;
-      reject(new Error('Failed to load the WYSIWYG editor (TinyMCE) from the CDN.'));
-    };
-    document.head.appendChild(script);
-  });
-  return tinyMceLoadPromise;
+// TinyMCE is bundled (not CDN-loaded) because the front component runs in
+// Twenty's remote-DOM worker where dynamically appended <script> elements
+// never execute. Dynamic import() defers evaluation until runtime — the
+// twenty CLI's manifest step runs in Node.js (no `window`), so static
+// imports would crash at build time. With esbuild bundle+splitting:false,
+// the code is inlined but wrapped in a deferred closure.
+let tinymceInstance: any = null;
+const loadTinyMce = async (): Promise<any> => {
+  if (tinymceInstance) return tinymceInstance;
+  const mod = await import('tinymce');
+  await import('tinymce/models/dom');
+  await import('tinymce/themes/silver');
+  await import('tinymce/icons/default');
+  // Skin/content CSS registered via tinymce.Resource.add — no URL fetch needed.
+  await import('tinymce/skins/ui/oxide/skin.js');
+  await import('tinymce/skins/ui/oxide/content.js');
+  // Plugins used in the toolbar configuration.
+  await import('tinymce/plugins/code');
+  await import('tinymce/plugins/lists');
+  await import('tinymce/plugins/table');
+  await import('tinymce/plugins/link');
+  await import('tinymce/plugins/image');
+  await import('tinymce/plugins/searchreplace');
+  await import('tinymce/plugins/fullscreen');
+  tinymceInstance = mod.default ?? mod;
+  return tinymceInstance;
 };
 
 export type TemplateEditorTab = 'visual' | 'source';
@@ -428,14 +420,11 @@ export type TemplateEditorComponentProps = {
   template?: Partial<TemplateEditorTemplate>;
 };
 
-/** TinyMCE configuration shared by every editor instance this widget creates. */
 const buildTinyMceConfig = (target: HTMLTextAreaElement, onReady: (editor: any) => void) => ({
   target,
   height: 500,
   license_key: TINYMCE_LICENSE_KEY,
-  base_url: TINYMCE_CDN_BASE,
-  suffix: '.min',
-  skin_url: `${TINYMCE_CDN_BASE}/skins/ui/oxide`,
+  skin: false as unknown as string,
   content_css: false as unknown as string,
   menubar: false,
   resize: false,
@@ -531,13 +520,10 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordId]);
 
-  // Initializes/tears down TinyMCE whenever visual mode becomes active (and
-  // once the template has finished loading). TinyMCE must target a *native*
-  // DOM element created via `document.createElement`, not a React-rendered
-  // `<textarea>` — the build's jsx wrapper maps React-rendered HTML tags to
-  // custom elements for the remote-DOM worker, and TinyMCE can't attach to
-  // those. Creating the textarea manually and appending it to a ref'd
-  // container sidesteps that mapping entirely.
+  // TinyMCE must target a *native* DOM element created via
+  // `document.createElement`, not a React-rendered `<textarea>` — the build's
+  // jsx wrapper maps React-rendered HTML tags to custom elements for the
+  // remote-DOM worker, and TinyMCE can't attach to those.
   useEffect(() => {
     if (isLoading || loadError) return undefined;
 
@@ -547,11 +533,10 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
 
     void (async () => {
       try {
-        await loadTinyMce();
+        const tmce = await loadTinyMce();
         if (cancelled) return;
         const container = containerRef.current;
-        const tinymceGlobal = typeof window !== 'undefined' ? window.tinymce : undefined;
-        if (!container || !tinymceGlobal) return;
+        if (!container || !tmce) return;
 
         const textarea = document.createElement('textarea');
         textarea.style.width = '100%';
@@ -559,7 +544,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         container.appendChild(textarea);
         textareaElRef.current = textarea;
 
-        const editors = await tinymceGlobal.init(
+        const editors = await tmce.init(
           buildTinyMceConfig(textarea, (editor: any) => {
             editorRef.current = editor;
             editor.on('init', () => {

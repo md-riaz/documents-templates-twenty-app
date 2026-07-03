@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "handlebars": "^4.7.9",
-    "puppeteer": "^25.3.0"
+    "puppeteer": "^25.3.0",
+    "tinymce": "7"
   },
   "peerDependencies": {
     "react": "^19.2.0"
