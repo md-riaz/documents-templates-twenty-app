@@ -475,7 +475,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const [status, setStatus] = useState('DRAFT');
   const [version, setVersion] = useState(0);
 
-  const [activeTab, setActiveTab] = useState<TemplateEditorTab>('visual');
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [statusIsError, setStatusIsError] = useState(false);
@@ -538,7 +537,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   // those. Creating the textarea manually and appending it to a ref'd
   // container sidesteps that mapping entirely.
   useEffect(() => {
-    if (isLoading || loadError || activeTab !== 'visual') return undefined;
+    if (isLoading || loadError) return undefined;
 
     let cancelled = false;
     let resizeObserver: ResizeObserver | undefined;
@@ -609,29 +608,15 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
       }
       textareaElRef.current = null;
     };
-  }, [activeTab, isLoading, loadError]);
-
-  const handleToggleTab = useCallback(() => {
-    if (activeTab === 'visual') {
-      const editor = editorRef.current;
-      if (editor) {
-        setHtmlSource(editor.getContent());
-      }
-      setActiveTab('source');
-    } else {
-      setActiveTab('visual');
-    }
-  }, [activeTab]);
+  }, [isLoading, loadError]);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
     setStatusIsError(false);
     setStatusMessage('');
     try {
-      const currentHtmlSource = activeTab === 'visual' && editorRef.current ? editorRef.current.getContent() : htmlSource;
-      if (currentHtmlSource !== htmlSource) {
-        setHtmlSource(currentHtmlSource);
-      }
+      const currentHtmlSource = editorRef.current ? editorRef.current.getContent() : htmlSource;
+      setHtmlSource(currentHtmlSource);
 
       const validationErrors = validateTemplateEditorState({
         name,
@@ -665,7 +650,7 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
     } finally {
       setIsSaving(false);
     }
-  }, [activeTab, htmlSource, name, previewData, id, boundObjectName, allowedOutputTypes, status, version, resolvedApi]);
+  }, [htmlSource, name, previewData, id, boundObjectName, allowedOutputTypes, status, version, resolvedApi]);
 
   if (isLoading) {
     return (
@@ -689,24 +674,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
       style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 480, padding: 16, boxSizing: 'border-box' }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          onClick={handleToggleTab}
-          aria-label={activeTab === 'visual' ? 'Switch to source code view' : 'Switch to visual editor'}
-          title={activeTab === 'visual' ? 'Switch to source code view' : 'Switch to visual editor'}
-          style={{
-            padding: '7px 12px',
-            fontSize: 13,
-            fontWeight: 500,
-            border: '1px solid #d0d5dd',
-            borderRadius: 4,
-            background: '#fff',
-            color: '#344054',
-            cursor: 'pointer',
-          }}
-        >
-          {activeTab === 'visual' ? 'View Source' : 'Visual Editor'}
-        </button>
         <button
           type="button"
           onClick={() => void handleSave()}
@@ -737,43 +704,16 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
       ) : null}
 
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-        {activeTab === 'visual' ? (
-          <>
-            {editorLoading ? (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', zIndex: 1, borderRadius: 4 }}>
-                <span style={{ color: '#475467', fontSize: 14 }}>Loading editor…</span>
-              </div>
-            ) : null}
-            <div
-              ref={containerRef}
-              aria-label="Visual template editor"
-              style={{ flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, overflow: 'hidden' }}
-            />
-          </>
-        ) : (
-          <textarea
-            aria-label="Template HTML source"
-            value={htmlSource}
-            onChange={(e) => setHtmlSource(e.target.value)}
-            spellCheck={false}
-            style={{
-              flex: 1,
-              width: '100%',
-              minHeight: 0,
-              resize: 'none',
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-              fontSize: 13,
-              lineHeight: 1.5,
-              padding: 12,
-              background: '#1d2939',
-              color: '#e4e7ec',
-              border: '1px solid #344054',
-              borderRadius: 4,
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
-          />
-        )}
+        {editorLoading ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', zIndex: 1, borderRadius: 4 }}>
+            <span style={{ color: '#475467', fontSize: 14 }}>Loading editor…</span>
+          </div>
+        ) : null}
+        <div
+          ref={containerRef}
+          aria-label="Visual template editor"
+          style={{ flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, overflow: 'hidden' }}
+        />
       </div>
     </section>
   );
