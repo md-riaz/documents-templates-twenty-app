@@ -36,7 +36,6 @@ Every template is a `DocumentTemplate` record. Here is what each field does:
 | **Status** | `ACTIVE` (default), `DRAFT`, or `ARCHIVED`. Only **Active** templates appear in the Generate Document picker. |
 | **Category** | Optional grouping — link to a `TemplateCategory` record for organizing templates (e.g. "Sales", "Onboarding"). |
 | **Preview Data** | Sample JSON context for the live preview. Lets you see what the rendered document looks like without saving or loading a real record. |
-| **Variables** | Optional explicit variable schema (JSON). The editor also auto-discovers variables from `htmlSource` and the bound object's field schema. |
 | **Allowed Output Types** | Defaults to `['PDF']`. Informational — does not currently gate output. |
 | **Version** | Auto-incremented version number. Each save that changes HTML Source creates a `TemplateVersion` snapshot. |
 | **Description** | Optional rich-text description for documentation purposes. |
@@ -47,16 +46,13 @@ Every template is a `DocumentTemplate` record. Here is what each field does:
 2. Click **+ Add New** — Twenty creates the record with defaults (`status: Active`).
 3. Open the new row. The record page has two tabs:
 
-   **Fields tab** (opens by default) — Twenty's native field editor with all the fields
-   listed above. The **HTML Source** field has a large editing area at the bottom of this
-   tab, so you can write Handlebars markup directly here.
+   **Editor tab** (opens by default) — a WYSIWYG HTML editor (powered by TinyMCE) with a
+   **Source Code** toggle button. Write and preview your Handlebars HTML directly in the
+   visual editor, or switch to source mode for full HTML editing — including `<head>`,
+   `<style>`, and any tags. A **Name** input and **Save** button are at the top.
 
-   **Preview tab** — a live rendered preview of your template against the Preview Data,
-   plus a **variable picker** sidebar. The picker lists every available field from the
-   bound object's schema (grouped by object/relation), and clicking a variable copies its
-   Handlebars expression (e.g. `{{opportunity.company.name}}`) to your clipboard so you
-   can paste it into the HTML Source field. Variables already referenced in the template
-   are marked with a blue dot. Use the search box to filter long field lists.
+   **Fields tab** — Twenty's native field editor for advanced settings: Category, Status,
+   Bound Object Name, Preview Data, Allowed Output Types, and other metadata.
 
 4. Fill in the key fields:
    - **Name** — give the template a descriptive name (e.g. "Opportunity Proposal").
@@ -64,12 +60,9 @@ Every template is a `DocumentTemplate` record. Here is what each field does:
      `opportunity`). This tells the renderer which record to load and which relations are
      available.
    - **HTML Source** — write your Handlebars HTML (see "Writing HTML Source" below).
-   - **Preview Data** — paste sample JSON so you can preview the output without a real
-     record.
    - **Status** — leave as `ACTIVE` (or set to `DRAFT` while authoring).
 
-5. Switch to the **Preview** tab to see the rendered output. The preview updates
-   client-side from Preview Data — no save needed.
+5. Use the **Source Code** toggle to switch between visual and raw HTML editing.
 6. Save the record. Changing HTML Source on an existing template automatically creates a
    `TemplateVersion` snapshot.
 
@@ -143,10 +136,7 @@ notation — no extra configuration needed:
 <p>Company domain: {{person.company.domainName}}</p>
 ```
 
-The available relation paths depend on the object's schema in your workspace. Use the
-**variable picker** sidebar in the Preview tab to browse all available fields and
-relations for the bound object — click any field to copy its `{{path}}` expression to
-your clipboard, then paste it into the HTML Source field on the Fields tab.
+Check the bound object's schema in Twenty's Settings to see available fields and relations for template variables.
 
 #### Conditionals
 
