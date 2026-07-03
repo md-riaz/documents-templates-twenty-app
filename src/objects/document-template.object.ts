@@ -1,12 +1,10 @@
-import { defineObject, FieldType, OnDeleteAction, RelationType } from 'twenty-sdk/define';
+import { defineObject, FieldType, RelationType } from 'twenty-sdk/define';
 
 import {
   DOCUMENT_TEMPLATE_FIELDS,
   DOCUMENT_TEMPLATE_OBJECT_UNIVERSAL_IDENTIFIER,
   DOCUMENT_FIELDS,
   DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER,
-  TEMPLATE_CATEGORY_FIELDS,
-  TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
   TEMPLATE_VERSION_FIELDS,
   TEMPLATE_VERSION_OBJECT_UNIVERSAL_IDENTIFIER,
 } from '../constants/model-identifiers';
@@ -29,22 +27,9 @@ export default defineObject({
   labelIdentifierFieldMetadataUniversalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name,
   fields: [
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, type: FieldType.TEXT, name: 'name', label: 'Name', description: 'Template name', icon: 'IconAbc' },
-    {
-      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.category,
-      type: FieldType.RELATION,
-      name: 'category',
-      label: 'TemplateCategory',
-      description: 'Category for this DocumentTemplate',
-      icon: 'IconFolder',
-      isNullable: true,
-      relationTargetFieldMetadataUniversalIdentifier: TEMPLATE_CATEGORY_FIELDS.templates,
-      relationTargetObjectMetadataUniversalIdentifier: TEMPLATE_CATEGORY_OBJECT_UNIVERSAL_IDENTIFIER,
-      universalSettings: { relationType: RelationType.MANY_TO_ONE, onDelete: OnDeleteAction.SET_NULL, joinColumnName: 'categoryId' },
-    },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.description, type: FieldType.RICH_TEXT, name: 'description', label: 'Description', description: 'Template description', icon: 'IconNotes', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.variables, type: FieldType.RAW_JSON, name: 'variables', label: 'Variables', description: 'Variable schema as JSON', icon: 'IconBraces', isNullable: true, defaultValue: null },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName,
       type: FieldType.TEXT,

@@ -97,7 +97,7 @@ export const runAcceptanceScenario = async (
   for (const signal of scenario.requiredSignals) {
     if (signal === 'objectsRegistered') {
       const objects = new Set(context.objectsRegistered ?? []);
-      const required = ['DocumentTemplate', 'TemplateCategory', 'Document'];
+      const required = ['DocumentTemplate', 'Document'];
       const absent = required.filter((objectName) => !objects.has(objectName));
       if (absent.length) missing.push(`objects not registered: ${absent.join(', ')}`);
       else evidence.push('required custom objects registered');

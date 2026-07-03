@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 import { defineFrontComponent } from 'twenty-sdk/define';
 import { useSelectedRecordIds } from 'twenty-sdk/front-component';
@@ -7,34 +7,62 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from '../constants/model-identifiers';
 import { renderHandlebarsTemplate } from '../logic/rendering/handlebars-renderer';
 import { createMetadataApi, type MetadataApi } from '../logic/metadata/metadata-client';
-import { listBoundObjectFields } from '../logic/list-template-variables';
-import { listTemplateVariablesLogic } from '../logic/list-template-variables';
 
-export type TemplateEditorTab = 'html' | 'preview';
+declare global {
+  interface Window {
+    tinymce: any;
+  }
+}
 
-export type TemplateEditorVariable = {
-  path: string;
-  label?: string;
-  required?: boolean;
+const TINYMCE_CDN_BASE = 'https://cdn.jsdelivr.net/npm/tinymce@7';
+const TINYMCE_CDN_URL = `${TINYMCE_CDN_BASE}/tinymce.min.js`;
+const TINYMCE_LICENSE_KEY = 'gpl';
+
+/**
+ * Loads TinyMCE from the CDN exactly once per page, regardless of how many
+ * times the editor mounts/unmounts (e.g. the record page tab switching away
+ * and back). Cached at module scope rather than in component state so the
+ * promise survives component remounts.
+ */
+let tinyMceLoadPromise: Promise<void> | null = null;
+
+const loadTinyMce = (): Promise<void> => {
+  if (typeof window !== 'undefined' && window.tinymce) {
+    return Promise.resolve();
+  }
+  if (tinyMceLoadPromise) return tinyMceLoadPromise;
+
+  tinyMceLoadPromise = new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = TINYMCE_CDN_URL;
+    script.referrerPolicy = 'origin';
+    script.onload = () => resolve();
+    script.onerror = () => {
+      tinyMceLoadPromise = null;
+      reject(new Error('Failed to load the WYSIWYG editor (TinyMCE) from the CDN.'));
+    };
+    document.head.appendChild(script);
+  });
+  return tinyMceLoadPromise;
 };
+
+export type TemplateEditorTab = 'visual' | 'source';
 
 export type TemplateEditorTemplate = {
   id?: string;
   name: string;
   htmlSource: string;
   previewData?: Record<string, unknown>;
-  variables?: TemplateEditorVariable[];
   boundObjectName?: string;
   allowedOutputTypes?: string[];
   status?: string;
   version?: number;
 };
 
-export type TemplateEditorState = Required<Omit<TemplateEditorTemplate, 'id' | 'previewData' | 'variables' | 'allowedOutputTypes'>> & {
+export type TemplateEditorState = Required<Omit<TemplateEditorTemplate, 'id' | 'previewData' | 'allowedOutputTypes'>> & {
   id?: string;
   previewJson: string;
   previewData: Record<string, unknown>;
-  variables: TemplateEditorVariable[];
   allowedOutputTypes: string[];
   activeTab: TemplateEditorTab;
   previewHtml: string;
@@ -49,13 +77,6 @@ export type TemplateEditorApi = {
   saveTemplate(input: TemplateEditorTemplate): Promise<TemplateEditorTemplate>;
   createTemplateVersion(input: { templateId: string; versionNumber: number; htmlSource: string; name: string }): Promise<unknown>;
   /**
-   * Live, schema-backed field list for the template's bound object (standard
-   * or custom), from the metadata client. Optional — falls back to an empty
-   * list (variable picker then only shows variables already referenced in the
-   * template source).
-   */
-  listFields?(objectNameSingular: string): Promise<TemplateEditorVariable[]>;
-  /**
    * Best-effort write-time check that `boundObjectName` names a real Twenty
    * object, using live metadata. Optional — when omitted, `save()` skips the
    * check (matches existing behavior for callers/tests that inject their own
@@ -68,15 +89,11 @@ const defaultTemplate: TemplateEditorTemplate = {
   name: '',
   htmlSource: '',
   previewData: {},
-  variables: [],
   boundObjectName: '',
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',
   version: 0,
 };
-
-const escapeAttribute = (value: unknown): string =>
-  String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
 export const createTemplateEditorState = (input: { template?: Partial<TemplateEditorTemplate> } = {}): TemplateEditorState => {
   const template = { ...defaultTemplate, ...(input.template ?? {}) };
@@ -87,12 +104,11 @@ export const createTemplateEditorState = (input: { template?: Partial<TemplateEd
     htmlSource: template.htmlSource,
     previewData,
     previewJson: JSON.stringify(previewData, null, 2),
-    variables: template.variables ?? [],
     boundObjectName: template.boundObjectName ?? '',
     allowedOutputTypes: template.allowedOutputTypes ?? ['HTML'],
     status: template.status ?? 'DRAFT',
     version: template.version ?? 0,
-    activeTab: 'html',
+    activeTab: 'visual',
     previewHtml: '',
     warnings: [],
     validationErrors: [],
@@ -113,32 +129,9 @@ export const validateTemplateEditorState = (state: Pick<TemplateEditorState, 'na
   return errors;
 };
 
-/**
- * Merges "already referenced in the template" variables with "available from
- * the bound object's schema" fields for the variable-insertion picker,
- * de-duplicated by path (referenced entries take precedence for label/metadata).
- */
-export const mergeTemplateVariables = (
-  referenced: TemplateEditorVariable[],
-  available: TemplateEditorVariable[],
-): TemplateEditorVariable[] => {
-  const merged = new Map<string, TemplateEditorVariable>();
-  for (const variable of available) merged.set(variable.path, variable);
-  for (const variable of referenced) merged.set(variable.path, variable);
-  return Array.from(merged.values());
-};
-
-export const insertVariableExpression = (value: string, variablePath: string, cursor: number): { value: string; cursor: number } => {
-  const expression = `{{${variablePath}}}`;
-  return {
-    value: `${value.slice(0, cursor)}${expression}${value.slice(cursor)}`,
-    cursor: cursor + expression.length,
-  };
-};
-
 const tabs: Array<{ id: TemplateEditorTab; label: string }> = [
-  { id: 'html', label: 'HTML' },
-  { id: 'preview', label: 'Preview JSON' },
+  { id: 'visual', label: 'Visual' },
+  { id: 'source', label: 'Source' },
 ];
 
 export const renderTemplateEditorMarkup = (_state: TemplateEditorState): string => `
@@ -234,7 +227,6 @@ export class TemplateEditorController {
       name: this.state.name,
       htmlSource: this.state.htmlSource,
       previewData,
-      variables: this.state.variables,
       boundObjectName: this.state.boundObjectName,
       allowedOutputTypes: this.state.allowedOutputTypes,
       status: this.state.status,
@@ -304,14 +296,13 @@ const DOCUMENT_TEMPLATE_SELECTION = {
   name: true,
   htmlSource: true,
   previewData: true,
-  variables: true,
   boundObjectName: true,
   allowedOutputTypes: true,
   status: true,
   version: true,
 };
 
-/** `previewData`/`variables` are RAW_JSON — coerce whether the client returns a JSON string or an already-parsed value. */
+/** `previewData` is RAW_JSON — coerce whether the client returns a JSON string or an already-parsed value. */
 const coerceJson = <T,>(value: unknown, fallback: T): T => {
   if (typeof value === 'string') {
     try {
@@ -337,7 +328,6 @@ export const fetchDocumentTemplate = async (
     name: (record.name as string) ?? '',
     htmlSource: (record.htmlSource as string) ?? '',
     previewData: coerceJson(record.previewData, {}),
-    variables: coerceJson(record.variables, []),
     boundObjectName: (record.boundObjectName as string) ?? '',
     allowedOutputTypes: (record.allowedOutputTypes as string[]) ?? ['HTML', 'PDF'],
     status: (record.status as string) ?? 'DRAFT',
@@ -364,28 +354,34 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
     };
   },
   async saveTemplate(input) {
-    // Name/Renderer/Bound object/Status/Allowed output types are edited via
-    // the native "Fields" tab now, independently of this widget. On update,
-    // only send the fields this editor actually owns — including the others
-    // here would silently overwrite a concurrent edit made in that tab with
-    // a stale in-memory value. A brand-new record (no id yet — not reachable
-    // from the live widget, since Twenty always creates the record row
-    // before this widget mounts, but used by tests/programmatic callers)
-    // still needs them seeded, since `name`/`htmlSource` are non-nullable
-    // with no default.
-    const editorOwnedData = {
-      htmlSource: input.htmlSource,
-      previewData: input.previewData ?? {},
-      variables: input.variables ?? [],
-    };
+    // Name/Bound object/Status/Allowed output types are edited via the native
+    // "Fields" tab now, independently of this widget. On update, only send
+    // the fields this editor actually owns — including the others here would
+    // silently overwrite a concurrent edit made in that tab with a stale
+    // in-memory value. A brand-new record (no id yet — not reachable from the
+    // live widget, since Twenty always creates the record row before this
+    // widget mounts, but used by tests/programmatic callers) still needs them
+    // seeded, since `name`/`htmlSource` are non-nullable with no default.
     const result = input.id
-      ? await client.mutation({ updateDocumentTemplate: { __args: { id: input.id, data: editorOwnedData }, ...DOCUMENT_TEMPLATE_SELECTION } })
+      ? await client.mutation({
+          updateDocumentTemplate: {
+            __args: {
+              id: input.id,
+              data: {
+                htmlSource: input.htmlSource,
+                previewData: input.previewData ?? {},
+              },
+            },
+            ...DOCUMENT_TEMPLATE_SELECTION,
+          },
+        })
       : await client.mutation({
           createDocumentTemplate: {
             __args: {
               data: {
-                ...editorOwnedData,
                 name: input.name,
+                htmlSource: input.htmlSource,
+                previewData: input.previewData ?? {},
                 boundObjectName: input.boundObjectName || null,
                 allowedOutputTypes: input.allowedOutputTypes ?? ['HTML', 'PDF'],
                 status: input.status ?? 'ACTIVE',
@@ -413,201 +409,12 @@ export const createCoreTemplateEditorApi = (client: GenqlClientLike, metadataApi
       },
     });
   },
-  async listFields(objectNameSingular) {
-    const fields = await listBoundObjectFields(objectNameSingular, metadataApi);
-    return fields.map((field) => ({ path: field.name, label: field.name }));
-  },
   async validateBoundObjectName(name) {
     const objects = await metadataApi.listObjects();
     const match = objects.some((object) => object.nameSingular.toLowerCase() === name.toLowerCase());
     return match ? { ok: true } : { ok: false, message: `"${name}" is not a valid Twenty object name.` };
   },
 });
-
-export type VariableGroup = {
-  label: string;
-  variables: Array<{ path: string; label: string; referenced: boolean }>;
-};
-
-export const groupVariablesForPicker = (
-  available: TemplateEditorVariable[],
-  referencedPaths: Set<string>,
-): VariableGroup[] => {
-  const groups = new Map<string, VariableGroup>();
-  for (const variable of available) {
-    const parts = variable.path.split('.');
-    const groupKey = parts.length > 1 ? parts.slice(0, -1).join('.') : parts[0];
-    if (!groups.has(groupKey)) {
-      groups.set(groupKey, { label: groupKey, variables: [] });
-    }
-    groups.get(groupKey)!.variables.push({
-      path: variable.path,
-      label: parts[parts.length - 1],
-      referenced: referencedPaths.has(variable.path),
-    });
-  }
-  return Array.from(groups.values());
-};
-
-const pickerStyles = {
-  container: {
-    width: 220,
-    minWidth: 180,
-    borderRight: '1px solid #e4e4e7',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    background: '#fafafa',
-  } satisfies CSSProperties,
-  header: {
-    padding: '10px 12px 8px',
-    borderBottom: '1px solid #e4e4e7',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-  } satisfies CSSProperties,
-  title: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: '#344054',
-    letterSpacing: '0.02em',
-  } satisfies CSSProperties,
-  search: {
-    margin: '8px 10px 4px',
-    padding: '5px 8px',
-    fontSize: 12,
-    border: '1px solid #d0d5dd',
-    borderRadius: 4,
-    outline: 'none',
-    width: 'calc(100% - 20px)',
-    background: '#fff',
-  } satisfies CSSProperties,
-  list: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '4px 0',
-  } satisfies CSSProperties,
-  groupLabel: {
-    fontSize: 10,
-    fontWeight: 600,
-    color: '#667085',
-    textTransform: 'uppercase',
-    letterSpacing: '0.06em',
-    padding: '10px 12px 4px',
-  } satisfies CSSProperties,
-  variableButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    width: '100%',
-    padding: '4px 12px 4px 16px',
-    border: 'none',
-    background: 'transparent',
-    cursor: 'pointer',
-    textAlign: 'left' as const,
-    fontSize: 12,
-    color: '#344054',
-    borderRadius: 0,
-    lineHeight: 1.5,
-  } satisfies CSSProperties,
-  referencedDot: {
-    width: 5,
-    height: 5,
-    borderRadius: '50%',
-    background: '#3b82f6',
-    flexShrink: 0,
-  } satisfies CSSProperties,
-  copiedToast: {
-    position: 'fixed' as const,
-    bottom: 16,
-    left: '50%',
-    transform: 'translateX(-50%)',
-    background: '#1d2939',
-    color: '#fff',
-    fontSize: 12,
-    padding: '6px 14px',
-    borderRadius: 6,
-    zIndex: 9999,
-    pointerEvents: 'none' as const,
-    whiteSpace: 'nowrap' as const,
-  } satisfies CSSProperties,
-  emptyState: {
-    padding: '16px 12px',
-    fontSize: 12,
-    color: '#98a2b3',
-    textAlign: 'center' as const,
-    lineHeight: 1.6,
-  } satisfies CSSProperties,
-};
-
-export type VariablePickerProps = {
-  groups: VariableGroup[];
-  onCopy: (path: string) => void;
-  filter: string;
-  onFilterChange: (value: string) => void;
-};
-
-export const VariablePicker = ({ groups, onCopy, filter, onFilterChange }: VariablePickerProps) => {
-  const lowerFilter = filter.toLowerCase();
-  const filtered = groups
-    .map((group) => ({
-      ...group,
-      variables: group.variables.filter(
-        (v) => v.path.toLowerCase().includes(lowerFilter) || v.label.toLowerCase().includes(lowerFilter),
-      ),
-    }))
-    .filter((group) => group.variables.length > 0);
-
-  return (
-    <nav aria-label="Template variables" style={pickerStyles.container}>
-      <div style={pickerStyles.header}>
-        <span style={pickerStyles.title}>Variables</span>
-      </div>
-      <input
-        type="search"
-        placeholder="Filter fields…"
-        value={filter}
-        onChange={(e) => onFilterChange(e.target.value)}
-        style={pickerStyles.search}
-        aria-label="Filter variables"
-      />
-      <div style={pickerStyles.list} role="list">
-        {filtered.length === 0 ? (
-          <p style={pickerStyles.emptyState}>
-            {filter ? 'No matching fields.' : 'Set Bound Object in the Fields tab to see available variables.'}
-          </p>
-        ) : (
-          filtered.map((group) => (
-            <div key={group.label} role="group" aria-label={group.label}>
-              <div style={pickerStyles.groupLabel}>{group.label}</div>
-              {group.variables.map((variable) => (
-                <button
-                  key={variable.path}
-                  role="listitem"
-                  type="button"
-                  style={pickerStyles.variableButton}
-                  onClick={() => onCopy(variable.path)}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = '#f0f0f3';
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  }}
-                  title={`Copy {{${variable.path}}} to clipboard`}
-                  aria-label={`Copy ${variable.path}`}
-                >
-                  {variable.referenced ? <span style={pickerStyles.referencedDot} aria-label="Referenced" /> : null}
-                  <span style={{ fontFamily: 'monospace', fontSize: 11 }}>{variable.label}</span>
-                </button>
-              ))}
-            </div>
-          ))
-        )}
-      </div>
-    </nav>
-  );
-};
 
 export type TemplateEditorComponentProps = {
   /**
@@ -621,6 +428,33 @@ export type TemplateEditorComponentProps = {
   template?: Partial<TemplateEditorTemplate>;
 };
 
+/** TinyMCE configuration shared by every editor instance this widget creates. */
+const buildTinyMceConfig = (target: HTMLTextAreaElement, onReady: (editor: any) => void) => ({
+  target,
+  height: 500,
+  license_key: TINYMCE_LICENSE_KEY,
+  base_url: TINYMCE_CDN_BASE,
+  suffix: '.min',
+  skin_url: `${TINYMCE_CDN_BASE}/skins/ui/oxide`,
+  content_css: false as unknown as string,
+  menubar: false,
+  resize: false,
+  plugins: 'code lists table link image searchreplace fullscreen',
+  toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright | bullist numlist | table link | code fullscreen',
+  promotion: false,
+  branding: false,
+  valid_elements: '*[*]',
+  extended_valid_elements: '*[*]',
+  verify_html: false,
+  entity_encoding: 'raw',
+  convert_urls: false,
+  protect: [/\{\{[\s\S]*?\}\}/g],
+  content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+  setup: (editor: any) => {
+    onReady(editor);
+  },
+});
+
 export const TemplateEditorComponent = ({ api, template }: TemplateEditorComponentProps) => {
   const selectedRecordIds = useSelectedRecordIds();
   const recordId = selectedRecordIds.length === 1 ? selectedRecordIds[0] : undefined;
@@ -631,26 +465,36 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const resolvedApiRef = useRef(api ? null : createCoreTemplateEditorApi(client, createMetadataApi()));
   const resolvedApi = api ?? resolvedApiRef.current!;
 
-  const [previewHtml, setPreviewHtml] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [variableGroups, setVariableGroups] = useState<VariableGroup[]>([]);
-  const [variableFilter, setVariableFilter] = useState('');
-  const [copiedPath, setCopiedPath] = useState<string | null>(null);
-  const [showPicker, setShowPicker] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  const handleCopyVariable = useCallback((path: string) => {
-    const expression = `{{${path}}}`;
-    void navigator.clipboard.writeText(expression).then(() => {
-      setCopiedPath(path);
-      setTimeout(() => setCopiedPath(null), 1500);
-    });
-  }, []);
+  const [id, setId] = useState<string | undefined>(undefined);
+  const [name, setName] = useState('');
+  const [htmlSource, setHtmlSource] = useState('');
+  const [previewData, setPreviewData] = useState<Record<string, unknown>>({});
+  const [boundObjectName, setBoundObjectName] = useState('');
+  const [allowedOutputTypes, setAllowedOutputTypes] = useState<string[]>(['HTML']);
+  const [status, setStatus] = useState('DRAFT');
+  const [version, setVersion] = useState(0);
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [statusIsError, setStatusIsError] = useState(false);
+
+  const [editorLoading, setEditorLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<any>(null);
+  const textareaElRef = useRef<HTMLTextAreaElement | null>(null);
+  const htmlSourceRef = useRef(htmlSource);
+
+  useEffect(() => {
+    htmlSourceRef.current = htmlSource;
+  }, [htmlSource]);
 
   useEffect(() => {
     if (!recordId && !template) {
       setIsLoading(false);
-      setErrorMessage('No template record selected.');
+      setLoadError('No template record selected.');
       return;
     }
     let cancelled = false;
@@ -662,128 +506,217 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
         if (cancelled) return;
         if (!tmpl) {
           setIsLoading(false);
-          setErrorMessage('Template not found.');
+          setLoadError('Template not found.');
           return;
         }
-        const rendered = await resolvedApi.renderPreview({
-          htmlSource: tmpl.htmlSource,
-          previewData: tmpl.previewData ?? {},
-        });
-        if (cancelled) return;
-        setPreviewHtml(rendered.html);
+        setId(tmpl.id);
+        setName(tmpl.name);
+        setHtmlSource(tmpl.htmlSource);
+        setPreviewData(tmpl.previewData ?? {});
+        setBoundObjectName(tmpl.boundObjectName ?? '');
+        setAllowedOutputTypes(tmpl.allowedOutputTypes ?? ['HTML']);
+        setStatus(tmpl.status ?? 'DRAFT');
+        setVersion(tmpl.version ?? 0);
         setIsLoading(false);
-        if (!rendered.ok) {
-          setErrorMessage(rendered.errors.map((e) => e.userMessage ?? e.message ?? '').join(' '));
-        }
-
-        const referencedVars = listTemplateVariablesLogic({ htmlSource: tmpl.htmlSource });
-        const referencedPaths = new Set(referencedVars.map((v) => v.name));
-
-        if (tmpl.boundObjectName && resolvedApi.listFields) {
-          try {
-            const schemaFields = await resolvedApi.listFields(tmpl.boundObjectName);
-            const merged = mergeTemplateVariables(
-              referencedVars.map((v) => ({ path: v.name, label: v.name })),
-              schemaFields,
-            );
-            if (!cancelled) {
-              setVariableGroups(groupVariablesForPicker(merged, referencedPaths));
-            }
-          } catch {
-            if (!cancelled) {
-              const groups = groupVariablesForPicker(
-                referencedVars.map((v) => ({ path: v.name, label: v.name })),
-                referencedPaths,
-              );
-              setVariableGroups(groups);
-            }
-          }
-        } else {
-          const groups = groupVariablesForPicker(
-            referencedVars.map((v) => ({ path: v.name, label: v.name })),
-            referencedPaths,
-          );
-          if (!cancelled) setVariableGroups(groups);
-        }
       } catch (err) {
         if (!cancelled) {
           setIsLoading(false);
-          setErrorMessage(err instanceof Error ? err.message : 'Failed to load preview.');
+          setLoadError(err instanceof Error ? err.message : 'Failed to load template.');
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordId]);
 
+  // Initializes/tears down TinyMCE whenever visual mode becomes active (and
+  // once the template has finished loading). TinyMCE must target a *native*
+  // DOM element created via `document.createElement`, not a React-rendered
+  // `<textarea>` — the build's jsx wrapper maps React-rendered HTML tags to
+  // custom elements for the remote-DOM worker, and TinyMCE can't attach to
+  // those. Creating the textarea manually and appending it to a ref'd
+  // container sidesteps that mapping entirely.
+  useEffect(() => {
+    if (isLoading || loadError) return undefined;
+
+    let cancelled = false;
+    let resizeObserver: ResizeObserver | undefined;
+    setEditorLoading(true);
+
+    void (async () => {
+      try {
+        await loadTinyMce();
+        if (cancelled) return;
+        const container = containerRef.current;
+        const tinymceGlobal = typeof window !== 'undefined' ? window.tinymce : undefined;
+        if (!container || !tinymceGlobal) return;
+
+        const textarea = document.createElement('textarea');
+        textarea.style.width = '100%';
+        textarea.style.height = '100%';
+        container.appendChild(textarea);
+        textareaElRef.current = textarea;
+
+        const editors = await tinymceGlobal.init(
+          buildTinyMceConfig(textarea, (editor: any) => {
+            editorRef.current = editor;
+            editor.on('init', () => {
+              if (cancelled) return;
+              setEditorLoading(false);
+              editor.setContent(htmlSourceRef.current || '');
+              const editorContainer = editor.getContainer();
+              if (editorContainer && container) {
+                const syncHeight = () => {
+                  const h = container.clientHeight;
+                  if (h > 0) editorContainer.style.height = `${h}px`;
+                };
+                syncHeight();
+                resizeObserver = new ResizeObserver(syncHeight);
+                resizeObserver.observe(container);
+              }
+            });
+          }),
+        );
+        if (cancelled) return;
+        if (!editors || editors.length === 0) {
+          throw new Error('TinyMCE init returned no editor instances.');
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setEditorLoading(false);
+          setStatusIsError(true);
+          setStatusMessage(err instanceof Error ? err.message : 'Failed to load the WYSIWYG editor.');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (resizeObserver) resizeObserver.disconnect();
+      const editor = editorRef.current;
+      if (editor) {
+        try {
+          editor.remove();
+        } catch {
+          // Ignore teardown errors from an editor that may already be mid-destroy.
+        }
+        editorRef.current = null;
+      }
+      const textarea = textareaElRef.current;
+      if (textarea?.parentNode) {
+        textarea.parentNode.removeChild(textarea);
+      }
+      textareaElRef.current = null;
+    };
+  }, [isLoading, loadError]);
+
+  const handleSave = useCallback(async () => {
+    setIsSaving(true);
+    setStatusIsError(false);
+    setStatusMessage('');
+    try {
+      const currentHtmlSource = editorRef.current ? editorRef.current.getContent() : htmlSource;
+      setHtmlSource(currentHtmlSource);
+
+      const validationErrors = validateTemplateEditorState({
+        name,
+        htmlSource: currentHtmlSource,
+        previewJson: JSON.stringify(previewData ?? {}),
+      });
+      if (validationErrors.length) {
+        setStatusIsError(true);
+        setStatusMessage(validationErrors.join(' '));
+        return;
+      }
+
+      const saved = await resolvedApi.saveTemplate({
+        id,
+        name,
+        htmlSource: currentHtmlSource,
+        previewData: previewData ?? {},
+        boundObjectName,
+        allowedOutputTypes,
+        status,
+        version,
+      });
+
+      setId(saved.id);
+      setVersion(saved.version ?? version);
+      setStatusIsError(false);
+      setStatusMessage(saved.version ? `Saved version ${saved.version}.` : 'Saved.');
+    } catch (err) {
+      setStatusIsError(true);
+      setStatusMessage(err instanceof Error ? err.message : 'Failed to save template.');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [htmlSource, name, previewData, id, boundObjectName, allowedOutputTypes, status, version, resolvedApi]);
+
   if (isLoading) {
     return (
-      <section aria-label="Template preview" aria-busy="true" style={{ padding: 16 }}>
-        <p style={{ color: '#475467' }}>Loading preview…</p>
+      <section aria-label="Template editor" aria-busy="true" style={{ padding: 16 }}>
+        <p style={{ color: '#475467' }}>Loading template…</p>
       </section>
     );
   }
 
-  if (errorMessage && !previewHtml) {
+  if (loadError) {
     return (
-      <section aria-label="Template preview" style={{ padding: 16 }}>
-        <p style={{ color: '#b42318' }}>{errorMessage}</p>
+      <section aria-label="Template editor" style={{ padding: 16 }}>
+        <p style={{ color: '#b42318' }}>{loadError}</p>
       </section>
     );
   }
 
   return (
-    <section aria-label="Template preview" style={{ display: 'flex', height: 'calc(100vh - 160px)', minHeight: 480 }}>
-      {showPicker ? (
-        <VariablePicker
-          groups={variableGroups}
-          onCopy={handleCopyVariable}
-          filter={variableFilter}
-          onFilterChange={setVariableFilter}
-        />
-      ) : null}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 16, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <button
-            type="button"
-            onClick={() => setShowPicker((prev) => !prev)}
-            style={{
-              padding: '4px 10px',
-              fontSize: 12,
-              border: '1px solid #d0d5dd',
-              borderRadius: 4,
-              background: showPicker ? '#f0f0f3' : '#fff',
-              cursor: 'pointer',
-              color: '#344054',
-              fontWeight: 500,
-            }}
-            aria-label={showPicker ? 'Hide variable picker' : 'Show variable picker'}
-            title={showPicker ? 'Hide variable picker' : 'Show variable picker'}
-          >
-            {showPicker ? 'Hide Variables' : 'Show Variables'}
-          </button>
-          <span style={{ fontSize: 12, color: '#98a2b3' }}>
-            Click a variable to copy its Handlebars expression
-          </span>
-        </div>
-        <iframe
-          aria-label="Template preview"
-          title="Template preview"
-          srcDoc={previewHtml}
-          sandbox=""
-          style={{ width: '100%', flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
-        />
-        {errorMessage ? (
-          <output aria-live="polite" style={{ display: 'block', marginTop: 8, fontSize: 13, color: '#b42318' }}>
-            {errorMessage}
-          </output>
-        ) : null}
+    <section
+      aria-label="Template editor"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 480, padding: 16, boxSizing: 'border-box' }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={isSaving}
+          aria-label="Save template"
+          style={{
+            padding: '7px 16px',
+            fontSize: 13,
+            fontWeight: 600,
+            border: '1px solid #1570ef',
+            borderRadius: 4,
+            background: isSaving ? '#a7c8f7' : '#1570ef',
+            color: '#fff',
+            cursor: isSaving ? 'default' : 'pointer',
+          }}
+        >
+          {isSaving ? 'Saving…' : 'Save'}
+        </button>
       </div>
-      {copiedPath ? (
-        <div style={pickerStyles.copiedToast} role="status" aria-live="polite">
-          Copied {`{{${copiedPath}}}`}
-        </div>
+
+      {statusMessage ? (
+        <output
+          aria-live="polite"
+          style={{ display: 'block', marginBottom: 8, fontSize: 13, color: statusIsError ? '#b42318' : '#067647' }}
+        >
+          {statusMessage}
+        </output>
       ) : null}
+
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        {editorLoading ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb', zIndex: 1, borderRadius: 4 }}>
+            <span style={{ color: '#475467', fontSize: 14 }}>Loading editor…</span>
+          </div>
+        ) : null}
+        <div
+          ref={containerRef}
+          aria-label="Visual template editor"
+          style={{ flex: 1, minHeight: 0, border: '1px solid #d0d5dd', borderRadius: 4, overflow: 'hidden' }}
+        />
+      </div>
     </section>
   );
 };
@@ -791,6 +724,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
 export default defineFrontComponent({
   universalIdentifier: TEMPLATE_EDITOR_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER,
   name: 'template-preview',
-  description: 'Renders a live preview of the document template using its HTML source and preview data.',
+  description: 'A WYSIWYG/source editor for the document template\'s HTML source.',
   component: TemplateEditorComponent,
 });

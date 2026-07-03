@@ -1,7 +1,6 @@
 export { default as applicationConfig } from './application-config';
 export { default as defaultRole } from './default-role';
 export { default as documentTemplateObject } from './objects/document-template.object';
-export { default as templateCategoryObject } from './objects/template-category.object';
 export { default as templateVersionObject } from './objects/template-version.object';
 export { default as documentObject } from './objects/document.object';
 export { default as documentTemplateView } from './menu/document-template.view';
@@ -17,12 +16,8 @@ export {
 export {
   TemplateEditorComponent,
   TemplateEditorController,
-  VariablePicker,
   createLocalPreviewTemplateEditorApi,
   createTemplateEditorState,
-  groupVariablesForPicker,
-  insertVariableExpression,
-  mergeTemplateVariables,
   renderTemplateEditorMarkup,
   templateEditorFrontComponent,
   validateTemplateEditorState,
@@ -31,9 +26,6 @@ export {
   type TemplateEditorState,
   type TemplateEditorTab,
   type TemplateEditorTemplate,
-  type TemplateEditorVariable,
-  type VariableGroup,
-  type VariablePickerProps,
 } from './front-components/template-editor.front-component';
 export {
   GenerateDocumentComponent,

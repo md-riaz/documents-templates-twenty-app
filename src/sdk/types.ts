@@ -23,7 +23,6 @@ export type GeneratePdfFromHtmlSdkInput = Omit<GeneratePdfFromHtmlInput, 'princi
 export type ListTemplatesInput = {
   activeOnly?: boolean;
   search?: string;
-  categoryId?: string;
   limit?: number;
 };
 
@@ -31,7 +30,6 @@ export type TemplateSummary = {
   id: string;
   name: string;
   status?: string;
-  category?: unknown;
   version?: number;
 };
 

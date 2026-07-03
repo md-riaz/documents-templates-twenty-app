@@ -109,7 +109,7 @@ export const createCoreRecordApi = (client: CoreApiClient): CoreRecordApi => {
  * Twenty's `AttachmentCreateInput` exposes a `target<ObjectName>Id: ID` field for
  * every object that can be an Attachment target — confirmed live against the real
  * schema to follow `target${PascalCase(nameSingular)}Id` uniformly, including our
- * own custom objects never explicitly enumerated anywhere (`targetTemplateCategoryId`,
+ * own custom objects never explicitly enumerated anywhere (e.g.
  * `targetTemplateVersionId`). A previous version of this file kept a static map keyed
  * by camelCase object names but looked it up with a lower-cased key (always a miss,
  * silently producing a target-less, orphaned Attachment) and — even if the casing bug

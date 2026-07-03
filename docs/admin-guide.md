@@ -29,7 +29,6 @@ For admins/integrators authoring templates programmatically (see the README's
 | `htmlSource` | TEXT | Yes | Handlebars markup. |
 | `boundObjectName` | TEXT | No | Twenty object singular name (e.g. `company`, or any custom object). Validated against live metadata when saved through the Template Editor UI; not enforced for direct API writes that bypass the editor. |
 | `previewData` | RAW_JSON | No | Sample context for the live preview. |
-| `variables` | RAW_JSON | No | Optional explicit variable metadata; the editor also auto-discovers variables from `htmlSource` and the bound object's schema. |
 | `allowedOutputTypes` | ARRAY | No (default `['PDF']`) | Informational; does not currently gate `Generate PDF`. |
 | `status` | SELECT | No (default `ACTIVE`) | `DRAFT` / `ACTIVE` / `ARCHIVED` — only `ACTIVE` templates appear in **Generate Document**. |
 
