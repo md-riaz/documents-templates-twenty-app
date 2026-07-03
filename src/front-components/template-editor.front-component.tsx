@@ -16,6 +16,7 @@ declare global {
 
 const TINYMCE_CDN_BASE = 'https://cdn.jsdelivr.net/npm/tinymce@7';
 const TINYMCE_CDN_URL = `${TINYMCE_CDN_BASE}/tinymce.min.js`;
+const TINYMCE_LICENSE_KEY = 'gpl';
 
 /**
  * Loads TinyMCE from the CDN exactly once per page, regardless of how many
@@ -431,6 +432,7 @@ export type TemplateEditorComponentProps = {
 const buildTinyMceConfig = (target: HTMLTextAreaElement, onReady: (editor: any) => void) => ({
   target,
   height: 500,
+  license_key: TINYMCE_LICENSE_KEY,
   base_url: TINYMCE_CDN_BASE,
   suffix: '.min',
   skin_url: `${TINYMCE_CDN_BASE}/skins/ui/oxide`,

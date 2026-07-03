@@ -89,7 +89,7 @@ test('acceptance scenarios cover install, permissions, template preview, generat
   const executed = await runAcceptanceScenario('document-generation-single-pdf-save-bulk', {
     permissions: generatorPrincipal.permissionScopes,
     appInstalled: true,
-    objectsRegistered: ['DocumentTemplate', 'TemplateCategory', 'Document'],
+    objectsRegistered: ['DocumentTemplate', 'Document'],
     settingsPersist: true,
     templatePreviewOk: true,
     documentSaved: true,

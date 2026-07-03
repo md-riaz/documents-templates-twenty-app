@@ -51,7 +51,6 @@ const toTemplateSummary = (record: Record<string, unknown>): TemplateSummary => 
   id: stringOrUndefined(record.id) ?? '',
   name: stringOrUndefined(record.name) ?? 'Untitled template',
   status: stringOrUndefined(record.status),
-  category: record.category,
   version: numberOrUndefined(record.version),
 });
 

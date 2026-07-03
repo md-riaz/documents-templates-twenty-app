@@ -34,7 +34,6 @@ Every template is a `DocumentTemplate` record. Here is what each field does:
 | **HTML Source** | The Handlebars HTML markup that defines your document. This is where all your HTML, CSS (`<style>` tags), and `{{variable}}` expressions go. |
 | **Bound Object Name** | The Twenty object this template is designed for — e.g. `company`, `person`, `opportunity`, or any custom object. When set, the renderer automatically loads that record and its relations as template context. Validated against live metadata on save. |
 | **Status** | `ACTIVE` (default), `DRAFT`, or `ARCHIVED`. Only **Active** templates appear in the Generate Document picker. |
-| **Category** | Optional grouping — link to a `TemplateCategory` record for organizing templates (e.g. "Sales", "Onboarding"). |
 | **Preview Data** | Sample JSON context for the live preview. Lets you see what the rendered document looks like without saving or loading a real record. |
 | **Allowed Output Types** | Defaults to `['PDF']`. Informational — does not currently gate output. |
 | **Version** | Auto-incremented version number. Each save that changes HTML Source creates a `TemplateVersion` snapshot. |
@@ -46,24 +45,24 @@ Every template is a `DocumentTemplate` record. Here is what each field does:
 2. Click **+ Add New** — Twenty creates the record with defaults (`status: Active`).
 3. Open the new row. The record page has two tabs:
 
-   **Editor tab** (opens by default) — a WYSIWYG HTML editor (powered by TinyMCE) with a
-   **Source Code** toggle button. Write and preview your Handlebars HTML directly in the
-   visual editor, or switch to source mode for full HTML editing — including `<head>`,
-   `<style>`, and any tags. A **Name** input and **Save** button are at the top.
-
-   **Fields tab** — Twenty's native field editor for advanced settings: Category, Status,
+   **Fields tab** (opens by default) — Twenty's native field editor for Name, Status,
    Bound Object Name, Preview Data, Allowed Output Types, and other metadata.
 
-4. Fill in the key fields:
+   **Editor tab** — a WYSIWYG HTML editor (powered by TinyMCE) with a **Source Code**
+   toggle in the toolbar. Write and preview your Handlebars HTML directly in the visual
+   editor, or switch to source mode for full HTML editing — including `<head>`, `<style>`,
+   and any tags. A **Save** button persists HTML changes.
+
+4. In the **Fields** tab, fill in the key metadata:
    - **Name** — give the template a descriptive name (e.g. "Opportunity Proposal").
    - **Bound Object Name** — set this to the object you'll generate documents from (e.g.
      `opportunity`). This tells the renderer which record to load and which relations are
      available.
-   - **HTML Source** — write your Handlebars HTML (see "Writing HTML Source" below).
    - **Status** — leave as `ACTIVE` (or set to `DRAFT` while authoring).
 
-5. Use the **Source Code** toggle to switch between visual and raw HTML editing.
-6. Save the record. Changing HTML Source on an existing template automatically creates a
+5. Switch to the **Editor** tab and write your Handlebars HTML (see "Writing HTML Source"
+   below). Use the toolbar's **Source Code** button to toggle between visual and raw HTML.
+6. Click **Save**. Changing HTML Source on an existing template automatically creates a
    `TemplateVersion` snapshot.
 
 ### Step 2: Generate a document from a template

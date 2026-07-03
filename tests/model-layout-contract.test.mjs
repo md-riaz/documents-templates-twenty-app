@@ -9,7 +9,6 @@ const read = (path) => readFileSync(join(root, path), 'utf8');
 
 const objectFiles = [
   ['src/objects/document-template.object.ts', 'DocumentTemplate'],
-  ['src/objects/template-category.object.ts', 'TemplateCategory'],
   ['src/objects/template-version.object.ts', 'TemplateVersion'],
   ['src/objects/document.object.ts', 'Document'],
 ];
@@ -26,7 +25,6 @@ test('custom objects and relations are defined for document lifecycle records', 
   for (const field of ['htmlSource', 'previewData', 'boundObjectName', 'status', 'version']) {
     assert.match(template, new RegExp(field), `DocumentTemplate should define ${field}`);
   }
-  assert.match(template, /TemplateCategory/);
   assert.match(template, /TemplateVersion/);
   assert.match(template, /DOCUMENT_OBJECT_UNIVERSAL_IDENTIFIER/, 'DocumentTemplate should reference the Document object it relates to');
 
@@ -53,7 +51,6 @@ test('navigation saved views command menu and page tab shells are registered', (
   const index = read('src/index.ts');
   for (const exportName of [
     'documentTemplateObject',
-    'templateCategoryObject',
     'templateVersionObject',
     'documentObject',
     'documentTemplateView',

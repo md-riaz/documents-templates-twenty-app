@@ -133,7 +133,6 @@ test('SDK listTemplates filters template summaries and top-level wrappers accept
     id: 'template-1',
     name: 'Invoice',
     status: 'ACTIVE',
-    category: 'Sales',
     version: 3,
   }]);
 
