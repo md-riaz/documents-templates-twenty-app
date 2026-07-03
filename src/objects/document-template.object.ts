@@ -44,7 +44,6 @@ export default defineObject({
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.description, type: FieldType.RICH_TEXT, name: 'description', label: 'Description', description: 'Template description', icon: 'IconNotes', isNullable: true, defaultValue: null },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.variables, type: FieldType.RAW_JSON, name: 'variables', label: 'Variables', description: 'Variable schema as JSON', icon: 'IconBraces', isNullable: true, defaultValue: null },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName,
       type: FieldType.TEXT,

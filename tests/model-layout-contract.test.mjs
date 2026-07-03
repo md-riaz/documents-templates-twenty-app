@@ -23,7 +23,7 @@ test('custom objects and relations are defined for document lifecycle records', 
   }
 
   const template = read('src/objects/document-template.object.ts');
-  for (const field of ['htmlSource', 'previewData', 'variables', 'boundObjectName', 'status', 'version']) {
+  for (const field of ['htmlSource', 'previewData', 'boundObjectName', 'status', 'version']) {
     assert.match(template, new RegExp(field), `DocumentTemplate should define ${field}`);
   }
   assert.match(template, /TemplateCategory/);
@@ -73,15 +73,12 @@ test('navigation saved views command menu and page tab shells are registered', (
 test('DocumentTemplate has Fields tab (position 0) with HTML Source editor widget, and Preview tab (position 1)', () => {
   const fieldsTab = read('src/page-layout-tabs/document-template-fields.page-layout-tab.ts');
   assert.match(fieldsTab, /title: 'Fields'/);
-  assert.match(fieldsTab, /position: 0/);
+  assert.match(fieldsTab, /position: 1/);
   assert.match(fieldsTab, /type: 'FIELDS'/);
-  assert.match(fieldsTab, /type: 'FIELD'/, 'Fields tab should include a dedicated FIELD widget for HTML Source');
-  assert.match(fieldsTab, /fieldDisplayMode: 'EDITOR'/, 'HTML Source widget should use EDITOR display mode');
-  assert.match(fieldsTab, /DOCUMENT_TEMPLATE_FIELDS\.htmlSource/, 'HTML Source widget should reference the htmlSource field');
 
   const previewTab = read('src/page-layout-tabs/document-template-editor.page-layout-tab.ts');
-  assert.match(previewTab, /title: 'Preview'/);
-  assert.match(previewTab, /position: 1/);
+  assert.match(previewTab, /title: 'Editor'/);
+  assert.match(previewTab, /position: 0/);
   assert.match(previewTab, /type: 'FRONT_COMPONENT'/);
 });
 

@@ -17,12 +17,8 @@ export {
 export {
   TemplateEditorComponent,
   TemplateEditorController,
-  VariablePicker,
   createLocalPreviewTemplateEditorApi,
   createTemplateEditorState,
-  groupVariablesForPicker,
-  insertVariableExpression,
-  mergeTemplateVariables,
   renderTemplateEditorMarkup,
   templateEditorFrontComponent,
   validateTemplateEditorState,
@@ -31,9 +27,6 @@ export {
   type TemplateEditorState,
   type TemplateEditorTab,
   type TemplateEditorTemplate,
-  type TemplateEditorVariable,
-  type VariableGroup,
-  type VariablePickerProps,
 } from './front-components/template-editor.front-component';
 export {
   GenerateDocumentComponent,

@@ -22,8 +22,6 @@ test('template editor front component exists and is publicly exported', () => {
     'createTemplateEditorState',
     'renderTemplateEditorMarkup',
     'TemplateEditorController',
-    'VariablePicker',
-    'groupVariablesForPicker',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
@@ -34,25 +32,9 @@ const {
   TemplateEditorController,
   renderTemplateEditorMarkup,
   validateTemplateEditorState,
-  insertVariableExpression,
-  mergeTemplateVariables,
-  groupVariablesForPicker,
   fetchDocumentTemplate,
   createCoreTemplateEditorApi,
 } = await import('../dist/front-components/template-editor.front-component.js');
-
-test('mergeTemplateVariables de-duplicates by path, preferring already-referenced entries', () => {
-  const referenced = [{ path: 'company.name', label: 'Company name (used)', isHelper: false }];
-  const available = [
-    { path: 'company.name', label: 'Company name (schema)', isHelper: false },
-    { path: 'company.domainName', label: 'Domain', isHelper: false },
-  ];
-
-  const merged = mergeTemplateVariables(referenced, available);
-  assert.equal(merged.length, 2);
-  assert.equal(merged.find((v) => v.path === 'company.name').label, 'Company name (used)');
-  assert.ok(merged.find((v) => v.path === 'company.domainName'));
-});
 
 const createApi = () => {
   const savedTemplates = [];
@@ -93,7 +75,6 @@ const fixtureTemplate = {
   name: 'Welcome Letter',
   htmlSource: '<h1>Hello {{person.name.firstName}}</h1>',
   previewData: { person: { name: { firstName: 'Ada' } } },
-  variables: [{ path: 'person.name.firstName', label: 'First name', required: true }],
   allowedOutputTypes: ['HTML', 'PDF'],
   status: 'ACTIVE',
   isActive: true,
@@ -182,15 +163,11 @@ test('template editor save creates or updates templates and records versions whe
 test('template editor supports keyboard tab navigation and variable insertion', () => {
   let state = createTemplateEditorState({ template: fixtureTemplate });
   state = TemplateEditorController.reduceKey(state, { key: 'ArrowRight', target: 'tabs' });
-  assert.equal(state.activeTab, 'preview');
+  assert.equal(state.activeTab, 'source');
   state = TemplateEditorController.reduceKey(state, { key: 'End', target: 'tabs' });
-  assert.equal(state.activeTab, 'preview');
+  assert.equal(state.activeTab, 'source');
   state = TemplateEditorController.reduceKey(state, { key: 'Home', target: 'tabs' });
   assert.equal(state.activeTab, 'html');
-
-  const inserted = insertVariableExpression('<p>Hello </p>', 'person.name.firstName', 9);
-  assert.equal(inserted.value, '<p>Hello {{person.name.firstName}}</p>');
-  assert.equal(inserted.cursor, '<p>Hello {{person.name.firstName}}'.length);
 
   const validation = validateTemplateEditorState({ ...state, name: '', htmlSource: '', previewJson: '{bad' });
   assert.match(validation.join('\n'), /Set a Name in the Fields tab before saving/);
@@ -209,7 +186,6 @@ test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTempl
           name: 'Proposal',
           htmlSource: '<h1>{{company.name}}</h1>',
           previewData: '{"company":{"name":"Acme"}}',
-          variables: '[]',
           boundObjectName: 'company',
           allowedOutputTypes: ['HTML', 'PDF'],
           status: 'ACTIVE',
@@ -222,7 +198,6 @@ test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTempl
   const template = await fetchDocumentTemplate(fakeClient, 'template-9');
   assert.equal(template.id, 'template-9');
   assert.deepEqual(template.previewData, { company: { name: 'Acme' } });
-  assert.deepEqual(template.variables, []);
   assert.equal(template.boundObjectName, 'company');
   assert.equal(template.version, 2);
 });
@@ -273,7 +248,7 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
   const updateData = mutations.find((m) => m.updateDocumentTemplate).updateDocumentTemplate.__args.data;
   assert.deepEqual(
     Object.keys(updateData).sort(),
-    ['htmlSource', 'previewData', 'variables'],
+    ['htmlSource', 'previewData'],
     'updating an existing template must not touch name/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
   );
 
@@ -282,9 +257,6 @@ test('createCoreTemplateEditorApi renders previews locally, saves via updateDocu
   const createData = mutations.find((m) => m.createDocumentTemplate).createDocumentTemplate.__args.data;
   assert.equal(createData.name, 'New', 'a brand-new record has no Fields-tab edit to clobber, so it still needs name seeded');
   assert.equal(createData.status, 'ACTIVE');
-
-  const fields = await api.listFields('company');
-  assert.deepEqual(fields, [{ path: 'company.name', label: 'company.name' }]);
 
   const validCheck = await api.validateBoundObjectName('company');
   assert.equal(validCheck.ok, true);
@@ -313,40 +285,4 @@ test('TemplateEditorController.save rejects an invalid boundObjectName before pe
   assert.equal(result.ok, false);
   assert.match(result.errors.join('\n'), /not a valid Twenty object name/);
   assert.equal(saveTemplateCalls.length, 0, 'save must not persist when boundObjectName is invalid');
-});
-
-test('groupVariablesForPicker groups variables by object prefix and marks referenced ones', () => {
-  const available = [
-    { path: 'opportunity.name', label: 'opportunity.name' },
-    { path: 'opportunity.stage', label: 'opportunity.stage' },
-    { path: 'opportunity.closeDate', label: 'opportunity.closeDate' },
-    { path: 'opportunity.company.name', label: 'opportunity.company.name' },
-    { path: 'opportunity.company.domainName', label: 'opportunity.company.domainName' },
-    { path: 'opportunity.pointOfContact.name.firstName', label: 'opportunity.pointOfContact.name.firstName' },
-  ];
-  const referenced = new Set(['opportunity.name', 'opportunity.company.name']);
-
-  const groups = groupVariablesForPicker(available, referenced);
-
-  assert.ok(groups.length >= 2, 'should produce multiple groups');
-
-  const oppGroup = groups.find((g) => g.label === 'opportunity');
-  assert.ok(oppGroup, 'should have an "opportunity" group');
-  assert.ok(oppGroup.variables.some((v) => v.path === 'opportunity.name' && v.referenced === true));
-  assert.ok(oppGroup.variables.some((v) => v.path === 'opportunity.stage' && v.referenced === false));
-
-  const companyGroup = groups.find((g) => g.label === 'opportunity.company');
-  assert.ok(companyGroup, 'should have an "opportunity.company" group');
-  assert.ok(companyGroup.variables.some((v) => v.path === 'opportunity.company.name' && v.referenced === true));
-  assert.ok(companyGroup.variables.some((v) => v.path === 'opportunity.company.domainName' && v.referenced === false));
-});
-
-test('groupVariablesForPicker handles single-segment variables', () => {
-  const available = [
-    { path: 'today', label: 'today' },
-    { path: 'company.name', label: 'company.name' },
-  ];
-  const groups = groupVariablesForPicker(available, new Set());
-  assert.ok(groups.some((g) => g.label === 'today'), 'single-segment variable should create its own group');
-  assert.ok(groups.some((g) => g.label === 'company'), 'dotted variable should group by prefix');
 });

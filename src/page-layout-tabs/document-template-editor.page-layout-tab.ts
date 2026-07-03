@@ -10,9 +10,9 @@ import {
 export default definePageLayoutTab({
   universalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_EDITOR_TAB_UNIVERSAL_IDENTIFIER,
   pageLayoutUniversalIdentifier: DOCUMENT_TEMPLATE_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER,
-  title: 'Preview',
-  icon: 'IconEye',
-  position: 1,
+  title: 'Editor',
+  icon: 'IconCode',
+  position: 0,
   layoutMode: PageLayoutTabLayoutMode.GRID,
   widgets: [
     {
