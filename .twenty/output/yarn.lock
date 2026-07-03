@@ -721,22 +721,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tinymce/tinymce-react@npm:^6.3.0":
-  version: 6.3.0
-  resolution: "@tinymce/tinymce-react@npm:6.3.0"
-  dependencies:
-    prop-types: "npm:^15.6.2"
-  peerDependencies:
-    react: ^19.0.0 || ^18.0.0 || ^17.0.1 || ^16.7.0
-    react-dom: ^19.0.0 || ^18.0.0 || ^17.0.1 || ^16.7.0
-    tinymce: ^8.0.0 || ^7.0.0 || ^6.0.0 || ^5.5.1
-  peerDependenciesMeta:
-    tinymce:
-      optional: true
-  checksum: 10c0/467937194f956ac4981b15b5b5ebf38bf1adacd8472026cbb1de3d6464ec1190f5c7318ce52e1b48df3d282cb100d0c8e06fd74ec10d4f7048633cdc099dd431
-  languageName: node
-  linkType: hard
-
 "@types/node@npm:*, @types/node@npm:^26.0.1":
   version: 26.0.1
   resolution: "@types/node@npm:26.0.1"
@@ -1008,13 +992,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "documents-templates@workspace:."
   dependencies:
-    "@tinymce/tinymce-react": "npm:^6.3.0"
     "@types/node": "npm:^26.0.1"
     "@types/react": "npm:^19.2.0"
     handlebars: "npm:^4.7.9"
     puppeteer: "npm:^25.3.0"
     react: "npm:^19.2.0"
-    tinymce: "npm:^8.7.0"
     twenty-client-sdk: "npm:2.16.0"
     twenty-sdk: "npm:2.16.0"
     typescript: "npm:^6.0.3"
@@ -1511,13 +1493,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-tokens@npm:^3.0.0 || ^4.0.0":
-  version: 4.0.0
-  resolution: "js-tokens@npm:4.0.0"
-  checksum: 10c0/e248708d377aa058eacf2037b07ded847790e6de892bbad3dac0abba2e759cb9f121b00099a65195616badcb6eca8d14d975cb3e89eb1cfda644756402c8aeed
-  languageName: node
-  linkType: hard
-
 "jsonc-parser@npm:^3.2.0":
   version: 3.3.1
   resolution: "jsonc-parser@npm:3.3.1"
@@ -1536,17 +1511,6 @@ __metadata:
   version: 4.18.1
   resolution: "lodash@npm:4.18.1"
   checksum: 10c0/757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
-  languageName: node
-  linkType: hard
-
-"loose-envify@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "loose-envify@npm:1.4.0"
-  dependencies:
-    js-tokens: "npm:^3.0.0 || ^4.0.0"
-  bin:
-    loose-envify: cli.js
-  checksum: 10c0/655d110220983c1a4b9c0c679a2e8016d4b67f6e9c7b5435ff5979ecdb20d0813f4dec0a08674fcbdd4846a3f07edbb50a36811fd37930b94aaa0d9daceb017e
   languageName: node
   linkType: hard
 
@@ -1636,13 +1600,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"object-assign@npm:^4.1.1":
-  version: 4.1.1
-  resolution: "object-assign@npm:4.1.1"
-  checksum: 10c0/1f4df9945120325d041ccf7b86f31e8bcc14e73d29171e37a7903050e96b81323784ec59f93f102ec635bcf6fa8034ba3ea0a8c7e69fa202b87ae3b6cec5a414
-  languageName: node
-  linkType: hard
-
 "onetime@npm:^5.1.0":
   version: 5.1.2
   resolution: "onetime@npm:5.1.2"
@@ -1679,17 +1636,6 @@ __metadata:
   bin:
     prettier: bin/prettier.cjs
   checksum: 10c0/dc6ec13d692745c6b7e7bf39beda9eb1b3b76c619118319bce393928c392264b1273337c75f80499695e165affefc7b3a9d2ebb18983af0a8f4dfbb2f45f6ff3
-  languageName: node
-  linkType: hard
-
-"prop-types@npm:^15.6.2":
-  version: 15.8.1
-  resolution: "prop-types@npm:15.8.1"
-  dependencies:
-    loose-envify: "npm:^1.4.0"
-    object-assign: "npm:^4.1.1"
-    react-is: "npm:^16.13.1"
-  checksum: 10c0/59ece7ca2fb9838031d73a48d4becb9a7cc1ed10e610517c7d8f19a1e02fa47f7c27d557d8a5702bec3cfeccddc853579832b43f449e54635803f277b1c78077
   languageName: node
   linkType: hard
 
@@ -1738,13 +1684,6 @@ __metadata:
   peerDependencies:
     react: ^19.2.7
   checksum: 10c0/970ff600f6e80d47d39e2f226f12f226173b3cba3382efc97c5f0cd663de9af38c7a4c11c213fb936094faeac83060d660247accaa96b752180d5b951b9cfecb
-  languageName: node
-  linkType: hard
-
-"react-is@npm:^16.13.1":
-  version: 16.13.1
-  resolution: "react-is@npm:16.13.1"
-  checksum: 10c0/33977da7a5f1a287936a0c85639fec6ca74f4f15ef1e59a6bc20338fc73dc69555381e211f7a3529b8150a1f71e4225525b41b60b52965bda53ce7d47377ada1
   languageName: node
   linkType: hard
 
@@ -2019,13 +1958,6 @@ __metadata:
     fdir: "npm:^6.5.0"
     picomatch: "npm:^4.0.4"
   checksum: 10c0/7f7bb0f197c88bc4b20c231e0deca4240ca3bf313a88f5a7fee93a872b84966a4d50220947c0455ad07a60b3b360961c5b7fd979222aeb716a9f99b412002e4c
-  languageName: node
-  linkType: hard
-
-"tinymce@npm:^8.7.0":
-  version: 8.7.0
-  resolution: "tinymce@npm:8.7.0"
-  checksum: 10c0/a3733b6de5b465accb309c64422752fb9beb4635522514e23af0e7f88e00b85d05f5e8022fed89af4f74913e14cbf8bf87b54156eaae7ae3a5cde094e3b8927a
   languageName: node
   linkType: hard
 
