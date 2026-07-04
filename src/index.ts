@@ -1,6 +1,7 @@
 export { default as applicationConfig } from './application-config';
 export { default as defaultRole } from './default-role';
 export { default as documentTemplateObject } from './objects/document-template.object';
+export { default as templateCategoryObject } from './objects/template-category.object';
 export { default as templateVersionObject } from './objects/template-version.object';
 export { default as documentObject } from './objects/document.object';
 export { default as documentTemplateView } from './menu/document-template.view';
@@ -15,12 +16,24 @@ export {
 } from './front-components/document-shell.front-component';
 export {
   TemplateEditorComponent,
+  TemplateEditorController,
+  VariablePicker,
   createLocalPreviewTemplateEditorApi,
+  createTemplateEditorState,
+  groupVariablesForPicker,
+  insertVariableExpression,
+  mergeTemplateVariables,
   renderTemplateEditorMarkup,
   templateEditorFrontComponent,
+  validateTemplateEditorState,
+  type TemplateEditorApi,
   type TemplateEditorComponentProps,
   type TemplateEditorState,
+  type TemplateEditorTab,
   type TemplateEditorTemplate,
+  type TemplateEditorVariable,
+  type VariableGroup,
+  type VariablePickerProps,
 } from './front-components/template-editor.front-component';
 export {
   GenerateDocumentComponent,
@@ -57,8 +70,6 @@ export {
 export { default as documentTemplatePageLayout } from './page-layouts/document-template.page-layout';
 export { default as documentTemplateFieldsTab } from './page-layout-tabs/document-template-fields.page-layout-tab';
 export { default as documentTemplateEditorTab } from './page-layout-tabs/document-template-editor.page-layout-tab';
-export { default as documentTemplateBetaEditorTab } from './page-layout-tabs/document-template-beta-editor.page-layout-tab';
-export { default as tinymceBetaEditorFrontComponent } from './front-components/tinymce-beta-editor.front-component';
 export { default as generateDocumentCommandMenuItem } from './menu/generate-document.command-menu-item';
 export {
   ContextProviderRegistry,
