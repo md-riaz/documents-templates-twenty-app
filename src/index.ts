@@ -15,16 +15,11 @@ export {
 } from './front-components/document-shell.front-component';
 export {
   TemplateEditorComponent,
-  TemplateEditorController,
   createLocalPreviewTemplateEditorApi,
-  createTemplateEditorState,
   renderTemplateEditorMarkup,
   templateEditorFrontComponent,
-  validateTemplateEditorState,
-  type TemplateEditorApi,
   type TemplateEditorComponentProps,
   type TemplateEditorState,
-  type TemplateEditorTab,
   type TemplateEditorTemplate,
 } from './front-components/template-editor.front-component';
 export {
@@ -62,6 +57,8 @@ export {
 export { default as documentTemplatePageLayout } from './page-layouts/document-template.page-layout';
 export { default as documentTemplateFieldsTab } from './page-layout-tabs/document-template-fields.page-layout-tab';
 export { default as documentTemplateEditorTab } from './page-layout-tabs/document-template-editor.page-layout-tab';
+export { default as documentTemplateBetaEditorTab } from './page-layout-tabs/document-template-beta-editor.page-layout-tab';
+export { default as tinymceBetaEditorFrontComponent } from './front-components/tinymce-beta-editor.front-component';
 export { default as generateDocumentCommandMenuItem } from './menu/generate-document.command-menu-item';
 export {
   ContextProviderRegistry,
