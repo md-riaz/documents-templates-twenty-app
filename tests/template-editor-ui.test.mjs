@@ -19,270 +19,42 @@ test('template editor front component exists and is publicly exported', () => {
   const index = read('src/index.ts');
   for (const exportName of [
     'templateEditorFrontComponent',
-    'createTemplateEditorState',
     'renderTemplateEditorMarkup',
-    'TemplateEditorController',
+    'TemplateEditorComponent',
   ]) {
     assert.match(index, new RegExp(exportName), `src/index.ts should export ${exportName}`);
   }
 });
 
 const {
-  createTemplateEditorState,
-  TemplateEditorController,
   renderTemplateEditorMarkup,
-  validateTemplateEditorState,
-  fetchDocumentTemplate,
-  createCoreTemplateEditorApi,
+  createLocalPreviewTemplateEditorApi,
 } = await import('../dist/front-components/template-editor.front-component.js');
 
-const createApi = () => {
-  const savedTemplates = [];
-  const versions = [];
-  const previews = [];
-  return {
-    savedTemplates,
-    versions,
-    previews,
-    async renderPreview(input) {
-      previews.push(input);
-      if (input.htmlSource.includes('{{missing')) {
-        return { ok: false, html: '', warnings: [], errors: [{ userMessage: 'Missing required variable: missing.name' }] };
-      }
-      return {
-        ok: true,
-        html: `${input.htmlSource.replace('{{person.name.firstName}}', input.previewData.person.name.firstName)}`,
-        warnings: input.previewData.warning ? ['Fixture warning'] : [],
-        errors: [],
-      };
-    },
-    async saveTemplate(input) {
-      const id = input.id ?? `template-${savedTemplates.length + 1}`;
-      const record = { ...input, id, version: input.version ?? 1 };
-      savedTemplates.push(record);
-      return record;
-    },
-    async createTemplateVersion(input) {
-      const record = { id: `version-${versions.length + 1}`, ...input };
-      versions.push(record);
-      return record;
-    },
-  };
-};
-
-const fixtureTemplate = {
-  id: 'template-1',
-  name: 'Welcome Letter',
-  htmlSource: '<h1>Hello {{person.name.firstName}}</h1>',
-  previewData: { person: { name: { firstName: 'Ada' } } },
-  allowedOutputTypes: ['HTML', 'PDF'],
-  status: 'ACTIVE',
-  isActive: true,
-  version: 3,
-};
-
 test('renderTemplateEditorMarkup returns a preview placeholder', () => {
-  const state = createTemplateEditorState({ template: fixtureTemplate });
-  const markup = renderTemplateEditorMarkup(state);
-
+  const markup = renderTemplateEditorMarkup();
   assert.match(markup, /aria-label="Template preview"/);
   assert.match(markup, /Loading preview/);
 });
 
-test('template editor debounces live preview and updates preview result', async () => {
-  const api = createApi();
-  const controller = new TemplateEditorController({
-    initialState: createTemplateEditorState({ template: fixtureTemplate }),
-    api,
-    debounceMs: 15,
+test('createLocalPreviewTemplateEditorApi renders HTML through Handlebars', async () => {
+  const api = createLocalPreviewTemplateEditorApi();
+  const result = await api.renderPreview({
+    htmlSource: '<h1>Hello {{name}}</h1>',
+    previewData: { name: 'Ada' },
   });
-
-  controller.updateField('htmlSource', '<h1>Hello {{person.name.firstName}}</h1><p>Draft A</p>');
-  controller.updateField('htmlSource', '<h1>Hello {{person.name.firstName}}</h1><p>Draft B</p>');
-
-  await controller.flushPreview();
-
-  assert.equal(api.previews.length, 1, 'rapid edits should coalesce into one preview request');
-  assert.match(controller.state.previewHtml, /Draft B/);
-  assert.match(controller.state.previewHtml, /Ada/);
-  assert.deepEqual(controller.state.validationErrors, []);
+  assert.equal(result.ok, true);
+  assert.match(result.html, /Hello Ada/);
+  assert.deepEqual(result.warnings, []);
+  assert.deepEqual(result.errors, []);
 });
 
-test('template editor validates preview JSON and surfaces render validation errors', async () => {
-  const api = createApi();
-  const controller = new TemplateEditorController({
-    initialState: createTemplateEditorState({ template: fixtureTemplate }),
-    api,
-    debounceMs: 1,
+test('createLocalPreviewTemplateEditorApi returns errors for invalid templates', async () => {
+  const api = createLocalPreviewTemplateEditorApi();
+  const result = await api.renderPreview({
+    htmlSource: '<h1>{{#each}}{{/each></h1>',
+    previewData: {},
   });
-
-  controller.updateField('previewJson', '{ not valid json');
-  await controller.flushPreview();
-  assert.match(controller.state.validationErrors.join('\n'), /Preview JSON is not valid JSON/);
-  assert.equal(api.previews.length, 0, 'invalid preview JSON should not call preview API');
-
-  controller.updateField('previewJson', JSON.stringify(fixtureTemplate.previewData));
-  controller.updateField('htmlSource', '<p>{{missing.name}}</p>');
-  await controller.flushPreview();
-  assert.match(controller.state.validationErrors.join('\n'), /Missing required variable/);
-});
-
-test('template editor save creates or updates templates and records versions when source changes', async () => {
-  const api = createApi();
-  const controller = new TemplateEditorController({
-    initialState: createTemplateEditorState({ template: fixtureTemplate }),
-    api,
-    debounceMs: 1,
-  });
-
-  controller.updateField('htmlSource', '<h1>Hello {{person.name.firstName}}</h1><p>Changed</p>');
-  const saved = await controller.save();
-
-  assert.equal(saved.ok, true);
-  assert.equal(api.savedTemplates.length, 1);
-  assert.equal(api.savedTemplates[0].version, 4);
-  assert.equal(api.versions.length, 1, 'source changes should create a TemplateVersion');
-  assert.equal(api.versions[0].templateId, 'template-1');
-  assert.equal(api.versions[0].versionNumber, 4);
-  assert.match(controller.state.statusMessage, /Saved version 4/);
-
-  const createController = new TemplateEditorController({
-    initialState: createTemplateEditorState(),
-    api,
-    debounceMs: 1,
-  });
-  createController.updateField('name', 'New Template');
-  createController.updateField('htmlSource', '<p>Hello</p>');
-  createController.updateField('previewJson', '{}');
-  const created = await createController.save();
-
-  assert.equal(created.ok, true);
-  assert.equal(api.savedTemplates.at(-1).version, 1);
-});
-
-test('template editor supports keyboard tab navigation and variable insertion', () => {
-  let state = createTemplateEditorState({ template: fixtureTemplate });
-  state = TemplateEditorController.reduceKey(state, { key: 'ArrowRight', target: 'tabs' });
-  assert.equal(state.activeTab, 'source');
-  state = TemplateEditorController.reduceKey(state, { key: 'End', target: 'tabs' });
-  assert.equal(state.activeTab, 'source');
-  state = TemplateEditorController.reduceKey(state, { key: 'Home', target: 'tabs' });
-  assert.equal(state.activeTab, 'visual');
-
-  const validation = validateTemplateEditorState({ ...state, name: '', htmlSource: '', previewJson: '{bad' });
-  assert.match(validation.join('\n'), /Set a Name in the Fields tab before saving/);
-  assert.match(validation.join('\n'), /HTML source is required/);
-  assert.match(validation.join('\n'), /Preview JSON is not valid JSON/);
-});
-
-test('fetchDocumentTemplate maps a genql-queried record into TemplateEditorTemplate, coercing RAW_JSON fields', async () => {
-  const fakeClient = {
-    async query(request) {
-      assert.ok(request.documentTemplate);
-      assert.equal(request.documentTemplate.__args.filter.id.eq, 'template-9');
-      return {
-        documentTemplate: {
-          id: 'template-9',
-          name: 'Proposal',
-          htmlSource: '<h1>{{company.name}}</h1>',
-          previewData: '{"company":{"name":"Acme"}}',
-          boundObjectName: 'company',
-          allowedOutputTypes: ['HTML', 'PDF'],
-          status: 'ACTIVE',
-          version: 2,
-        },
-      };
-    },
-  };
-
-  const template = await fetchDocumentTemplate(fakeClient, 'template-9');
-  assert.equal(template.id, 'template-9');
-  assert.deepEqual(template.previewData, { company: { name: 'Acme' } });
-  assert.equal(template.boundObjectName, 'company');
-  assert.equal(template.version, 2);
-});
-
-test('fetchDocumentTemplate returns null for a missing record', async () => {
-  const template = await fetchDocumentTemplate({ query: async () => ({ documentTemplate: null }) }, 'missing');
-  assert.equal(template, null);
-});
-
-test('createCoreTemplateEditorApi renders previews locally, saves via updateDocumentTemplate/createDocumentTemplate, and validates boundObjectName against live metadata', async () => {
-  const mutations = [];
-  const fakeClient = {
-    async mutation(request) {
-      mutations.push(request);
-      const field = Object.keys(request)[0];
-      if (field === 'updateDocumentTemplate') {
-        return { updateDocumentTemplate: { id: request.updateDocumentTemplate.__args.id, version: 5 } };
-      }
-      if (field === 'createDocumentTemplate') {
-        return { createDocumentTemplate: { id: 'template-new', version: 1 } };
-      }
-      if (field === 'createTemplateVersion') {
-        return { createTemplateVersion: { id: 'version-1' } };
-      }
-      throw new Error(`unexpected mutation field ${field}`);
-    },
-  };
-  const fakeMetadataApi = {
-    async listObjects() {
-      return [{ nameSingular: 'company', labelSingular: 'Company', fields: [] }];
-    },
-    async getFields(objectNameSingular) {
-      if (objectNameSingular !== 'company') return [];
-      return [{ name: 'name', label: 'Name', type: 'TEXT', isRelation: false }];
-    },
-  };
-
-  const api = createCoreTemplateEditorApi(fakeClient, fakeMetadataApi);
-
-  const preview = await api.renderPreview({ htmlSource: '<h1>{{name}}</h1>', previewData: { name: 'Ada' } });
-  assert.equal(preview.ok, true);
-  assert.match(preview.html, /Ada/);
-  assert.equal(mutations.length, 0, 'preview must be fully local, no network call');
-
-  const updated = await api.saveTemplate({ id: 'template-9', name: 'Proposal', htmlSource: '<h1>x</h1>', status: 'ACTIVE' });
-  assert.equal(updated.id, 'template-9');
-  assert.equal(updated.version, 5);
-  const updateData = mutations.find((m) => m.updateDocumentTemplate).updateDocumentTemplate.__args.data;
-  assert.deepEqual(
-    Object.keys(updateData).sort(),
-    ['htmlSource', 'previewData'],
-    'updating an existing template must not touch name/boundObjectName/allowedOutputTypes/status — those are edited via the native Fields tab and would otherwise be clobbered with a stale value',
-  );
-
-  const created = await api.saveTemplate({ name: 'New', htmlSource: '<p>x</p>', status: 'ACTIVE' });
-  assert.equal(created.id, 'template-new');
-  const createData = mutations.find((m) => m.createDocumentTemplate).createDocumentTemplate.__args.data;
-  assert.equal(createData.name, 'New', 'a brand-new record has no Fields-tab edit to clobber, so it still needs name seeded');
-  assert.equal(createData.status, 'ACTIVE');
-
-  const validCheck = await api.validateBoundObjectName('company');
-  assert.equal(validCheck.ok, true);
-  const invalidCheck = await api.validateBoundObjectName('not-a-real-object');
-  assert.equal(invalidCheck.ok, false);
-  assert.match(invalidCheck.message, /not a valid Twenty object name/);
-});
-
-test('TemplateEditorController.save rejects an invalid boundObjectName before persisting', async () => {
-  const saveTemplateCalls = [];
-  const api = {
-    async renderPreview() { return { ok: true, html: '', warnings: [], errors: [] }; },
-    async saveTemplate(input) { saveTemplateCalls.push(input); return { ...input, id: 'template-1', version: 1 }; },
-    async createTemplateVersion() { return {}; },
-    async validateBoundObjectName(name) {
-      return name === 'company' ? { ok: true } : { ok: false, message: `"${name}" is not a valid Twenty object name.` };
-    },
-  };
-  const controller = new TemplateEditorController({
-    initialState: createTemplateEditorState({ template: { ...fixtureTemplate, boundObjectName: 'not-real' } }),
-    api,
-    debounceMs: 1,
-  });
-
-  const result = await controller.save();
   assert.equal(result.ok, false);
-  assert.match(result.errors.join('\n'), /not a valid Twenty object name/);
-  assert.equal(saveTemplateCalls.length, 0, 'save must not persist when boundObjectName is invalid');
+  assert.ok(result.errors.length > 0);
 });

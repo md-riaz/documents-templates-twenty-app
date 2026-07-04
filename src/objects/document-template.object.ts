@@ -28,7 +28,15 @@ export default defineObject({
   fields: [
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.name, type: FieldType.TEXT, name: 'name', label: 'Name', description: 'Template name', icon: 'IconAbc' },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.description, type: FieldType.RICH_TEXT, name: 'description', label: 'Description', description: 'Template description', icon: 'IconNotes', isNullable: true, defaultValue: null },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, type: FieldType.TEXT, name: 'htmlSource', label: 'HTML Source', description: 'Handlebars HTML source', icon: 'IconCode' },
+    { 
+      universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.htmlSource, 
+      type: FieldType.TEXT, 
+      name: 'htmlSource', 
+      label: 'HTML Source', 
+      description: 'Handlebars HTML source', 
+      icon: 'IconCode',
+      universalSettings: { displayedMaxRows: 25 } 
+    },
     { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.previewData, type: FieldType.RAW_JSON, name: 'previewData', label: 'Preview Data', description: 'JSON preview context', icon: 'IconJson', isNullable: true, defaultValue: null },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.boundObjectName,
@@ -40,7 +48,7 @@ export default defineObject({
       isNullable: true,
       defaultValue: null,
     },
-    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: ['PDF'] as string[] },
+    { universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.allowedOutputTypes, type: FieldType.ARRAY, name: 'allowedOutputTypes', label: 'Allowed Output Types', description: 'Allowed document outputs such as HTML/PDF', icon: 'IconFiles', defaultValue: ["'PDF'"] as string[] },
     {
       universalIdentifier: DOCUMENT_TEMPLATE_FIELDS.status,
       type: FieldType.SELECT,

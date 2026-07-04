@@ -70,12 +70,15 @@ test('navigation saved views command menu and page tab shells are registered', (
 test('DocumentTemplate has Fields tab (position 0) with HTML Source editor widget, and Preview tab (position 1)', () => {
   const fieldsTab = read('src/page-layout-tabs/document-template-fields.page-layout-tab.ts');
   assert.match(fieldsTab, /title: 'Fields'/);
-  assert.match(fieldsTab, /position: 1/);
+  assert.match(fieldsTab, /position: 0/);
   assert.match(fieldsTab, /type: 'FIELDS'/);
+  assert.match(fieldsTab, /type: 'FIELD'/);
+  assert.match(fieldsTab, /fieldDisplayMode: 'EDITOR'/);
+  assert.match(fieldsTab, /htmlSource/);
 
   const previewTab = read('src/page-layout-tabs/document-template-editor.page-layout-tab.ts');
-  assert.match(previewTab, /title: 'Editor'/);
-  assert.match(previewTab, /position: 0/);
+  assert.match(previewTab, /title: 'Preview'/);
+  assert.match(previewTab, /position: 1/);
   assert.match(previewTab, /type: 'FRONT_COMPONENT'/);
 });
 

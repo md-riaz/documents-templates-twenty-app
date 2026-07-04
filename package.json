@@ -1,9 +1,9 @@
 {
   "name": "documents-templates",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "private": true,
   "license": "MIT",
-  "description": "Documents & Templates app for Twenty CRM.",
+  "description": "Custom Twenty module for generating documents from templates",
   "engines": {
     "node": ">=24.0.0",
     "npm": "please-use-yarn",

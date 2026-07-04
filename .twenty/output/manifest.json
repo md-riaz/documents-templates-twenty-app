@@ -1,7 +1,6 @@
 {
   "application": {
     "universalIdentifier": "6eaaf6ac-81f8-5c40-8f27-0d0c70b17500",
-    "defaultRoleUniversalIdentifier": "a2f3882b-4d9a-5b87-9f9d-0d0c70b17501",
     "displayName": "Documents & Templates",
     "description": "Reusable document template management for proposals, invoices, onboarding packs, PDFs, record attachments, and audit history.",
     "category": "Productivity",
@@ -9,9 +8,10 @@
     "websiteUrl": "https://github.com/md-riaz/documents-templates-twenty-app#readme",
     "issueReportUrl": "https://github.com/md-riaz/documents-templates-twenty-app/issues",
     "screenshots": [],
-    "aboutDescription": "# Documents & Templates for Twenty CRM\n\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, and keep a searchable audit trail.\n\n## Why use this app?\n\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\n- **Record-first file management:** the CRM record you generated from links straight to its Document record, whose Files tab holds the PDF — no duplicate copies.\n- **Auditability:** Document records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\n\n## Reusable business scenarios\n\n| Scenario | Example output | Business value |\n| --- | --- | --- |\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\n| Customer onboarding | Welcome pack, implementation checklist, kickoff documents | Creates repeatable onboarding material from live CRM context. |\n| Renewals and account management | Renewal notice, QBR summary, success-plan documents | Helps account teams communicate consistently at scale. |\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction documents | Reuses the same template engine for non-sales CRM processes. |\n| Bulk campaigns | One document/documents per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\n\n## User guide\n\n### DocumentTemplate fields\n\nEvery template is a `DocumentTemplate` record. Here is what each field does:\n\n| Field | Purpose |\n| --- | --- |\n| **Name** | Display name shown in template pickers and the Templates list view. |\n| **HTML Source** | The Handlebars HTML markup that defines your document. This is where all your HTML, CSS (`<style>` tags), and `{{variable}}` expressions go. |\n| **Bound Object Name** | The Twenty object this template is designed for — e.g. `company`, `person`, `opportunity`, or any custom object. When set, the renderer automatically loads that record and its relations as template context. Validated against live metadata on save. |\n| **Status** | `ACTIVE` (default), `DRAFT`, or `ARCHIVED`. Only **Active** templates appear in the Generate Document picker. |\n| **Preview Data** | Sample JSON context for the live preview. Lets you see what the rendered document looks like without saving or loading a real record. |\n| **Allowed Output Types** | Defaults to `['PDF']`. Informational — does not currently gate output. |\n| **Version** | Auto-incremented version number. Each save that changes HTML Source creates a `TemplateVersion` snapshot. |\n| **Description** | Optional rich-text description for documentation purposes. |\n\n### Step 1: Create a template\n\n1. Open **Documents & Templates → Templates** in the left navigation menu.\n2. Click **+ Add New** — Twenty creates the record with defaults (`status: Active`).\n3. Open the new row. The record page has two tabs:\n\n   **Fields tab** (opens by default) — Twenty's native field editor for Name, Status,\n   Bound Object Name, Preview Data, Allowed Output Types, and other metadata.\n\n   **Editor tab** — a WYSIWYG HTML editor (powered by TinyMCE) with a **Source Code**\n   toggle in the toolbar. Write and preview your Handlebars HTML directly in the visual\n   editor, or switch to source mode for full HTML editing — including `<head>`, `<style>`,\n   and any tags. A **Save** button persists HTML changes.\n\n4. In the **Fields** tab, fill in the key metadata:\n   - **Name** — give the template a descriptive name (e.g. \"Opportunity Proposal\").\n   - **Bound Object Name** — set this to the object you'll generate documents from (e.g.\n     `opportunity`). This tells the renderer which record to load and which relations are\n     available.\n   - **Status** — leave as `ACTIVE` (or set to `DRAFT` while authoring).\n\n5. Switch to the **Editor** tab and write your Handlebars HTML (see \"Writing HTML Source\"\n   below). Use the toolbar's **Source Code** button to toggle between visual and raw HTML.\n6. Click **Save**. Changing HTML Source on an existing template automatically creates a\n   `TemplateVersion` snapshot.\n\n### Step 2: Generate a document from a template\n\n1. Navigate to any CRM record (e.g. an Opportunity, Company, or Person).\n2. Open the **command menu** (click the `⌘` button or use the keyboard shortcut) and\n   choose **Generate Document**.\n3. Select an **Active** template from the picker. Only templates whose `boundObjectName`\n   matches the current record's object type (or templates with no bound object) appear.\n4. The app renders the template against the live CRM record — you see a preview of the\n   final HTML.\n5. Click **Generate PDF** to convert the rendered HTML to a PDF and save it.\n6. The app creates a **Document** audit record linked to the source CRM record, generates\n   the PDF via Puppeteer, uploads it to Twenty's file storage, and attaches it to the\n   Document record.\n7. The source record's **Documents** tab now shows the new Document with a \"View Document\"\n   link. The Document record's own **Files** tab holds the PDF — durable, re-signed on\n   every query (the cached `pdfUrl` expires after ~24h).\n\nYou can also automate this with workflows — see\n[docs/workflow-examples.md](docs/workflow-examples.md) for a step-by-step walkthrough of\nchaining **Render Template → Save Document → Generate PDF** in Twenty's workflow builder.\n\n### Writing HTML Source (Handlebars guide)\n\nTemplates use [Handlebars](https://handlebarsjs.com/) syntax inside standard HTML. The\nrenderer loads the bound object's record and its **first-level relations** automatically,\nso you can reference related data without any extra setup.\n\n#### Basic variables\n\nUse `{{object.field}}` to insert a field value. The top-level key is always the bound\nobject's singular name:\n\n```handlebars\n<!-- boundObjectName: \"company\" -->\n<h1>{{company.name}}</h1>\n<p>Domain: {{company.domainName}}</p>\n<p>Employees: {{company.employees}}</p>\n```\n\n```handlebars\n<!-- boundObjectName: \"person\" -->\n<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>\n<p>Email: {{person.email}}</p>\n<p>Job title: {{person.jobTitle}}</p>\n```\n\n#### Accessing related objects (relations)\n\nWhen the renderer loads a record, it **shallow-expands one level of relations** from live\nmetadata. This means you can access any directly related object's fields using dot\nnotation — no extra configuration needed:\n\n```handlebars\n<!-- boundObjectName: \"opportunity\" -->\n<h1>{{opportunity.name}}</h1>\n<p>Company: {{opportunity.company.name}}</p>\n<p>Contact: {{opportunity.pointOfContact.name.firstName}} {{opportunity.pointOfContact.name.lastName}}</p>\n<p>Contact title: {{opportunity.pointOfContact.jobTitle}}</p>\n<p>Deal value: ${{opportunity.amount.amountMicros}}</p>\n<p>Stage: {{opportunity.stage}}</p>\n<p>Close date: {{opportunity.closeDate}}</p>\n```\n\n```handlebars\n<!-- boundObjectName: \"person\" -->\n<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>\n<p>Works at: {{person.company.name}}</p>\n<p>Company domain: {{person.company.domainName}}</p>\n```\n\nCheck the bound object's schema in Twenty's Settings to see available fields and relations for template variables.\n\n#### Conditionals\n\n```handlebars\n{{#if opportunity.closeDate}}\n  <p>Target close: {{opportunity.closeDate}}</p>\n{{else}}\n  <p>Close date not set</p>\n{{/if}}\n```\n\n#### Loops\n\n```handlebars\n{{#each items}}\n  <tr>\n    <td>{{this.name}}</td>\n    <td>{{this.quantity}}</td>\n    <td>{{this.price}}</td>\n  </tr>\n{{/each}}\n```\n\n#### Built-in helpers\n\nThe renderer includes standard Handlebars helpers (`#if`, `#unless`, `#each`, `#with`)\nand a set of utility helpers:\n\n```handlebars\n{{uppercase company.name}}          {{!-- \"ACME CORPORATION\" --}}\n{{lowercase person.email}}           {{!-- \"ada@example.com\" --}}\n{{capitalize opportunity.stage}}     {{!-- \"Proposal\" --}}\n{{formatDate opportunity.closeDate}} {{!-- formatted date string --}}\n```\n\n#### Embedding CSS\n\nPut `<style>` tags directly in `htmlSource` — there is no separate CSS field. This keeps\neverything in one place and ensures the PDF renderer sees the same styles:\n\n```html\n<style>\n  body { font-family: 'Segoe UI', sans-serif; color: #1a1a2e; }\n  .header { background: #1a1a2e; color: white; padding: 40px; }\n  .amount { font-size: 28px; font-weight: 700; color: #0f3460; }\n</style>\n\n<div class=\"header\">\n  <h1>Proposal for {{opportunity.company.name}}</h1>\n</div>\n<p class=\"amount\">${{opportunity.amount.amountMicros}}</p>\n```\n\n#### HTML escaping\n\n- `{{variable}}` — auto-escaped (safe for user-supplied data).\n- `{{{variable}}}` — unescaped (raw HTML). Only use for trusted, sanitized content.\n\n#### Preview Data example\n\nThe **Preview Data** field (JSON) lets you test your template without a real record. Its\nshape should mirror the context the renderer produces — the bound object name as the\ntop-level key, with nested relations:\n\n```json\n{\n  \"opportunity\": {\n    \"name\": \"Enterprise CRM Migration\",\n    \"stage\": \"PROPOSAL\",\n    \"closeDate\": \"2026-08-15\",\n    \"amount\": { \"amountMicros\": 75000000000, \"currencyCode\": \"USD\" },\n    \"company\": { \"name\": \"Acme Corporation\" },\n    \"pointOfContact\": {\n      \"name\": { \"firstName\": \"Sarah\", \"lastName\": \"Chen\" },\n      \"jobTitle\": \"VP of Operations\"\n    }\n  }\n}\n```\n\n### Creating a template programmatically\n\nFor bulk-seeding, CI, or migrations, use `twenty-client-sdk`'s `CoreApiClient` directly:\n\n```ts\nimport { CoreApiClient } from 'twenty-client-sdk/core';\n\nconst client = new CoreApiClient();\nawait client.mutation({\n  createDocumentTemplate: {\n    __args: {\n      data: {\n        name: 'Opportunity Proposal',\n        htmlSource: '<h1>Proposal for {{opportunity.company.name}}</h1>...',\n        boundObjectName: 'opportunity',\n        status: 'ACTIVE',\n        previewData: JSON.stringify({\n          opportunity: {\n            name: 'Sample Deal',\n            company: { name: 'Acme Corp' },\n            pointOfContact: { name: { firstName: 'Jane', lastName: 'Doe' } },\n          },\n        }),\n      },\n    },\n    id: true,\n  },\n});\n```\n\nSee [docs/admin-guide.md](docs/admin-guide.md) for the full field reference.\n\n## Documentation links\n\n- [Admin guide](docs/admin-guide.md)\n- [Workflow examples](docs/workflow-examples.md)\n- [SDK usage examples](examples/sdk-usage.ts)\n- [Release notes](docs/release-notes.md)\n- [CI commands](docs/ci-commands.md)\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\n\n## Marketplace readiness\n\n- User guide: this README.\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\n\n## Screenshot briefs\n\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\n\n- [Template library](docs/screenshots/01-template-library.md)\n- [Template editor](docs/screenshots/02-template-editor.md)\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\n\n## Generating documents from any record\n\nThe primary, zero-configuration way to generate a document is the **Generate Document**\ncommand-menu item. Select any record — on any standard or custom object, no per-object setup\nrequired — open the command menu, and choose **Generate Document**. This works out of the box\nbecause it does not depend on a page layout being customized for that object.\n\n### Documents history tab (optional, per-object)\n\nThe app also ships a Documents widget (a real front component) that shows document history\nfiltered by the current record's type and ID, with a link to each Document record's own Files\ntab. It comes pre-attached to Company, Person,\nand Opportunity record pages. Admins who want the same dedicated tab on another object (a custom\nobject, Task, Note, etc.) can attach it manually, per object, through Twenty's own UI:\n\n1. Open the record page for the object (e.g., Task, custom \"Proposal\" object).\n2. Go to **Settings → Data Model → [Object] → Page Layout** (or use the **+** tab button on the\n   record page).\n3. Add a new tab, name it \"Documents\".\n4. Add a **Front Component** widget and select the Documents history front component from this\n   app.\n5. Save the layout.\n\n### Why there's no fully dynamic Documents tab\n\nTwenty's page-layout system is compile-time/static: which tabs and widgets exist on an object's\nrecord page is defined ahead of time (via the Settings UI or an app's object/page-layout\ndefinitions), not computed per-request. That means a single Documents *tab* cannot automatically\nappear on every current and future custom object without either rebuilding the app or an admin\nattaching it by hand as described above. The two mechanisms that *do* work without a rebuild for\nan arbitrary object are: the **Generate Document** command-menu item (available everywhere, zero\nconfiguration) and manually attaching the Documents history widget via the Data Model UI\n(per-object, admin-driven, no rebuild required — just a UI action).\n\n## PDF Generation\n\nPDF generation uses Puppeteer with Chromium. Requires Chromium installed on the server.\n\n### Docker deployment (recommended)\n\nUse the provided Dockerfile that extends Twenty with Chromium:\n\n```bash\n# Clone and build\ngit clone https://github.com/md-riaz/documents-templates-twenty-app.git\ncd documents-templates-twenty-app/docker\n\n# Create .env file\ncp .env.example .env\n# Edit .env with your settings\n\n# Build and start\ndocker compose up -d\n```\n\nThe Dockerfile installs Alpine's musl-native Chromium automatically. See `docker/Dockerfile`.\n\n### VPS deployment (non-Docker)\n\nOn Ubuntu/Debian:\n\n```bash\n# Install Chromium\nsudo apt update\nsudo apt install -y chromium-browser\n\n# Set environment variables\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n\n# Or add to /etc/environment for persistence\necho 'PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true' | sudo tee -a /etc/environment\necho 'PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser' | sudo tee -a /etc/environment\n```\n\nOn Alpine (if running Twenty without Docker):\n\n```bash\napk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto dbus\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n```\n\nOn RHEL/CentOS/Fedora:\n\n```bash\nsudo dnf install -y chromium\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\n```\n\n### How it works\n\n1. Templates are rendered to HTML using Handlebars + CRM data\n2. Puppeteer converts HTML to PDF using system Chromium\n3. PDF is stored and attached to the source record\n\n### Supported formats\n\n- A4, A3, A5, Letter, Legal\n- Portrait or landscape orientation\n- Custom margins (mm, cm, in, px, pt)\n- Header/footer templates\n- Background graphics printing\n\n### Using the adapter\n\n```typescript\nimport { pdfAdapter } from 'documents-templates';\n\nconst pdfBytes = await pdfAdapter.renderHtmlToPdf({\n  html: '<h1>Invoice</h1><p>...</p>',\n  options: {\n    format: 'A4',\n    landscape: false,\n    printBackground: true,\n    margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },\n    displayHeaderFooter: false,\n    preferCSSPageSize: true,\n  }\n});\n```\n\n## Verification\n\nRun the release verification command from the app root:\n\n```bash\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\n```\n\nIf a local Twenty server and CLI script are available, also run:\n\n```bash\nyarn twenty dev --once --dry-run\n```\n",
-    "yarnLockChecksum": "8811f46be351ae9410137ef551fb487f",
-    "packageJsonChecksum": "f77e29a226b50f99297067c58d458823"
+    "defaultRoleUniversalIdentifier": "a2f3882b-4d9a-5b87-9f9d-0d0c70b17501",
+    "aboutDescription": "# Documents & Templates for Twenty CRM\r\n\r\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, and keep a searchable audit trail.\r\n\r\n## Why use this app?\r\n\r\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\r\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\r\n- **Record-first file management:** the CRM record you generated from links straight to its Document record, whose Files tab holds the PDF — no duplicate copies.\r\n- **Auditability:** Document records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.\r\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\r\n\r\n## Reusable business scenarios\r\n\r\n| Scenario | Example output | Business value |\r\n| --- | --- | --- |\r\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\r\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\r\n| Customer onboarding | Welcome pack, implementation checklist, kickoff documents | Creates repeatable onboarding material from live CRM context. |\r\n| Renewals and account management | Renewal notice, QBR summary, success-plan documents | Helps account teams communicate consistently at scale. |\r\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\r\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction documents | Reuses the same template engine for non-sales CRM processes. |\r\n| Bulk campaigns | One document/documents per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\r\n\r\n## User guide\r\n\r\n### DocumentTemplate fields\r\n\r\nEvery template is a `DocumentTemplate` record. Here is what each field does:\r\n\r\n| Field | Purpose |\r\n| --- | --- |\r\n| **Name** | Display name shown in template pickers and the Templates list view. |\r\n| **HTML Source** | The Handlebars HTML markup that defines your document. This is where all your HTML, CSS (`<style>` tags), and `{{variable}}` expressions go. |\r\n| **Bound Object Name** | The Twenty object this template is designed for — e.g. `company`, `person`, `opportunity`, or any custom object. When set, the renderer automatically loads that record and its relations as template context. Validated against live metadata on save. |\r\n| **Status** | `ACTIVE` (default), `DRAFT`, or `ARCHIVED`. Only **Active** templates appear in the Generate Document picker. |\r\n| **Preview Data** | Sample JSON context for the live preview. Lets you see what the rendered document looks like without saving or loading a real record. |\r\n| **Allowed Output Types** | Defaults to `['PDF']`. Informational — does not currently gate output. |\r\n| **Version** | Auto-incremented version number. Each save that changes HTML Source creates a `TemplateVersion` snapshot. |\r\n| **Description** | Optional rich-text description for documentation purposes. |\r\n\r\n### Step 1: Create a template\r\n\r\n1. Open **Documents & Templates → Templates** in the left navigation menu.\r\n2. Click **+ Add New** — Twenty creates the record with defaults (`status: Active`).\r\n3. Open the new row. The record page has two tabs:\r\n\r\n   **Fields tab** (opens by default) — Twenty's native field editor for Name, Status,\r\n   Bound Object Name, Preview Data, Allowed Output Types, and other metadata.\r\n\r\n   **Editor tab** — a WYSIWYG HTML editor (powered by TinyMCE) with a **Source Code**\r\n   toggle in the toolbar. Write and preview your Handlebars HTML directly in the visual\r\n   editor, or switch to source mode for full HTML editing — including `<head>`, `<style>`,\r\n   and any tags. A **Save** button persists HTML changes.\r\n\r\n4. In the **Fields** tab, fill in the key metadata:\r\n   - **Name** — give the template a descriptive name (e.g. \"Opportunity Proposal\").\r\n   - **Bound Object Name** — set this to the object you'll generate documents from (e.g.\r\n     `opportunity`). This tells the renderer which record to load and which relations are\r\n     available.\r\n   - **Status** — leave as `ACTIVE` (or set to `DRAFT` while authoring).\r\n\r\n5. Switch to the **Editor** tab and write your Handlebars HTML (see \"Writing HTML Source\"\r\n   below). Use the toolbar's **Source Code** button to toggle between visual and raw HTML.\r\n6. Click **Save**. Changing HTML Source on an existing template automatically creates a\r\n   `TemplateVersion` snapshot.\r\n\r\n### Step 2: Generate a document from a template\r\n\r\n1. Navigate to any CRM record (e.g. an Opportunity, Company, or Person).\r\n2. Open the **command menu** (click the `⌘` button or use the keyboard shortcut) and\r\n   choose **Generate Document**.\r\n3. Select an **Active** template from the picker. Only templates whose `boundObjectName`\r\n   matches the current record's object type (or templates with no bound object) appear.\r\n4. The app renders the template against the live CRM record — you see a preview of the\r\n   final HTML.\r\n5. Click **Generate PDF** to convert the rendered HTML to a PDF and save it.\r\n6. The app creates a **Document** audit record linked to the source CRM record, generates\r\n   the PDF via Puppeteer, uploads it to Twenty's file storage, and attaches it to the\r\n   Document record.\r\n7. The source record's **Documents** tab now shows the new Document with a \"View Document\"\r\n   link. The Document record's own **Files** tab holds the PDF — durable, re-signed on\r\n   every query (the cached `pdfUrl` expires after ~24h).\r\n\r\nYou can also automate this with workflows — see\r\n[docs/workflow-examples.md](docs/workflow-examples.md) for a step-by-step walkthrough of\r\nchaining **Render Template → Save Document → Generate PDF** in Twenty's workflow builder.\r\n\r\n### Writing HTML Source (Handlebars guide)\r\n\r\nTemplates use [Handlebars](https://handlebarsjs.com/) syntax inside standard HTML. The\r\nrenderer loads the bound object's record and its **first-level relations** automatically,\r\nso you can reference related data without any extra setup.\r\n\r\n#### Basic variables\r\n\r\nUse `{{object.field}}` to insert a field value. The top-level key is always the bound\r\nobject's singular name:\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"company\" -->\r\n<h1>{{company.name}}</h1>\r\n<p>Domain: {{company.domainName}}</p>\r\n<p>Employees: {{company.employees}}</p>\r\n```\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"person\" -->\r\n<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>\r\n<p>Email: {{person.email}}</p>\r\n<p>Job title: {{person.jobTitle}}</p>\r\n```\r\n\r\n#### Accessing related objects (relations)\r\n\r\nWhen the renderer loads a record, it **shallow-expands one level of relations** from live\r\nmetadata. This means you can access any directly related object's fields using dot\r\nnotation — no extra configuration needed:\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"opportunity\" -->\r\n<h1>{{opportunity.name}}</h1>\r\n<p>Company: {{opportunity.company.name}}</p>\r\n<p>Contact: {{opportunity.pointOfContact.name.firstName}} {{opportunity.pointOfContact.name.lastName}}</p>\r\n<p>Contact title: {{opportunity.pointOfContact.jobTitle}}</p>\r\n<p>Deal value: ${{opportunity.amount.amountMicros}}</p>\r\n<p>Stage: {{opportunity.stage}}</p>\r\n<p>Close date: {{opportunity.closeDate}}</p>\r\n```\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"person\" -->\r\n<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>\r\n<p>Works at: {{person.company.name}}</p>\r\n<p>Company domain: {{person.company.domainName}}</p>\r\n```\r\n\r\nCheck the bound object's schema in Twenty's Settings to see available fields and relations for template variables.\r\n\r\n#### Conditionals\r\n\r\n```handlebars\r\n{{#if opportunity.closeDate}}\r\n  <p>Target close: {{opportunity.closeDate}}</p>\r\n{{else}}\r\n  <p>Close date not set</p>\r\n{{/if}}\r\n```\r\n\r\n#### Loops\r\n\r\n```handlebars\r\n{{#each items}}\r\n  <tr>\r\n    <td>{{this.name}}</td>\r\n    <td>{{this.quantity}}</td>\r\n    <td>{{this.price}}</td>\r\n  </tr>\r\n{{/each}}\r\n```\r\n\r\n#### Built-in helpers\r\n\r\nThe renderer includes standard Handlebars helpers (`#if`, `#unless`, `#each`, `#with`)\r\nand a set of utility helpers:\r\n\r\n```handlebars\r\n{{uppercase company.name}}          {{!-- \"ACME CORPORATION\" --}}\r\n{{lowercase person.email}}           {{!-- \"ada@example.com\" --}}\r\n{{capitalize opportunity.stage}}     {{!-- \"Proposal\" --}}\r\n{{formatDate opportunity.closeDate}} {{!-- formatted date string --}}\r\n```\r\n\r\n#### Embedding CSS\r\n\r\nPut `<style>` tags directly in `htmlSource` — there is no separate CSS field. This keeps\r\neverything in one place and ensures the PDF renderer sees the same styles:\r\n\r\n```html\r\n<style>\r\n  body { font-family: 'Segoe UI', sans-serif; color: #1a1a2e; }\r\n  .header { background: #1a1a2e; color: white; padding: 40px; }\r\n  .amount { font-size: 28px; font-weight: 700; color: #0f3460; }\r\n</style>\r\n\r\n<div class=\"header\">\r\n  <h1>Proposal for {{opportunity.company.name}}</h1>\r\n</div>\r\n<p class=\"amount\">${{opportunity.amount.amountMicros}}</p>\r\n```\r\n\r\n#### HTML escaping\r\n\r\n- `{{variable}}` — auto-escaped (safe for user-supplied data).\r\n- `{{{variable}}}` — unescaped (raw HTML). Only use for trusted, sanitized content.\r\n\r\n#### Preview Data example\r\n\r\nThe **Preview Data** field (JSON) lets you test your template without a real record. Its\r\nshape should mirror the context the renderer produces — the bound object name as the\r\ntop-level key, with nested relations:\r\n\r\n```json\r\n{\r\n  \"opportunity\": {\r\n    \"name\": \"Enterprise CRM Migration\",\r\n    \"stage\": \"PROPOSAL\",\r\n    \"closeDate\": \"2026-08-15\",\r\n    \"amount\": { \"amountMicros\": 75000000000, \"currencyCode\": \"USD\" },\r\n    \"company\": { \"name\": \"Acme Corporation\" },\r\n    \"pointOfContact\": {\r\n      \"name\": { \"firstName\": \"Sarah\", \"lastName\": \"Chen\" },\r\n      \"jobTitle\": \"VP of Operations\"\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n### Creating a template programmatically\r\n\r\nFor bulk-seeding, CI, or migrations, use `twenty-client-sdk`'s `CoreApiClient` directly:\r\n\r\n```ts\r\nimport { CoreApiClient } from 'twenty-client-sdk/core';\r\n\r\nconst client = new CoreApiClient();\r\nawait client.mutation({\r\n  createDocumentTemplate: {\r\n    __args: {\r\n      data: {\r\n        name: 'Opportunity Proposal',\r\n        htmlSource: '<h1>Proposal for {{opportunity.company.name}}</h1>...',\r\n        boundObjectName: 'opportunity',\r\n        status: 'ACTIVE',\r\n        previewData: JSON.stringify({\r\n          opportunity: {\r\n            name: 'Sample Deal',\r\n            company: { name: 'Acme Corp' },\r\n            pointOfContact: { name: { firstName: 'Jane', lastName: 'Doe' } },\r\n          },\r\n        }),\r\n      },\r\n    },\r\n    id: true,\r\n  },\r\n});\r\n```\r\n\r\nSee [docs/admin-guide.md](docs/admin-guide.md) for the full field reference.\r\n\r\n## Documentation links\r\n\r\n- [Admin guide](docs/admin-guide.md)\r\n- [Workflow examples](docs/workflow-examples.md)\r\n- [SDK usage examples](examples/sdk-usage.ts)\r\n- [Release notes](docs/release-notes.md)\r\n- [CI commands](docs/ci-commands.md)\r\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\r\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\r\n\r\n## Marketplace readiness\r\n\r\n- User guide: this README.\r\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\r\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\r\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\r\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\r\n\r\n## Screenshot briefs\r\n\r\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\r\n\r\n- [Template library](docs/screenshots/01-template-library.md)\r\n- [Template editor](docs/screenshots/02-template-editor.md)\r\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\r\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\r\n\r\n## Generating documents from any record\r\n\r\nThe primary, zero-configuration way to generate a document is the **Generate Document**\r\ncommand-menu item. Select any record — on any standard or custom object, no per-object setup\r\nrequired — open the command menu, and choose **Generate Document**. This works out of the box\r\nbecause it does not depend on a page layout being customized for that object.\r\n\r\n### Documents history tab (optional, per-object)\r\n\r\nThe app also ships a Documents widget (a real front component) that shows document history\r\nfiltered by the current record's type and ID, with a link to each Document record's own Files\r\ntab. It comes pre-attached to Company, Person,\r\nand Opportunity record pages. Admins who want the same dedicated tab on another object (a custom\r\nobject, Task, Note, etc.) can attach it manually, per object, through Twenty's own UI:\r\n\r\n1. Open the record page for the object (e.g., Task, custom \"Proposal\" object).\r\n2. Go to **Settings → Data Model → [Object] → Page Layout** (or use the **+** tab button on the\r\n   record page).\r\n3. Add a new tab, name it \"Documents\".\r\n4. Add a **Front Component** widget and select the Documents history front component from this\r\n   app.\r\n5. Save the layout.\r\n\r\n### Why there's no fully dynamic Documents tab\r\n\r\nTwenty's page-layout system is compile-time/static: which tabs and widgets exist on an object's\r\nrecord page is defined ahead of time (via the Settings UI or an app's object/page-layout\r\ndefinitions), not computed per-request. That means a single Documents *tab* cannot automatically\r\nappear on every current and future custom object without either rebuilding the app or an admin\r\nattaching it by hand as described above. The two mechanisms that *do* work without a rebuild for\r\nan arbitrary object are: the **Generate Document** command-menu item (available everywhere, zero\r\nconfiguration) and manually attaching the Documents history widget via the Data Model UI\r\n(per-object, admin-driven, no rebuild required — just a UI action).\r\n\r\n## PDF Generation\r\n\r\nPDF generation uses Puppeteer with Chromium. Requires Chromium installed on the server.\r\n\r\n### Docker deployment (recommended)\r\n\r\nUse the provided Dockerfile that extends Twenty with Chromium:\r\n\r\n```bash\r\n# Clone and build\r\ngit clone https://github.com/md-riaz/documents-templates-twenty-app.git\r\ncd documents-templates-twenty-app/docker\r\n\r\n# Create .env file\r\ncp .env.example .env\r\n# Edit .env with your settings\r\n\r\n# Build and start\r\ndocker compose up -d\r\n```\r\n\r\nThe Dockerfile installs Alpine's musl-native Chromium automatically. See `docker/Dockerfile`.\r\n\r\n### VPS deployment (non-Docker)\r\n\r\nOn Ubuntu/Debian:\r\n\r\n```bash\r\n# Install Chromium\r\nsudo apt update\r\nsudo apt install -y chromium-browser\r\n\r\n# Set environment variables\r\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\r\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\r\n\r\n# Or add to /etc/environment for persistence\r\necho 'PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true' | sudo tee -a /etc/environment\r\necho 'PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser' | sudo tee -a /etc/environment\r\n```\r\n\r\nOn Alpine (if running Twenty without Docker):\r\n\r\n```bash\r\napk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto dbus\r\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\r\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\r\n```\r\n\r\nOn RHEL/CentOS/Fedora:\r\n\r\n```bash\r\nsudo dnf install -y chromium\r\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\r\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\r\n```\r\n\r\n### How it works\r\n\r\n1. Templates are rendered to HTML using Handlebars + CRM data\r\n2. Puppeteer converts HTML to PDF using system Chromium\r\n3. PDF is stored and attached to the source record\r\n\r\n### Supported formats\r\n\r\n- A4, A3, A5, Letter, Legal\r\n- Portrait or landscape orientation\r\n- Custom margins (mm, cm, in, px, pt)\r\n- Header/footer templates\r\n- Background graphics printing\r\n\r\n### Using the adapter\r\n\r\n```typescript\r\nimport { pdfAdapter } from 'documents-templates';\r\n\r\nconst pdfBytes = await pdfAdapter.renderHtmlToPdf({\r\n  html: '<h1>Invoice</h1><p>...</p>',\r\n  options: {\r\n    format: 'A4',\r\n    landscape: false,\r\n    printBackground: true,\r\n    margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },\r\n    displayHeaderFooter: false,\r\n    preferCSSPageSize: true,\r\n  }\r\n});\r\n```\r\n\r\n## Verification\r\n\r\nRun the release verification command from the app root:\r\n\r\n```bash\r\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\r\n```\r\n\r\nIf a local Twenty server and CLI script are available, also run:\r\n\r\n```bash\r\nyarn twenty dev --once --dry-run\r\n```\r\n",
+    "yarnLockChecksum": "085aeadcdf532c6b338dff105dd2b91f",
+    "packageJsonChecksum": "2c92a30eeb2331cdbeecfc958b321a6e"
   },
   "objects": [
     {
@@ -370,7 +370,7 @@
           "description": "Allowed document outputs such as HTML/PDF",
           "icon": "IconFiles",
           "defaultValue": [
-            "PDF"
+            "'PDF'"
           ]
         },
         {
@@ -1313,17 +1313,3282 @@
     },
     {
       "universalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371",
-      "name": "template-preview",
-      "description": "A WYSIWYG/source editor for the document template's HTML source.",
+      "name": "template-editor",
+      "description": "Provides a massive code editor and live preview for document templates.",
       "componentName": "TemplateEditorComponent",
       "sourceComponentPath": "src/front-components/template-editor.front-component.tsx",
       "builtComponentPath": "src/front-components/template-editor.front-component.mjs",
-      "builtComponentChecksum": "ae463128d278924c0ca8f2f180f68362",
+      "builtComponentChecksum": "8abec5183bd9f281d5d1a8f5d038993a",
       "isHeadless": false,
       "usesSdkClient": true
     }
   ],
-  "publicAssets": [],
+  "publicAssets": [
+    {
+      "filePath": "public/tinymce/bower.json",
+      "fileName": "bower.json",
+      "fileType": "json",
+      "checksum": "4444567e202f18e052fed9adfb2fb3d9"
+    },
+    {
+      "filePath": "public/tinymce/CHANGELOG.md",
+      "fileName": "CHANGELOG.md",
+      "fileType": "md",
+      "checksum": "0a5c7370dfee325b771487d6d4960567"
+    },
+    {
+      "filePath": "public/tinymce/composer.json",
+      "fileName": "composer.json",
+      "fileType": "json",
+      "checksum": "7e7f8ebfd38a95200744fbed391767bd"
+    },
+    {
+      "filePath": "public/tinymce/icons/default/icons.js",
+      "fileName": "icons.js",
+      "fileType": "js",
+      "checksum": "0ab11ce65d9f8863461eb2d0b6ab1f9a"
+    },
+    {
+      "filePath": "public/tinymce/icons/default/icons.min.js",
+      "fileName": "icons.min.js",
+      "fileType": "js",
+      "checksum": "5b2105adc864400a516d36b5d309f87d"
+    },
+    {
+      "filePath": "public/tinymce/icons/default/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "9c5b7a740ca30e13e64b6a4de5b17c77"
+    },
+    {
+      "filePath": "public/tinymce/license.md",
+      "fileName": "license.md",
+      "fileType": "md",
+      "checksum": "63fbb9393bcad8322c94a866739dc3ee"
+    },
+    {
+      "filePath": "public/tinymce/models/dom/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "0400e22acd7d9117cc36b06d26eacbe6"
+    },
+    {
+      "filePath": "public/tinymce/models/dom/model.js",
+      "fileName": "model.js",
+      "fileType": "js",
+      "checksum": "03bd7b1b004f41fcaa229a92eedc29c7"
+    },
+    {
+      "filePath": "public/tinymce/models/dom/model.min.js",
+      "fileName": "model.min.js",
+      "fileType": "js",
+      "checksum": "9a8a2801b123872f3eb0194c7b8f86ef"
+    },
+    {
+      "filePath": "public/tinymce/notices.txt",
+      "fileName": "notices.txt",
+      "fileType": "txt",
+      "checksum": "a7fe5f53948f93855593bc6f74b11ac5"
+    },
+    {
+      "filePath": "public/tinymce/package.json",
+      "fileName": "package.json",
+      "fileType": "json",
+      "checksum": "05566baf0e77b122ee510fb4d1d7e63a"
+    },
+    {
+      "filePath": "public/tinymce/plugins/accordion/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "3987030cfebaf6bf4f1864005d1ed61a"
+    },
+    {
+      "filePath": "public/tinymce/plugins/accordion/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "e609a0bcb9090db2575b58d4b8a2b69d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/accordion/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "27e08bb473a8e9cc5242e51f407ab9d7"
+    },
+    {
+      "filePath": "public/tinymce/plugins/advlist/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "344ca56d8dedfae33380a44b89dfdd1d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/advlist/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "6ea21687b9248275ca7432277a5c31a3"
+    },
+    {
+      "filePath": "public/tinymce/plugins/advlist/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "5dd0757a7e8c046613592db18f3a7f9e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/anchor/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "dd697e3891ed83de226860a7aa436b10"
+    },
+    {
+      "filePath": "public/tinymce/plugins/anchor/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "9f4a334ec7ac61da7c945a57e347a7a8"
+    },
+    {
+      "filePath": "public/tinymce/plugins/anchor/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "cdde8528d6118883251d472b1eadbf3d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autolink/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "fa84bd3bd42aeb01da94b784344d4d84"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autolink/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "d1a2c45c5f36ceb51fa2d5c3b9fb7ad5"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autolink/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "afb77d92b089c8e72a67db21556dff12"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autoresize/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "00116480a9865b9b84937b8c6ec471ed"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autoresize/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5f6bc9e2258da6bd65ea0b1221b03683"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autoresize/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "b39aaeaab0813123eb79a4c8ee248537"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autosave/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "8d9bb78be9ddbce43bfd7964b71678ae"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autosave/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "10f5261824e29282042888529952ccf2"
+    },
+    {
+      "filePath": "public/tinymce/plugins/autosave/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "bebf53ef6e64a8534adac2adc2386e8d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/charmap/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "18775f459a8bd073ba47b3ad3e2f6bdf"
+    },
+    {
+      "filePath": "public/tinymce/plugins/charmap/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "6a8bdc25dcb4f1bac65246bbc0d33062"
+    },
+    {
+      "filePath": "public/tinymce/plugins/charmap/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c885bd6a51cb86988e49e3198e1d4fd6"
+    },
+    {
+      "filePath": "public/tinymce/plugins/code/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "d2db687200588ab654afd39728df329f"
+    },
+    {
+      "filePath": "public/tinymce/plugins/code/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "42f03ed4035db8738655f15538786299"
+    },
+    {
+      "filePath": "public/tinymce/plugins/code/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f3ec3f322ab14eb3ee6fd07d88b0c0e6"
+    },
+    {
+      "filePath": "public/tinymce/plugins/codesample/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "23fdb57b1d401abe9ff929ab26ec394e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/codesample/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "e459c7a9b63c95e87cee7846a819ec92"
+    },
+    {
+      "filePath": "public/tinymce/plugins/codesample/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "669e02004063332195fcf8dd06b3b5b9"
+    },
+    {
+      "filePath": "public/tinymce/plugins/directionality/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "cd2c90f18e8c7d1215bc4ede4a2ed3ff"
+    },
+    {
+      "filePath": "public/tinymce/plugins/directionality/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "ff75f717ac8bf28380c9820aac8c81ef"
+    },
+    {
+      "filePath": "public/tinymce/plugins/directionality/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ba82ab392b627f86ddc51b52fdc41faf"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "57e489f4ab69ca17dc7c95aef7052d88"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/js/emojiimages.js",
+      "fileName": "emojiimages.js",
+      "fileType": "js",
+      "checksum": "1ab2fd097df3919a141b411bb0b053b8"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/js/emojiimages.min.js",
+      "fileName": "emojiimages.min.js",
+      "fileType": "js",
+      "checksum": "9347548e6783f39f57f9508d68166712"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/js/emojis.js",
+      "fileName": "emojis.js",
+      "fileType": "js",
+      "checksum": "7fa1cc8fdcb750daad96da33821c5263"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/js/emojis.min.js",
+      "fileName": "emojis.min.js",
+      "fileType": "js",
+      "checksum": "885f39c7b98f2a8d89aac899c23b84fe"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "81ab0902d24a2c5a23c1e9cf0504a7af"
+    },
+    {
+      "filePath": "public/tinymce/plugins/emoticons/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "751d70c1c52c5eff2d9d714613c5496b"
+    },
+    {
+      "filePath": "public/tinymce/plugins/fullscreen/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "2a071ce05b6865fc1a874f298b920e9e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/fullscreen/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5ce603b6e050986aa67d16764d40beb3"
+    },
+    {
+      "filePath": "public/tinymce/plugins/fullscreen/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f24d2dd9eb68144f913042e8fe94e471"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "b7c64e9d5f9003aacb929b6944987c2e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ar.js",
+      "fileName": "ar.js",
+      "fileType": "js",
+      "checksum": "f7e29866b870be64454712a0bfdceaef"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/bg_BG.js",
+      "fileName": "bg_BG.js",
+      "fileType": "js",
+      "checksum": "d5a41cf5453dbd6cc1ea8fbaf268f91b"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/bg-BG.js",
+      "fileName": "bg-BG.js",
+      "fileType": "js",
+      "checksum": "7dc722ede82918148b1d5530348483f1"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ca.js",
+      "fileName": "ca.js",
+      "fileType": "js",
+      "checksum": "33ae0c3e4ea58f276290c071547ef7cd"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/cs.js",
+      "fileName": "cs.js",
+      "fileType": "js",
+      "checksum": "e678796969274cafe7fa1877fcea40b5"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/da.js",
+      "fileName": "da.js",
+      "fileType": "js",
+      "checksum": "4d15a37a4ad69c26e17d5147f3e04aea"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/de.js",
+      "fileName": "de.js",
+      "fileType": "js",
+      "checksum": "83b3fee2666dc3b2caadcd8df5a117b1"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/el.js",
+      "fileName": "el.js",
+      "fileType": "js",
+      "checksum": "55845312d98877a651d9193538d5122b"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/en.js",
+      "fileName": "en.js",
+      "fileType": "js",
+      "checksum": "25ec53a8e7728a382679b18920afe7c4"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/es.js",
+      "fileName": "es.js",
+      "fileType": "js",
+      "checksum": "1e02d4c563993bc0dd2837c0adbf038c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/eu.js",
+      "fileName": "eu.js",
+      "fileType": "js",
+      "checksum": "bdad367473f9afeb4601b3754fc163dc"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/fa.js",
+      "fileName": "fa.js",
+      "fileType": "js",
+      "checksum": "b18b4db563fe6a3e36c7944ca6b93044"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/fi.js",
+      "fileName": "fi.js",
+      "fileType": "js",
+      "checksum": "53db866385b0b6779fe2ff0a0482070d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/fr_FR.js",
+      "fileName": "fr_FR.js",
+      "fileType": "js",
+      "checksum": "6d03416c1d7f9f953f9d4629144ed77c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/fr-FR.js",
+      "fileName": "fr-FR.js",
+      "fileType": "js",
+      "checksum": "4dfa6fc8d7168a26ad0dea4c4a79611e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/he_IL.js",
+      "fileName": "he_IL.js",
+      "fileType": "js",
+      "checksum": "e5a85e20c1d6af2008e99144c3a5be28"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/he-IL.js",
+      "fileName": "he-IL.js",
+      "fileType": "js",
+      "checksum": "5ba78e61c6fbe117b97fb229c2b2defb"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/hi.js",
+      "fileName": "hi.js",
+      "fileType": "js",
+      "checksum": "cfc6b2b198475abbcd91545d624bb103"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/hr.js",
+      "fileName": "hr.js",
+      "fileType": "js",
+      "checksum": "892358646252137ff5796b0840dff871"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/hu_HU.js",
+      "fileName": "hu_HU.js",
+      "fileType": "js",
+      "checksum": "f24ff1424a16811d035f32c668e05f4f"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/hu-HU.js",
+      "fileName": "hu-HU.js",
+      "fileType": "js",
+      "checksum": "8bc441a563620952c6ab3d6be86910cd"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/id.js",
+      "fileName": "id.js",
+      "fileType": "js",
+      "checksum": "4ef64cb3b406da4ab33571a184f6a8e8"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/it.js",
+      "fileName": "it.js",
+      "fileType": "js",
+      "checksum": "debbcf6b6f80ff78043ea4f762a1d86e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ja.js",
+      "fileName": "ja.js",
+      "fileType": "js",
+      "checksum": "c0ad4baefb952fe4c637db8264ef6f7e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/kk.js",
+      "fileName": "kk.js",
+      "fileType": "js",
+      "checksum": "8fc30ca83443a6fba267915108110f5c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ko_KR.js",
+      "fileName": "ko_KR.js",
+      "fileType": "js",
+      "checksum": "25a16f0f57a9c3943e2d0640e893b4ea"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ko-KR.js",
+      "fileName": "ko-KR.js",
+      "fileType": "js",
+      "checksum": "b7da2bfd39d39ef2844887b70cbebdd5"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ms.js",
+      "fileName": "ms.js",
+      "fileType": "js",
+      "checksum": "16da45ae14907721c36718fb3b30c451"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/nb_NO.js",
+      "fileName": "nb_NO.js",
+      "fileType": "js",
+      "checksum": "7e1e997155632ce31c76b2576d2672f9"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/nb-NO.js",
+      "fileName": "nb-NO.js",
+      "fileType": "js",
+      "checksum": "5829baf6953875d62be31f31777087d9"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/nl.js",
+      "fileName": "nl.js",
+      "fileType": "js",
+      "checksum": "20f677beac1ff5a29932ed7f265b3dee"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/pl.js",
+      "fileName": "pl.js",
+      "fileType": "js",
+      "checksum": "b0e51d9a267abb8d57ab112811f8cad2"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/pt_BR.js",
+      "fileName": "pt_BR.js",
+      "fileType": "js",
+      "checksum": "d31074c9a256a9cbc2a1160e14545d53"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/pt_PT.js",
+      "fileName": "pt_PT.js",
+      "fileType": "js",
+      "checksum": "213bd09ce1ddce6aa2c1eab391020393"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/pt-BR.js",
+      "fileName": "pt-BR.js",
+      "fileType": "js",
+      "checksum": "3dfea8cca48c3e912aba21421211aa8a"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/pt-PT.js",
+      "fileName": "pt-PT.js",
+      "fileType": "js",
+      "checksum": "5265fa8d4c25687e3d83e0beccce8997"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ro.js",
+      "fileName": "ro.js",
+      "fileType": "js",
+      "checksum": "59e9b92c87368b48cd2023d530672c28"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/ru.js",
+      "fileName": "ru.js",
+      "fileType": "js",
+      "checksum": "56bd96bcd4b31e5d8d16ed1c948827c5"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/sk.js",
+      "fileName": "sk.js",
+      "fileType": "js",
+      "checksum": "08eff7d8782df5326227924b9f582d1c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/sl_SI.js",
+      "fileName": "sl_SI.js",
+      "fileType": "js",
+      "checksum": "0d62175a1ba88969b6dfb1b94cda85c0"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/sl-SI.js",
+      "fileName": "sl-SI.js",
+      "fileType": "js",
+      "checksum": "52489f51c0854647bccfd5b0a295b5ea"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/sv_SE.js",
+      "fileName": "sv_SE.js",
+      "fileType": "js",
+      "checksum": "8021b2bf6035872c5140248689ce3e99"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/sv-SE.js",
+      "fileName": "sv-SE.js",
+      "fileType": "js",
+      "checksum": "00f85a56cb35b83d018e867d588a9390"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/th_TH.js",
+      "fileName": "th_TH.js",
+      "fileType": "js",
+      "checksum": "04413f1796c6b47d2ed732fe9bc81fb1"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/th-TH.js",
+      "fileName": "th-TH.js",
+      "fileType": "js",
+      "checksum": "b1d43458de02e555e3594d893a3aa8fa"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/tr.js",
+      "fileName": "tr.js",
+      "fileType": "js",
+      "checksum": "c555f22b01767c44883cc00dbaeec7ff"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/uk.js",
+      "fileName": "uk.js",
+      "fileType": "js",
+      "checksum": "849237baf50625f4b8c17039bec688e5"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/vi.js",
+      "fileName": "vi.js",
+      "fileType": "js",
+      "checksum": "354387db83ea8af6ee7bad101cf77dab"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/zh_CN.js",
+      "fileName": "zh_CN.js",
+      "fileType": "js",
+      "checksum": "778615758c4af74bfe1624fdbc8093f1"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/zh_TW.js",
+      "fileName": "zh_TW.js",
+      "fileType": "js",
+      "checksum": "1ce4b68afa621fcf36eec23254afebc9"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/zh-CN.js",
+      "fileName": "zh-CN.js",
+      "fileType": "js",
+      "checksum": "a884c03d1ab58df31362f0cd1df986de"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/js/i18n/keynav/zh-TW.js",
+      "fileName": "zh-TW.js",
+      "fileType": "js",
+      "checksum": "7cdef7dd0621decf462477ed36e67c8f"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "a66f2a487015108ce287ab15762ba7f9"
+    },
+    {
+      "filePath": "public/tinymce/plugins/help/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "0b8191f1ac42377533039eafc75c9e87"
+    },
+    {
+      "filePath": "public/tinymce/plugins/image/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "27415d3d43098d4bdb48c6c45c15e08c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/image/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "c49f8bad0b559fb4b42b242064c8e730"
+    },
+    {
+      "filePath": "public/tinymce/plugins/image/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "367c9c489b5bce0c270bace013e28c76"
+    },
+    {
+      "filePath": "public/tinymce/plugins/importcss/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "2409fda93c2625fad2c9dfffe31b1473"
+    },
+    {
+      "filePath": "public/tinymce/plugins/importcss/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "0471b78da0de320d080d4dc09d14a6c3"
+    },
+    {
+      "filePath": "public/tinymce/plugins/importcss/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "438adb8a6aed8e3f9694db7409a05cbb"
+    },
+    {
+      "filePath": "public/tinymce/plugins/insertdatetime/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "4ece334f6233df3aa3e5becbfe1f9a8e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/insertdatetime/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "ccd3dadd42680ddbd028ad8ba85ee560"
+    },
+    {
+      "filePath": "public/tinymce/plugins/insertdatetime/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "32721828cee7da758b613591c5f61be7"
+    },
+    {
+      "filePath": "public/tinymce/plugins/link/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "5837f9d0ed7b2cc610dbffa6a7d7dafe"
+    },
+    {
+      "filePath": "public/tinymce/plugins/link/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "826f64b65070ef37b0e957bcc92db4c5"
+    },
+    {
+      "filePath": "public/tinymce/plugins/link/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "bee0568a6effb3d434caf427326c1dde"
+    },
+    {
+      "filePath": "public/tinymce/plugins/lists/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "959bf9c345e983ce032814178b94cb09"
+    },
+    {
+      "filePath": "public/tinymce/plugins/lists/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "7ca24651db330cc812ddf2ca4c880bdc"
+    },
+    {
+      "filePath": "public/tinymce/plugins/lists/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c6de148db9a9be062a1be8e277c1f9e1"
+    },
+    {
+      "filePath": "public/tinymce/plugins/media/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "22710d182e71e1bef50ee3838ac15b07"
+    },
+    {
+      "filePath": "public/tinymce/plugins/media/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "c30da1703a2b8966c1e935e0b76b7524"
+    },
+    {
+      "filePath": "public/tinymce/plugins/media/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "399d98c014f2637de8abea2179c0cc08"
+    },
+    {
+      "filePath": "public/tinymce/plugins/nonbreaking/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "851e4039437062e49d5729f1fe30cb40"
+    },
+    {
+      "filePath": "public/tinymce/plugins/nonbreaking/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "92c7dc9680dca887f9090e31c45d0a05"
+    },
+    {
+      "filePath": "public/tinymce/plugins/nonbreaking/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ad9ba7df3926675286d4d30657fb302f"
+    },
+    {
+      "filePath": "public/tinymce/plugins/pagebreak/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "b2ec3630c22897879bc089749ca3466e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/pagebreak/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "78b253f5e0111a106f2718818ffdd149"
+    },
+    {
+      "filePath": "public/tinymce/plugins/pagebreak/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "2bf6399b2b8a5ef3d83c24362514754f"
+    },
+    {
+      "filePath": "public/tinymce/plugins/preview/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "ac924715206330e49ae83f0ce0a41a7c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/preview/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "103b6b048451ab64c18721966924c85c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/preview/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "7adbaf81472640031c03ac69e88acc2a"
+    },
+    {
+      "filePath": "public/tinymce/plugins/quickbars/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "24942b053967586fefe96a215c44ae07"
+    },
+    {
+      "filePath": "public/tinymce/plugins/quickbars/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "131d195358d5d068f1049b8b6c7684bc"
+    },
+    {
+      "filePath": "public/tinymce/plugins/quickbars/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "d73f4ebceb7355baebab74e82b78d31e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/save/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "d2a87bcc64b326fc6dfa962fcbc662e8"
+    },
+    {
+      "filePath": "public/tinymce/plugins/save/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "bb429aeaf3112a5216531a6415e152a3"
+    },
+    {
+      "filePath": "public/tinymce/plugins/save/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "3b86c2bf6b21a11284fd6fd31b72948d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/searchreplace/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "027916795b63233ba94d3938bc15cc28"
+    },
+    {
+      "filePath": "public/tinymce/plugins/searchreplace/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "3c3df01de6f28c4b8bf87862b8943a8b"
+    },
+    {
+      "filePath": "public/tinymce/plugins/searchreplace/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ec3fe56d6011437a2502029a8a8b147c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/table/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "dc0a57cf52e5c96e8886974820620f30"
+    },
+    {
+      "filePath": "public/tinymce/plugins/table/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5910eda5d06be5e6a7482fd11e75de64"
+    },
+    {
+      "filePath": "public/tinymce/plugins/table/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f31b252691db79f788850268813bef5e"
+    },
+    {
+      "filePath": "public/tinymce/plugins/visualblocks/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "1f348278fc3fa3ae9d560a2c6074537d"
+    },
+    {
+      "filePath": "public/tinymce/plugins/visualblocks/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "469131de0b8e1dbd9778317e3758eb08"
+    },
+    {
+      "filePath": "public/tinymce/plugins/visualblocks/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "98645a0d0ec00f0e47243800bc7c7ec4"
+    },
+    {
+      "filePath": "public/tinymce/plugins/visualchars/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "01e4394764848c643482a4e060c3c16c"
+    },
+    {
+      "filePath": "public/tinymce/plugins/visualchars/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "9b1f26648230145aefd3fb1f2fb3797f"
+    },
+    {
+      "filePath": "public/tinymce/plugins/visualchars/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "afc81b4af2a5ed5d85fb641beb0d45fe"
+    },
+    {
+      "filePath": "public/tinymce/plugins/wordcount/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "8702637f4301b2c60b0d036a74a57952"
+    },
+    {
+      "filePath": "public/tinymce/plugins/wordcount/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "fbebdeaa700c5376d1f7a0256735daf3"
+    },
+    {
+      "filePath": "public/tinymce/plugins/wordcount/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c5192c646724026085769412616ee0a7"
+    },
+    {
+      "filePath": "public/tinymce/README.md",
+      "fileName": "README.md",
+      "fileType": "md",
+      "checksum": "5bae37bb19d574304863ca68aec7fd00"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "c8926691f2c46d55c7c120dbd96d0205"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "970e2a4d9e3de16a6c52077be8d37625"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "e113bd1ce328b22e0dd9953dc64a3036"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/default/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "a5bd35dad44d0b1d1de1c4157355f0d3"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/default/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "42d862bdc12aed0769e56cd121e30d93"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/default/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f7768f573257c0a5a0be98f12d188680"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/default/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/default/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/document/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "be4dc4ed6080223fa73b91e3004d2f19"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/document/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "a90776f111fcadc0bfaf5fe1e8f4dc40"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/document/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f9f3192b8bb69c6f1d267a260ed720f7"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/document/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/document/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5-dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "268197bc0ca4807acc4f2e8d569ab86f"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5-dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "a31bb9aaaf8bec9b47eec1a5933090ee"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5-dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "cfd182c830599643078b02f686f2293e"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5-dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5-dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "a5bd35dad44d0b1d1de1c4157355f0d3"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "b60ac7772e222390bcc96586e8628ed1"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f7768f573257c0a5a0be98f12d188680"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/tinymce-5/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/writer/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "8ca6e53fe576c03004dc7a2331770301"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/writer/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "8dc62f7a85a06508998dfb1b43da9173"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/writer/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "7529e0af92b96d2deb984d4799b887d7"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/writer/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/content/writer/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "c65755feb720322640901c7490edc8b1"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "cd1a61f757480d063b441776b201204f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "7f6978efc5da9beb4cb54c3ee549e8ae"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "e3e3f1a075129a502215ef28243631fa"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "f28512baaec9ec5dc2e9fcb7df6f8fe3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "854d6f59fbff26d5fcd5ec7bf64f6336"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "cc54b55d7d2c8f5cb91b6521d9ae9d57"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "ffffe15328072058562c98f1dc245133"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "6b6f55ca3aafd26349b6019ea95045c1"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "06df4886576c74c4dd32d995020dc002"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "e96d3c218f2b79f82e2c87b6f3f818bb"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide-dark/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "7a37bb270af0cbce1c8759bc2a41bfef"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "240b921f2247d4d51faeddc826d1ff3f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "726651b91a6fbfb8e1ea8eb446b90ad5"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "3dd08fc623d9ea2f7dbd0779000c69ed"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "91989d59571085e78e3042dc5fcab58f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "ac87c7a42523fdd332cde378cc7e52c1"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "9f01960a550bf2c8d80235909554d189"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "b9f167a05b1e23cd10fa40326faa5d6f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "06df4886576c74c4dd32d995020dc002"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "fb3cc71941cdc2e83de399ee39abe36d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/oxide/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "7a37bb270af0cbce1c8759bc2a41bfef"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "fb1dc6fd93ce8b7bad56f58f487d1494"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "d55e28fdb186dfd8d05279eb867abb84"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "235bf0e31e727469c3587324289cbaf7"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "144812164491d179300f6ffe624702be"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "f28512baaec9ec5dc2e9fcb7df6f8fe3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "854d6f59fbff26d5fcd5ec7bf64f6336"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "45e80848912838dfc79b1464eff5a3cf"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "1c50fb643c76986acf1935662bded1da"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "838f9ed41183ee442f2c33d0601afa57"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "9e0c739df1042ac0abeefc551754c779"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "eb127cec1c96aebc630b4f9f5efcbf7e"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5-dark/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "8281a5fb4a2999effb427cd1a6a68063"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "240b921f2247d4d51faeddc826d1ff3f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "a5844c90ad64a935a153cff6a1e34c08"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "2a8c55df728fb4eae8823f4d2abd17c7"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "91989d59571085e78e3042dc5fcab58f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "bc647b09ec1147ed61c244f27ba386e3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "f68a274cbbcf709a502be18af64d4772"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "3be039279c288e4b5477a90dd77e4eda"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "9e0c739df1042ac0abeefc551754c779"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "7d0e89599f3017f7e3941b47f71afee3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/skins/ui/tinymce-5/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "8281a5fb4a2999effb427cd1a6a68063"
+    },
+    {
+      "filePath": "public/tinymce/themes/silver/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "7281b0268319c90508a1a300a7c06d97"
+    },
+    {
+      "filePath": "public/tinymce/themes/silver/theme.js",
+      "fileName": "theme.js",
+      "fileType": "js",
+      "checksum": "c5be3c067eae899e4ccc1ca24a308b48"
+    },
+    {
+      "filePath": "public/tinymce/themes/silver/theme.min.js",
+      "fileName": "theme.min.js",
+      "fileType": "js",
+      "checksum": "b9eabf187e050a8068f72aa3b63873d8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce.d.ts",
+      "fileName": "tinymce.d.ts",
+      "fileType": "ts",
+      "checksum": "d57c8f067a5b36451eed6d04ceda2ec8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce.js",
+      "fileName": "tinymce.js",
+      "fileType": "js",
+      "checksum": "09cddae177798225605c14152a62578a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce.min.js",
+      "fileName": "tinymce.min.js",
+      "fileType": "js",
+      "checksum": "95a36916596cbabd5cdc3ce04abe7075"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/bower.json",
+      "fileName": "bower.json",
+      "fileType": "json",
+      "checksum": "4444567e202f18e052fed9adfb2fb3d9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/CHANGELOG.md",
+      "fileName": "CHANGELOG.md",
+      "fileType": "md",
+      "checksum": "0a5c7370dfee325b771487d6d4960567"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/composer.json",
+      "fileName": "composer.json",
+      "fileType": "json",
+      "checksum": "7e7f8ebfd38a95200744fbed391767bd"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/icons/default/icons.js",
+      "fileName": "icons.js",
+      "fileType": "js",
+      "checksum": "0ab11ce65d9f8863461eb2d0b6ab1f9a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/icons/default/icons.min.js",
+      "fileName": "icons.min.js",
+      "fileType": "js",
+      "checksum": "5b2105adc864400a516d36b5d309f87d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/icons/default/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "9c5b7a740ca30e13e64b6a4de5b17c77"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/license.md",
+      "fileName": "license.md",
+      "fileType": "md",
+      "checksum": "63fbb9393bcad8322c94a866739dc3ee"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/models/dom/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "0400e22acd7d9117cc36b06d26eacbe6"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/models/dom/model.js",
+      "fileName": "model.js",
+      "fileType": "js",
+      "checksum": "03bd7b1b004f41fcaa229a92eedc29c7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/models/dom/model.min.js",
+      "fileName": "model.min.js",
+      "fileType": "js",
+      "checksum": "9a8a2801b123872f3eb0194c7b8f86ef"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/notices.txt",
+      "fileName": "notices.txt",
+      "fileType": "txt",
+      "checksum": "a7fe5f53948f93855593bc6f74b11ac5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/package.json",
+      "fileName": "package.json",
+      "fileType": "json",
+      "checksum": "05566baf0e77b122ee510fb4d1d7e63a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/accordion/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "3987030cfebaf6bf4f1864005d1ed61a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/accordion/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "e609a0bcb9090db2575b58d4b8a2b69d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/accordion/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "27e08bb473a8e9cc5242e51f407ab9d7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/advlist/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "344ca56d8dedfae33380a44b89dfdd1d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/advlist/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "6ea21687b9248275ca7432277a5c31a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/advlist/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "5dd0757a7e8c046613592db18f3a7f9e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/anchor/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "dd697e3891ed83de226860a7aa436b10"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/anchor/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "9f4a334ec7ac61da7c945a57e347a7a8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/anchor/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "cdde8528d6118883251d472b1eadbf3d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autolink/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "fa84bd3bd42aeb01da94b784344d4d84"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autolink/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "d1a2c45c5f36ceb51fa2d5c3b9fb7ad5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autolink/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "afb77d92b089c8e72a67db21556dff12"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autoresize/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "00116480a9865b9b84937b8c6ec471ed"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autoresize/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5f6bc9e2258da6bd65ea0b1221b03683"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autoresize/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "b39aaeaab0813123eb79a4c8ee248537"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autosave/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "8d9bb78be9ddbce43bfd7964b71678ae"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autosave/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "10f5261824e29282042888529952ccf2"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/autosave/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "bebf53ef6e64a8534adac2adc2386e8d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/charmap/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "18775f459a8bd073ba47b3ad3e2f6bdf"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/charmap/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "6a8bdc25dcb4f1bac65246bbc0d33062"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/charmap/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c885bd6a51cb86988e49e3198e1d4fd6"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/code/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "d2db687200588ab654afd39728df329f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/code/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "42f03ed4035db8738655f15538786299"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/code/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f3ec3f322ab14eb3ee6fd07d88b0c0e6"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/codesample/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "23fdb57b1d401abe9ff929ab26ec394e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/codesample/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "e459c7a9b63c95e87cee7846a819ec92"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/codesample/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "669e02004063332195fcf8dd06b3b5b9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/directionality/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "cd2c90f18e8c7d1215bc4ede4a2ed3ff"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/directionality/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "ff75f717ac8bf28380c9820aac8c81ef"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/directionality/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ba82ab392b627f86ddc51b52fdc41faf"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "57e489f4ab69ca17dc7c95aef7052d88"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/js/emojiimages.js",
+      "fileName": "emojiimages.js",
+      "fileType": "js",
+      "checksum": "1ab2fd097df3919a141b411bb0b053b8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/js/emojiimages.min.js",
+      "fileName": "emojiimages.min.js",
+      "fileType": "js",
+      "checksum": "9347548e6783f39f57f9508d68166712"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/js/emojis.js",
+      "fileName": "emojis.js",
+      "fileType": "js",
+      "checksum": "7fa1cc8fdcb750daad96da33821c5263"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/js/emojis.min.js",
+      "fileName": "emojis.min.js",
+      "fileType": "js",
+      "checksum": "885f39c7b98f2a8d89aac899c23b84fe"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "81ab0902d24a2c5a23c1e9cf0504a7af"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/emoticons/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "751d70c1c52c5eff2d9d714613c5496b"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/fullscreen/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "2a071ce05b6865fc1a874f298b920e9e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/fullscreen/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5ce603b6e050986aa67d16764d40beb3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/fullscreen/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f24d2dd9eb68144f913042e8fe94e471"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "b7c64e9d5f9003aacb929b6944987c2e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ar.js",
+      "fileName": "ar.js",
+      "fileType": "js",
+      "checksum": "f7e29866b870be64454712a0bfdceaef"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/bg_BG.js",
+      "fileName": "bg_BG.js",
+      "fileType": "js",
+      "checksum": "d5a41cf5453dbd6cc1ea8fbaf268f91b"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/bg-BG.js",
+      "fileName": "bg-BG.js",
+      "fileType": "js",
+      "checksum": "7dc722ede82918148b1d5530348483f1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ca.js",
+      "fileName": "ca.js",
+      "fileType": "js",
+      "checksum": "33ae0c3e4ea58f276290c071547ef7cd"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/cs.js",
+      "fileName": "cs.js",
+      "fileType": "js",
+      "checksum": "e678796969274cafe7fa1877fcea40b5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/da.js",
+      "fileName": "da.js",
+      "fileType": "js",
+      "checksum": "4d15a37a4ad69c26e17d5147f3e04aea"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/de.js",
+      "fileName": "de.js",
+      "fileType": "js",
+      "checksum": "83b3fee2666dc3b2caadcd8df5a117b1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/el.js",
+      "fileName": "el.js",
+      "fileType": "js",
+      "checksum": "55845312d98877a651d9193538d5122b"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/en.js",
+      "fileName": "en.js",
+      "fileType": "js",
+      "checksum": "25ec53a8e7728a382679b18920afe7c4"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/es.js",
+      "fileName": "es.js",
+      "fileType": "js",
+      "checksum": "1e02d4c563993bc0dd2837c0adbf038c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/eu.js",
+      "fileName": "eu.js",
+      "fileType": "js",
+      "checksum": "bdad367473f9afeb4601b3754fc163dc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/fa.js",
+      "fileName": "fa.js",
+      "fileType": "js",
+      "checksum": "b18b4db563fe6a3e36c7944ca6b93044"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/fi.js",
+      "fileName": "fi.js",
+      "fileType": "js",
+      "checksum": "53db866385b0b6779fe2ff0a0482070d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/fr_FR.js",
+      "fileName": "fr_FR.js",
+      "fileType": "js",
+      "checksum": "6d03416c1d7f9f953f9d4629144ed77c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/fr-FR.js",
+      "fileName": "fr-FR.js",
+      "fileType": "js",
+      "checksum": "4dfa6fc8d7168a26ad0dea4c4a79611e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/he_IL.js",
+      "fileName": "he_IL.js",
+      "fileType": "js",
+      "checksum": "e5a85e20c1d6af2008e99144c3a5be28"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/he-IL.js",
+      "fileName": "he-IL.js",
+      "fileType": "js",
+      "checksum": "5ba78e61c6fbe117b97fb229c2b2defb"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/hi.js",
+      "fileName": "hi.js",
+      "fileType": "js",
+      "checksum": "cfc6b2b198475abbcd91545d624bb103"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/hr.js",
+      "fileName": "hr.js",
+      "fileType": "js",
+      "checksum": "892358646252137ff5796b0840dff871"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/hu_HU.js",
+      "fileName": "hu_HU.js",
+      "fileType": "js",
+      "checksum": "f24ff1424a16811d035f32c668e05f4f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/hu-HU.js",
+      "fileName": "hu-HU.js",
+      "fileType": "js",
+      "checksum": "8bc441a563620952c6ab3d6be86910cd"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/id.js",
+      "fileName": "id.js",
+      "fileType": "js",
+      "checksum": "4ef64cb3b406da4ab33571a184f6a8e8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/it.js",
+      "fileName": "it.js",
+      "fileType": "js",
+      "checksum": "debbcf6b6f80ff78043ea4f762a1d86e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ja.js",
+      "fileName": "ja.js",
+      "fileType": "js",
+      "checksum": "c0ad4baefb952fe4c637db8264ef6f7e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/kk.js",
+      "fileName": "kk.js",
+      "fileType": "js",
+      "checksum": "8fc30ca83443a6fba267915108110f5c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ko_KR.js",
+      "fileName": "ko_KR.js",
+      "fileType": "js",
+      "checksum": "25a16f0f57a9c3943e2d0640e893b4ea"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ko-KR.js",
+      "fileName": "ko-KR.js",
+      "fileType": "js",
+      "checksum": "b7da2bfd39d39ef2844887b70cbebdd5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ms.js",
+      "fileName": "ms.js",
+      "fileType": "js",
+      "checksum": "16da45ae14907721c36718fb3b30c451"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/nb_NO.js",
+      "fileName": "nb_NO.js",
+      "fileType": "js",
+      "checksum": "7e1e997155632ce31c76b2576d2672f9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/nb-NO.js",
+      "fileName": "nb-NO.js",
+      "fileType": "js",
+      "checksum": "5829baf6953875d62be31f31777087d9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/nl.js",
+      "fileName": "nl.js",
+      "fileType": "js",
+      "checksum": "20f677beac1ff5a29932ed7f265b3dee"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/pl.js",
+      "fileName": "pl.js",
+      "fileType": "js",
+      "checksum": "b0e51d9a267abb8d57ab112811f8cad2"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/pt_BR.js",
+      "fileName": "pt_BR.js",
+      "fileType": "js",
+      "checksum": "d31074c9a256a9cbc2a1160e14545d53"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/pt_PT.js",
+      "fileName": "pt_PT.js",
+      "fileType": "js",
+      "checksum": "213bd09ce1ddce6aa2c1eab391020393"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/pt-BR.js",
+      "fileName": "pt-BR.js",
+      "fileType": "js",
+      "checksum": "3dfea8cca48c3e912aba21421211aa8a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/pt-PT.js",
+      "fileName": "pt-PT.js",
+      "fileType": "js",
+      "checksum": "5265fa8d4c25687e3d83e0beccce8997"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ro.js",
+      "fileName": "ro.js",
+      "fileType": "js",
+      "checksum": "59e9b92c87368b48cd2023d530672c28"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/ru.js",
+      "fileName": "ru.js",
+      "fileType": "js",
+      "checksum": "56bd96bcd4b31e5d8d16ed1c948827c5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/sk.js",
+      "fileName": "sk.js",
+      "fileType": "js",
+      "checksum": "08eff7d8782df5326227924b9f582d1c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/sl_SI.js",
+      "fileName": "sl_SI.js",
+      "fileType": "js",
+      "checksum": "0d62175a1ba88969b6dfb1b94cda85c0"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/sl-SI.js",
+      "fileName": "sl-SI.js",
+      "fileType": "js",
+      "checksum": "52489f51c0854647bccfd5b0a295b5ea"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/sv_SE.js",
+      "fileName": "sv_SE.js",
+      "fileType": "js",
+      "checksum": "8021b2bf6035872c5140248689ce3e99"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/sv-SE.js",
+      "fileName": "sv-SE.js",
+      "fileType": "js",
+      "checksum": "00f85a56cb35b83d018e867d588a9390"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/th_TH.js",
+      "fileName": "th_TH.js",
+      "fileType": "js",
+      "checksum": "04413f1796c6b47d2ed732fe9bc81fb1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/th-TH.js",
+      "fileName": "th-TH.js",
+      "fileType": "js",
+      "checksum": "b1d43458de02e555e3594d893a3aa8fa"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/tr.js",
+      "fileName": "tr.js",
+      "fileType": "js",
+      "checksum": "c555f22b01767c44883cc00dbaeec7ff"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/uk.js",
+      "fileName": "uk.js",
+      "fileType": "js",
+      "checksum": "849237baf50625f4b8c17039bec688e5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/vi.js",
+      "fileName": "vi.js",
+      "fileType": "js",
+      "checksum": "354387db83ea8af6ee7bad101cf77dab"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/zh_CN.js",
+      "fileName": "zh_CN.js",
+      "fileType": "js",
+      "checksum": "778615758c4af74bfe1624fdbc8093f1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/zh_TW.js",
+      "fileName": "zh_TW.js",
+      "fileType": "js",
+      "checksum": "1ce4b68afa621fcf36eec23254afebc9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/zh-CN.js",
+      "fileName": "zh-CN.js",
+      "fileType": "js",
+      "checksum": "a884c03d1ab58df31362f0cd1df986de"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/js/i18n/keynav/zh-TW.js",
+      "fileName": "zh-TW.js",
+      "fileType": "js",
+      "checksum": "7cdef7dd0621decf462477ed36e67c8f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "a66f2a487015108ce287ab15762ba7f9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/help/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "0b8191f1ac42377533039eafc75c9e87"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/image/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "27415d3d43098d4bdb48c6c45c15e08c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/image/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "c49f8bad0b559fb4b42b242064c8e730"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/image/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "367c9c489b5bce0c270bace013e28c76"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/importcss/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "2409fda93c2625fad2c9dfffe31b1473"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/importcss/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "0471b78da0de320d080d4dc09d14a6c3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/importcss/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "438adb8a6aed8e3f9694db7409a05cbb"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/insertdatetime/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "4ece334f6233df3aa3e5becbfe1f9a8e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/insertdatetime/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "ccd3dadd42680ddbd028ad8ba85ee560"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/insertdatetime/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "32721828cee7da758b613591c5f61be7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/link/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "5837f9d0ed7b2cc610dbffa6a7d7dafe"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/link/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "826f64b65070ef37b0e957bcc92db4c5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/link/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "bee0568a6effb3d434caf427326c1dde"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/lists/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "959bf9c345e983ce032814178b94cb09"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/lists/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "7ca24651db330cc812ddf2ca4c880bdc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/lists/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c6de148db9a9be062a1be8e277c1f9e1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/media/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "22710d182e71e1bef50ee3838ac15b07"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/media/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "c30da1703a2b8966c1e935e0b76b7524"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/media/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "399d98c014f2637de8abea2179c0cc08"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/nonbreaking/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "851e4039437062e49d5729f1fe30cb40"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/nonbreaking/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "92c7dc9680dca887f9090e31c45d0a05"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/nonbreaking/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ad9ba7df3926675286d4d30657fb302f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/pagebreak/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "b2ec3630c22897879bc089749ca3466e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/pagebreak/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "78b253f5e0111a106f2718818ffdd149"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/pagebreak/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "2bf6399b2b8a5ef3d83c24362514754f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/preview/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "ac924715206330e49ae83f0ce0a41a7c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/preview/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "103b6b048451ab64c18721966924c85c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/preview/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "7adbaf81472640031c03ac69e88acc2a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/quickbars/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "24942b053967586fefe96a215c44ae07"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/quickbars/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "131d195358d5d068f1049b8b6c7684bc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/quickbars/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "d73f4ebceb7355baebab74e82b78d31e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/save/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "d2a87bcc64b326fc6dfa962fcbc662e8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/save/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "bb429aeaf3112a5216531a6415e152a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/save/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "3b86c2bf6b21a11284fd6fd31b72948d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/searchreplace/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "027916795b63233ba94d3938bc15cc28"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/searchreplace/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "3c3df01de6f28c4b8bf87862b8943a8b"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/searchreplace/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ec3fe56d6011437a2502029a8a8b147c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/table/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "dc0a57cf52e5c96e8886974820620f30"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/table/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5910eda5d06be5e6a7482fd11e75de64"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/table/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f31b252691db79f788850268813bef5e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/visualblocks/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "1f348278fc3fa3ae9d560a2c6074537d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/visualblocks/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "469131de0b8e1dbd9778317e3758eb08"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/visualblocks/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "98645a0d0ec00f0e47243800bc7c7ec4"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/visualchars/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "01e4394764848c643482a4e060c3c16c"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/visualchars/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "9b1f26648230145aefd3fb1f2fb3797f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/visualchars/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "afc81b4af2a5ed5d85fb641beb0d45fe"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/wordcount/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "8702637f4301b2c60b0d036a74a57952"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/wordcount/plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "fbebdeaa700c5376d1f7a0256735daf3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/plugins/wordcount/plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c5192c646724026085769412616ee0a7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/README.md",
+      "fileName": "README.md",
+      "fileType": "md",
+      "checksum": "5bae37bb19d574304863ca68aec7fd00"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "c8926691f2c46d55c7c120dbd96d0205"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "970e2a4d9e3de16a6c52077be8d37625"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "e113bd1ce328b22e0dd9953dc64a3036"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/default/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "a5bd35dad44d0b1d1de1c4157355f0d3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/default/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "42d862bdc12aed0769e56cd121e30d93"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/default/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f7768f573257c0a5a0be98f12d188680"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/default/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/default/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/document/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "be4dc4ed6080223fa73b91e3004d2f19"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/document/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "a90776f111fcadc0bfaf5fe1e8f4dc40"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/document/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f9f3192b8bb69c6f1d267a260ed720f7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/document/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/document/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5-dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "268197bc0ca4807acc4f2e8d569ab86f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5-dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "a31bb9aaaf8bec9b47eec1a5933090ee"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5-dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "cfd182c830599643078b02f686f2293e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5-dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5-dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "a5bd35dad44d0b1d1de1c4157355f0d3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "b60ac7772e222390bcc96586e8628ed1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f7768f573257c0a5a0be98f12d188680"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/tinymce-5/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/writer/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "8ca6e53fe576c03004dc7a2331770301"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/writer/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "8dc62f7a85a06508998dfb1b43da9173"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/writer/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "7529e0af92b96d2deb984d4799b887d7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/writer/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/content/writer/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "c65755feb720322640901c7490edc8b1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "cd1a61f757480d063b441776b201204f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "7f6978efc5da9beb4cb54c3ee549e8ae"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "e3e3f1a075129a502215ef28243631fa"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "f28512baaec9ec5dc2e9fcb7df6f8fe3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "854d6f59fbff26d5fcd5ec7bf64f6336"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "cc54b55d7d2c8f5cb91b6521d9ae9d57"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "ffffe15328072058562c98f1dc245133"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "6b6f55ca3aafd26349b6019ea95045c1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "06df4886576c74c4dd32d995020dc002"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "e96d3c218f2b79f82e2c87b6f3f818bb"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide-dark/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "7a37bb270af0cbce1c8759bc2a41bfef"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "240b921f2247d4d51faeddc826d1ff3f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "726651b91a6fbfb8e1ea8eb446b90ad5"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "3dd08fc623d9ea2f7dbd0779000c69ed"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "91989d59571085e78e3042dc5fcab58f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "ac87c7a42523fdd332cde378cc7e52c1"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "9f01960a550bf2c8d80235909554d189"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "b9f167a05b1e23cd10fa40326faa5d6f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "06df4886576c74c4dd32d995020dc002"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "fb3cc71941cdc2e83de399ee39abe36d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/oxide/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "7a37bb270af0cbce1c8759bc2a41bfef"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "fb1dc6fd93ce8b7bad56f58f487d1494"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "d55e28fdb186dfd8d05279eb867abb84"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "235bf0e31e727469c3587324289cbaf7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "144812164491d179300f6ffe624702be"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "f28512baaec9ec5dc2e9fcb7df6f8fe3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "854d6f59fbff26d5fcd5ec7bf64f6336"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "45e80848912838dfc79b1464eff5a3cf"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "1c50fb643c76986acf1935662bded1da"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "838f9ed41183ee442f2c33d0601afa57"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "9e0c739df1042ac0abeefc551754c779"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "eb127cec1c96aebc630b4f9f5efcbf7e"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5-dark/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "8281a5fb4a2999effb427cd1a6a68063"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "240b921f2247d4d51faeddc826d1ff3f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "a5844c90ad64a935a153cff6a1e34c08"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "2a8c55df728fb4eae8823f4d2abd17c7"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "91989d59571085e78e3042dc5fcab58f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "bc647b09ec1147ed61c244f27ba386e3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "f68a274cbbcf709a502be18af64d4772"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "3be039279c288e4b5477a90dd77e4eda"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "9e0c739df1042ac0abeefc551754c779"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "7d0e89599f3017f7e3941b47f71afee3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/skins/ui/tinymce-5/skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "8281a5fb4a2999effb427cd1a6a68063"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/themes/silver/index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "7281b0268319c90508a1a300a7c06d97"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/themes/silver/theme.js",
+      "fileName": "theme.js",
+      "fileType": "js",
+      "checksum": "c5be3c067eae899e4ccc1ca24a308b48"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/themes/silver/theme.min.js",
+      "fileName": "theme.min.js",
+      "fileType": "js",
+      "checksum": "b9eabf187e050a8068f72aa3b63873d8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/tinymce.d.ts",
+      "fileName": "tinymce.d.ts",
+      "fileType": "ts",
+      "checksum": "d57c8f067a5b36451eed6d04ceda2ec8"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/tinymce.js",
+      "fileName": "tinymce.js",
+      "fileType": "js",
+      "checksum": "09cddae177798225605c14152a62578a"
+    },
+    {
+      "filePath": "public/tinymce/tinymce/tinymce.min.js",
+      "fileName": "tinymce.min.js",
+      "fileType": "js",
+      "checksum": "95a36916596cbabd5cdc3ce04abe7075"
+    }
+  ],
   "views": [
     {
       "universalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0",
@@ -1531,15 +4796,21 @@
     {
       "universalIdentifier": "54b1de8e-28ff-4eac-af93-3a3f88b999ef",
       "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
-      "title": "Editor",
-      "icon": "IconCode",
-      "position": 0,
-      "layoutMode": "CANVAS",
+      "title": "Preview",
+      "icon": "IconEye",
+      "position": 1,
+      "layoutMode": "GRID",
       "widgets": [
         {
           "universalIdentifier": "8633de86-2484-4bdf-823b-adc0e4b35d30",
-          "title": "Editor",
+          "title": "Template Preview",
           "type": "FRONT_COMPONENT",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
           "configuration": {
             "configurationType": "FRONT_COMPONENT",
             "frontComponentUniversalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371"
@@ -1552,7 +4823,7 @@
       "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
       "title": "Fields",
       "icon": "IconList",
-      "position": 1,
+      "position": 0,
       "layoutMode": "GRID",
       "widgets": [
         {
@@ -1567,6 +4838,22 @@
           },
           "configuration": {
             "configurationType": "FIELDS"
+          }
+        },
+        {
+          "universalIdentifier": "72483c22-ef12-416b-9dab-7185a043079c",
+          "title": "HTML Source",
+          "type": "FIELD",
+          "gridPosition": {
+            "row": 4,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "FIELD",
+            "fieldMetadataId": "a45b67ab-a09e-42e4-b288-5cc34b9339a2",
+            "fieldDisplayMode": "EDITOR"
           }
         }
       ]

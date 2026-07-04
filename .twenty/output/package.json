@@ -1,6 +1,6 @@
 {
   "name": "documents-templates",
-  "version": "0.2.3",
+  "version": "0.2.21",
   "private": true,
   "license": "MIT",
   "description": "Documents & Templates app for Twenty CRM.",
@@ -15,7 +15,8 @@
     "twenty": "twenty",
     "build": "twenty dev:build .",
     "typecheck": "twenty dev:typecheck .",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "postinstall": "node -e \"require('fs').cpSync('node_modules/tinymce', 'public/tinymce', {recursive: true, force: true})\""
   },
   "keywords": [
     "twenty-app",
@@ -33,9 +34,10 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@tinymce/tinymce-react": "^6.3.0",
     "handlebars": "^4.7.9",
     "puppeteer": "^25.3.0",
-    "tinymce": "7"
+    "tinymce": "^8.7.0"
   },
   "peerDependencies": {
     "react": "^19.2.0"

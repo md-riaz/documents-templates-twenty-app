@@ -448,13 +448,9 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
   const resolvedApiRef = useRef(api ? null : createCoreTemplateEditorApi(client, createMetadataApi()));
   const resolvedApi = api ?? resolvedApiRef.current!;
 
-  const [activeTab, setActiveTab] = useState<'html' | 'preview'>('html');
-  const [htmlSource, setHtmlSource] = useState('');
-  const [previewData, setPreviewData] = useState<Record<string, unknown>>({});
   const [previewHtml, setPreviewHtml] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!recordId && !template) {
@@ -474,8 +470,6 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
           setErrorMessage('Template not found.');
           return;
         }
-        setHtmlSource(tmpl.htmlSource);
-        setPreviewData(tmpl.previewData ?? {});
         
         const rendered = await resolvedApi.renderPreview({
           htmlSource: tmpl.htmlSource,
@@ -496,90 +490,30 @@ export const TemplateEditorComponent = ({ api, template }: TemplateEditorCompone
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recordId]);
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    setErrorMessage('');
-    try {
-      const tmpl = await fetchDocumentTemplate(client, recordId!);
-      if (!tmpl) throw new Error("Template not found");
-      await resolvedApi.saveTemplate({
-        ...tmpl,
-        htmlSource,
-        previewData
-      });
-      const rendered = await resolvedApi.renderPreview({ htmlSource, previewData });
-      setPreviewHtml(rendered.html);
-      if (!rendered.ok) {
-        setErrorMessage(rendered.errors.map((e) => e.userMessage ?? e.message ?? '').join(' '));
-      } else {
-        setErrorMessage('');
-      }
-    } catch (err) {
-      setErrorMessage(err instanceof Error ? err.message : 'Save failed');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  }, [recordId, template]);
 
   if (isLoading) {
     return (
-      <section aria-label="Template editor" aria-busy="true" style={{ padding: 16 }}>
-        <p style={{ color: '#475467' }}>Loading template…</p>
+      <section aria-label="Template preview" aria-busy="true" style={{ padding: 16 }}>
+        <p style={{ color: '#475467' }}>Loading preview…</p>
       </section>
     );
   }
 
   return (
-    <section aria-label="Template editor" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 160px)', minHeight: 480, border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff', overflow: 'hidden' }}>
-      
-      <div style={{ display: 'flex', borderBottom: '1px solid #e0e0e0', padding: '0 16px', background: '#f9fafb', alignItems: 'center' }}>
-        <button
-          onClick={() => setActiveTab('html')}
-          style={{ padding: '12px 24px', border: 'none', background: 'none', borderBottom: activeTab === 'html' ? '2px solid #2563eb' : '2px solid transparent', color: activeTab === 'html' ? '#2563eb' : '#6b7280', fontWeight: activeTab === 'html' ? 600 : 400, cursor: 'pointer', fontSize: 14 }}
-        >
-          HTML Code
-        </button>
-        <button
-          onClick={() => setActiveTab('preview')}
-          style={{ padding: '12px 24px', border: 'none', background: 'none', borderBottom: activeTab === 'preview' ? '2px solid #2563eb' : '2px solid transparent', color: activeTab === 'preview' ? '#2563eb' : '#6b7280', fontWeight: activeTab === 'preview' ? 600 : 400, cursor: 'pointer', fontSize: 14 }}
-        >
-          Live Preview
-        </button>
-        <div style={{ flex: 1 }} />
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          style={{ margin: '8px 0', padding: '6px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 500 }}
-        >
-          {isSaving ? 'Saving...' : 'Save & Update Preview'}
-        </button>
-      </div>
-
+    <section aria-label="Template preview" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 480, overflow: 'hidden' }}>
       {errorMessage && (
         <div style={{ padding: '8px 16px', background: '#fee2e2', color: '#b91c1c', borderBottom: '1px solid #fca5a5', fontSize: 13 }}>
           {errorMessage}
         </div>
       )}
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {activeTab === 'html' ? (
-          <textarea
-            value={htmlSource}
-            onChange={(e) => setHtmlSource(e.target.value)}
-            style={{ flex: 1, width: '100%', padding: '16px', border: 'none', resize: 'none', fontFamily: 'monospace', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
-            placeholder="Enter your HTML template here..."
-            spellCheck={false}
-          />
-        ) : (
-          <iframe
-            title="Template preview"
-            srcDoc={previewHtml}
-            sandbox=""
-            style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-          />
-        )}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: 16 }}>
+        <iframe
+          title="Template preview"
+          srcDoc={previewHtml}
+          sandbox=""
+          style={{ width: '100%', height: '100%', border: '1px solid #d0d5dd', borderRadius: 4, background: '#fff' }}
+        />
       </div>
     </section>
   );

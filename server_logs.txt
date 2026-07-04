@@ -1,0 +1,83 @@
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder agent] [39m[32mcreation validation: 0.1ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder agent] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder agent] [39m[32mentity processing: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder agent] [39m[32mvalidateAndBuild: 0.4ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder skill] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder skill] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder skill] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder skill] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder skill] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder skill] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder frontComponent] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder frontComponent] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder frontComponent] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder frontComponent] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder frontComponent] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder frontComponent] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder commandMenuItem] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder commandMenuItem] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder commandMenuItem] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder commandMenuItem] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder commandMenuItem] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder commandMenuItem] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder navigationMenuItem] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder navigationMenuItem] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder navigationMenuItem] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder navigationMenuItem] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder navigationMenuItem] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder navigationMenuItem] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayout] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayout] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayout] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayout] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayout] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayout] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutTab] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutTab] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutTab] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutTab] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutTab] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutTab] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutWidget] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutWidget] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutWidget] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutWidget] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutWidget] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder pageLayoutWidget] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder webhook] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder webhook] [39m[32mdeletion validation: 0.1ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder webhook] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder webhook] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder webhook] [39m[32mentity processing: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder webhook] [39m[32mvalidateAndBuild: 0.4ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder applicationVariable] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder applicationVariable] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder applicationVariable] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder applicationVariable] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder applicationVariable] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder applicationVariable] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder connectionProvider] [39m[32mmatrix computation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder connectionProvider] [39m[32mdeletion validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder connectionProvider] [39m[32mcreation validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder connectionProvider] [39m[32mupdate validation: 0.0ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder connectionProvider] [39m[32mentity processing: 0.2ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[EntityBuilder connectionProvider] [39m[32mvalidateAndBuild: 0.3ms[39m
+[32m[Nest] 1  - [39m07/04/2026, 11:41:49 AM [32m    LOG[39m [38;5;3m[WorkspaceMigrationValidateBuildAndRunService] [39m[32m[install-perf] buildWorkspaceMigration took 12.2ms (status=success)[39m
+Exception Captured
+  {
+    operation: { name: 'InstallApplication', type: 'mutation' },
+    document: '\n' +
+      '        mutation InstallApplication($universalIdentifier: String!) {\n' +
+      '          installApplication(universalIdentifier: $universalIdentifier) {\n' +
+      '            id\n' +
+      '          }\n' +
+      '        }\n' +
+      '      ',
+    user: undefined,
+    workspace: {
+      id: 'a0b1be1d-41f6-45b7-ba30-34d24877af62',
+      displayName: 'Alpha Net',
+      createdAt: '2026-05-26T05:13:49.023Z',
+      activationStatus: 'ACTIVE'
+    }
+  }

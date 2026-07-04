@@ -1,0 +1,3335 @@
+{
+  "application": {
+    "universalIdentifier": "6eaaf6ac-81f8-5c40-8f27-0d0c70b17500",
+    "displayName": "Documents & Templates",
+    "description": "Reusable document template management for proposals, invoices, onboarding packs, PDFs, record attachments, and audit history.",
+    "category": "Productivity",
+    "author": "Documents & Templates",
+    "websiteUrl": "https://github.com/md-riaz/documents-templates-twenty-app#readme",
+    "issueReportUrl": "https://github.com/md-riaz/documents-templates-twenty-app/issues",
+    "screenshots": [],
+    "defaultRoleUniversalIdentifier": "a2f3882b-4d9a-5b87-9f9d-0d0c70b17501",
+    "aboutDescription": "# Documents & Templates for Twenty CRM\r\n\r\nDocuments & Templates turns Twenty CRM records into reusable business documents: proposals, quotes, invoices, onboarding packs, renewal notices, customer documents, and internal handover notes. Teams define templates once, merge them with live CRM data, generate PDFs, attach files back to the source record, and keep a searchable audit trail.\r\n\r\n## Why use this app?\r\n\r\n- **Faster document creation:** generate polished customer documents from Companies, People, Opportunities, Tasks, Notes, and Calendar Events.\r\n- **Consistent branding and language:** centralize approved HTML/CSS templates, subjects, variables, and output rules.\r\n- **Record-first file management:** the CRM record you generated from links straight to its Document record, whose Files tab holds the PDF — no duplicate copies.\r\n- **Auditability:** Document records keep template, status, PDF URL, attachment, error, and workflow history without replacing Twenty's native attachments.\r\n- **Automation-ready:** workflow actions support single-record and bulk iterator patterns for repeatable operational processes.\r\n\r\n## Reusable business scenarios\r\n\r\n| Scenario | Example output | Business value |\r\n| --- | --- | --- |\r\n| Sales proposals | Opportunity proposal PDF attached to the Opportunity | Shortens sales cycle and keeps latest proposal beside deal activity. |\r\n| Quotes and invoices | Company or Person quote/invoice PDF | Standardizes commercial documents and reduces manual copying. |\r\n| Customer onboarding | Welcome pack, implementation checklist, kickoff documents | Creates repeatable onboarding material from live CRM context. |\r\n| Renewals and account management | Renewal notice, QBR summary, success-plan documents | Helps account teams communicate consistently at scale. |\r\n| Support and operations | Incident summary, task handover, service report | Converts internal CRM notes into shareable customer/internal documents. |\r\n| Recruiting or partner workflows | Candidate brief, partner agreement, introduction documents | Reuses the same template engine for non-sales CRM processes. |\r\n| Bulk campaigns | One document/documents per filtered record through workflow iterators | Automates repetitive document generation while preserving per-record history. |\r\n\r\n## User guide\r\n\r\n### DocumentTemplate fields\r\n\r\nEvery template is a `DocumentTemplate` record. Here is what each field does:\r\n\r\n| Field | Purpose |\r\n| --- | --- |\r\n| **Name** | Display name shown in template pickers and the Templates list view. |\r\n| **HTML Source** | The Handlebars HTML markup that defines your document. This is where all your HTML, CSS (`<style>` tags), and `{{variable}}` expressions go. |\r\n| **Bound Object Name** | The Twenty object this template is designed for — e.g. `company`, `person`, `opportunity`, or any custom object. When set, the renderer automatically loads that record and its relations as template context. Validated against live metadata on save. |\r\n| **Status** | `ACTIVE` (default), `DRAFT`, or `ARCHIVED`. Only **Active** templates appear in the Generate Document picker. |\r\n| **Preview Data** | Sample JSON context for the live preview. Lets you see what the rendered document looks like without saving or loading a real record. |\r\n| **Allowed Output Types** | Defaults to `['PDF']`. Informational — does not currently gate output. |\r\n| **Version** | Auto-incremented version number. Each save that changes HTML Source creates a `TemplateVersion` snapshot. |\r\n| **Description** | Optional rich-text description for documentation purposes. |\r\n\r\n### Step 1: Create a template\r\n\r\n1. Open **Documents & Templates → Templates** in the left navigation menu.\r\n2. Click **+ Add New** — Twenty creates the record with defaults (`status: Active`).\r\n3. Open the new row. The record page has two tabs:\r\n\r\n   **Fields tab** (opens by default) — Twenty's native field editor for Name, Status,\r\n   Bound Object Name, Preview Data, Allowed Output Types, and other metadata.\r\n\r\n   **Editor tab** — a WYSIWYG HTML editor (powered by TinyMCE) with a **Source Code**\r\n   toggle in the toolbar. Write and preview your Handlebars HTML directly in the visual\r\n   editor, or switch to source mode for full HTML editing — including `<head>`, `<style>`,\r\n   and any tags. A **Save** button persists HTML changes.\r\n\r\n4. In the **Fields** tab, fill in the key metadata:\r\n   - **Name** — give the template a descriptive name (e.g. \"Opportunity Proposal\").\r\n   - **Bound Object Name** — set this to the object you'll generate documents from (e.g.\r\n     `opportunity`). This tells the renderer which record to load and which relations are\r\n     available.\r\n   - **Status** — leave as `ACTIVE` (or set to `DRAFT` while authoring).\r\n\r\n5. Switch to the **Editor** tab and write your Handlebars HTML (see \"Writing HTML Source\"\r\n   below). Use the toolbar's **Source Code** button to toggle between visual and raw HTML.\r\n6. Click **Save**. Changing HTML Source on an existing template automatically creates a\r\n   `TemplateVersion` snapshot.\r\n\r\n### Step 2: Generate a document from a template\r\n\r\n1. Navigate to any CRM record (e.g. an Opportunity, Company, or Person).\r\n2. Open the **command menu** (click the `⌘` button or use the keyboard shortcut) and\r\n   choose **Generate Document**.\r\n3. Select an **Active** template from the picker. Only templates whose `boundObjectName`\r\n   matches the current record's object type (or templates with no bound object) appear.\r\n4. The app renders the template against the live CRM record — you see a preview of the\r\n   final HTML.\r\n5. Click **Generate PDF** to convert the rendered HTML to a PDF and save it.\r\n6. The app creates a **Document** audit record linked to the source CRM record, generates\r\n   the PDF via Puppeteer, uploads it to Twenty's file storage, and attaches it to the\r\n   Document record.\r\n7. The source record's **Documents** tab now shows the new Document with a \"View Document\"\r\n   link. The Document record's own **Files** tab holds the PDF — durable, re-signed on\r\n   every query (the cached `pdfUrl` expires after ~24h).\r\n\r\nYou can also automate this with workflows — see\r\n[docs/workflow-examples.md](docs/workflow-examples.md) for a step-by-step walkthrough of\r\nchaining **Render Template → Save Document → Generate PDF** in Twenty's workflow builder.\r\n\r\n### Writing HTML Source (Handlebars guide)\r\n\r\nTemplates use [Handlebars](https://handlebarsjs.com/) syntax inside standard HTML. The\r\nrenderer loads the bound object's record and its **first-level relations** automatically,\r\nso you can reference related data without any extra setup.\r\n\r\n#### Basic variables\r\n\r\nUse `{{object.field}}` to insert a field value. The top-level key is always the bound\r\nobject's singular name:\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"company\" -->\r\n<h1>{{company.name}}</h1>\r\n<p>Domain: {{company.domainName}}</p>\r\n<p>Employees: {{company.employees}}</p>\r\n```\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"person\" -->\r\n<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>\r\n<p>Email: {{person.email}}</p>\r\n<p>Job title: {{person.jobTitle}}</p>\r\n```\r\n\r\n#### Accessing related objects (relations)\r\n\r\nWhen the renderer loads a record, it **shallow-expands one level of relations** from live\r\nmetadata. This means you can access any directly related object's fields using dot\r\nnotation — no extra configuration needed:\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"opportunity\" -->\r\n<h1>{{opportunity.name}}</h1>\r\n<p>Company: {{opportunity.company.name}}</p>\r\n<p>Contact: {{opportunity.pointOfContact.name.firstName}} {{opportunity.pointOfContact.name.lastName}}</p>\r\n<p>Contact title: {{opportunity.pointOfContact.jobTitle}}</p>\r\n<p>Deal value: ${{opportunity.amount.amountMicros}}</p>\r\n<p>Stage: {{opportunity.stage}}</p>\r\n<p>Close date: {{opportunity.closeDate}}</p>\r\n```\r\n\r\n```handlebars\r\n<!-- boundObjectName: \"person\" -->\r\n<h1>{{person.name.firstName}} {{person.name.lastName}}</h1>\r\n<p>Works at: {{person.company.name}}</p>\r\n<p>Company domain: {{person.company.domainName}}</p>\r\n```\r\n\r\nCheck the bound object's schema in Twenty's Settings to see available fields and relations for template variables.\r\n\r\n#### Conditionals\r\n\r\n```handlebars\r\n{{#if opportunity.closeDate}}\r\n  <p>Target close: {{opportunity.closeDate}}</p>\r\n{{else}}\r\n  <p>Close date not set</p>\r\n{{/if}}\r\n```\r\n\r\n#### Loops\r\n\r\n```handlebars\r\n{{#each items}}\r\n  <tr>\r\n    <td>{{this.name}}</td>\r\n    <td>{{this.quantity}}</td>\r\n    <td>{{this.price}}</td>\r\n  </tr>\r\n{{/each}}\r\n```\r\n\r\n#### Built-in helpers\r\n\r\nThe renderer includes standard Handlebars helpers (`#if`, `#unless`, `#each`, `#with`)\r\nand a set of utility helpers:\r\n\r\n```handlebars\r\n{{uppercase company.name}}          {{!-- \"ACME CORPORATION\" --}}\r\n{{lowercase person.email}}           {{!-- \"ada@example.com\" --}}\r\n{{capitalize opportunity.stage}}     {{!-- \"Proposal\" --}}\r\n{{formatDate opportunity.closeDate}} {{!-- formatted date string --}}\r\n```\r\n\r\n#### Embedding CSS\r\n\r\nPut `<style>` tags directly in `htmlSource` — there is no separate CSS field. This keeps\r\neverything in one place and ensures the PDF renderer sees the same styles:\r\n\r\n```html\r\n<style>\r\n  body { font-family: 'Segoe UI', sans-serif; color: #1a1a2e; }\r\n  .header { background: #1a1a2e; color: white; padding: 40px; }\r\n  .amount { font-size: 28px; font-weight: 700; color: #0f3460; }\r\n</style>\r\n\r\n<div class=\"header\">\r\n  <h1>Proposal for {{opportunity.company.name}}</h1>\r\n</div>\r\n<p class=\"amount\">${{opportunity.amount.amountMicros}}</p>\r\n```\r\n\r\n#### HTML escaping\r\n\r\n- `{{variable}}` — auto-escaped (safe for user-supplied data).\r\n- `{{{variable}}}` — unescaped (raw HTML). Only use for trusted, sanitized content.\r\n\r\n#### Preview Data example\r\n\r\nThe **Preview Data** field (JSON) lets you test your template without a real record. Its\r\nshape should mirror the context the renderer produces — the bound object name as the\r\ntop-level key, with nested relations:\r\n\r\n```json\r\n{\r\n  \"opportunity\": {\r\n    \"name\": \"Enterprise CRM Migration\",\r\n    \"stage\": \"PROPOSAL\",\r\n    \"closeDate\": \"2026-08-15\",\r\n    \"amount\": { \"amountMicros\": 75000000000, \"currencyCode\": \"USD\" },\r\n    \"company\": { \"name\": \"Acme Corporation\" },\r\n    \"pointOfContact\": {\r\n      \"name\": { \"firstName\": \"Sarah\", \"lastName\": \"Chen\" },\r\n      \"jobTitle\": \"VP of Operations\"\r\n    }\r\n  }\r\n}\r\n```\r\n\r\n### Creating a template programmatically\r\n\r\nFor bulk-seeding, CI, or migrations, use `twenty-client-sdk`'s `CoreApiClient` directly:\r\n\r\n```ts\r\nimport { CoreApiClient } from 'twenty-client-sdk/core';\r\n\r\nconst client = new CoreApiClient();\r\nawait client.mutation({\r\n  createDocumentTemplate: {\r\n    __args: {\r\n      data: {\r\n        name: 'Opportunity Proposal',\r\n        htmlSource: '<h1>Proposal for {{opportunity.company.name}}</h1>...',\r\n        boundObjectName: 'opportunity',\r\n        status: 'ACTIVE',\r\n        previewData: JSON.stringify({\r\n          opportunity: {\r\n            name: 'Sample Deal',\r\n            company: { name: 'Acme Corp' },\r\n            pointOfContact: { name: { firstName: 'Jane', lastName: 'Doe' } },\r\n          },\r\n        }),\r\n      },\r\n    },\r\n    id: true,\r\n  },\r\n});\r\n```\r\n\r\nSee [docs/admin-guide.md](docs/admin-guide.md) for the full field reference.\r\n\r\n## Documentation links\r\n\r\n- [Admin guide](docs/admin-guide.md)\r\n- [Workflow examples](docs/workflow-examples.md)\r\n- [SDK usage examples](examples/sdk-usage.ts)\r\n- [Release notes](docs/release-notes.md)\r\n- [CI commands](docs/ci-commands.md)\r\n- [Issue tracker / support](https://github.com/md-riaz/documents-templates-twenty-app/issues)\r\n- [Repository](https://github.com/md-riaz/documents-templates-twenty-app)\r\n\r\n## Marketplace readiness\r\n\r\n- User guide: this README.\r\n- Admin guide: [docs/admin-guide.md](docs/admin-guide.md)\r\n- Workflow examples: [docs/workflow-examples.md](docs/workflow-examples.md)\r\n- Release notes: [docs/release-notes.md](docs/release-notes.md)\r\n- CI commands: [docs/ci-commands.md](docs/ci-commands.md)\r\n\r\n## Screenshot briefs\r\n\r\nMarketplace screenshots are tracked as placeholder briefs until final UI captures are approved:\r\n\r\n- [Template library](docs/screenshots/01-template-library.md)\r\n- [Template editor](docs/screenshots/02-template-editor.md)\r\n- [Generate document modal](docs/screenshots/03-generate-document-modal.md)\r\n- [Workflow builder](docs/screenshots/05-workflow-builder.md)\r\n\r\n## Generating documents from any record\r\n\r\nThe primary, zero-configuration way to generate a document is the **Generate Document**\r\ncommand-menu item. Select any record — on any standard or custom object, no per-object setup\r\nrequired — open the command menu, and choose **Generate Document**. This works out of the box\r\nbecause it does not depend on a page layout being customized for that object.\r\n\r\n### Documents history tab (optional, per-object)\r\n\r\nThe app also ships a Documents widget (a real front component) that shows document history\r\nfiltered by the current record's type and ID, with a link to each Document record's own Files\r\ntab. It comes pre-attached to Company, Person,\r\nand Opportunity record pages. Admins who want the same dedicated tab on another object (a custom\r\nobject, Task, Note, etc.) can attach it manually, per object, through Twenty's own UI:\r\n\r\n1. Open the record page for the object (e.g., Task, custom \"Proposal\" object).\r\n2. Go to **Settings → Data Model → [Object] → Page Layout** (or use the **+** tab button on the\r\n   record page).\r\n3. Add a new tab, name it \"Documents\".\r\n4. Add a **Front Component** widget and select the Documents history front component from this\r\n   app.\r\n5. Save the layout.\r\n\r\n### Why there's no fully dynamic Documents tab\r\n\r\nTwenty's page-layout system is compile-time/static: which tabs and widgets exist on an object's\r\nrecord page is defined ahead of time (via the Settings UI or an app's object/page-layout\r\ndefinitions), not computed per-request. That means a single Documents *tab* cannot automatically\r\nappear on every current and future custom object without either rebuilding the app or an admin\r\nattaching it by hand as described above. The two mechanisms that *do* work without a rebuild for\r\nan arbitrary object are: the **Generate Document** command-menu item (available everywhere, zero\r\nconfiguration) and manually attaching the Documents history widget via the Data Model UI\r\n(per-object, admin-driven, no rebuild required — just a UI action).\r\n\r\n## PDF Generation\r\n\r\nPDF generation uses Puppeteer with Chromium. Requires Chromium installed on the server.\r\n\r\n### Docker deployment (recommended)\r\n\r\nUse the provided Dockerfile that extends Twenty with Chromium:\r\n\r\n```bash\r\n# Clone and build\r\ngit clone https://github.com/md-riaz/documents-templates-twenty-app.git\r\ncd documents-templates-twenty-app/docker\r\n\r\n# Create .env file\r\ncp .env.example .env\r\n# Edit .env with your settings\r\n\r\n# Build and start\r\ndocker compose up -d\r\n```\r\n\r\nThe Dockerfile installs Alpine's musl-native Chromium automatically. See `docker/Dockerfile`.\r\n\r\n### VPS deployment (non-Docker)\r\n\r\nOn Ubuntu/Debian:\r\n\r\n```bash\r\n# Install Chromium\r\nsudo apt update\r\nsudo apt install -y chromium-browser\r\n\r\n# Set environment variables\r\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\r\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\r\n\r\n# Or add to /etc/environment for persistence\r\necho 'PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true' | sudo tee -a /etc/environment\r\necho 'PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser' | sudo tee -a /etc/environment\r\n```\r\n\r\nOn Alpine (if running Twenty without Docker):\r\n\r\n```bash\r\napk add --no-cache chromium nss freetype harfbuzz ttf-freefont font-noto dbus\r\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\r\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\r\n```\r\n\r\nOn RHEL/CentOS/Fedora:\r\n\r\n```bash\r\nsudo dnf install -y chromium\r\nexport PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true\r\nexport PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser\r\n```\r\n\r\n### How it works\r\n\r\n1. Templates are rendered to HTML using Handlebars + CRM data\r\n2. Puppeteer converts HTML to PDF using system Chromium\r\n3. PDF is stored and attached to the source record\r\n\r\n### Supported formats\r\n\r\n- A4, A3, A5, Letter, Legal\r\n- Portrait or landscape orientation\r\n- Custom margins (mm, cm, in, px, pt)\r\n- Header/footer templates\r\n- Background graphics printing\r\n\r\n### Using the adapter\r\n\r\n```typescript\r\nimport { pdfAdapter } from 'documents-templates';\r\n\r\nconst pdfBytes = await pdfAdapter.renderHtmlToPdf({\r\n  html: '<h1>Invoice</h1><p>...</p>',\r\n  options: {\r\n    format: 'A4',\r\n    landscape: false,\r\n    printBackground: true,\r\n    margin: { top: '20mm', right: '15mm', bottom: '20mm', left: '15mm' },\r\n    displayHeaderFooter: false,\r\n    preferCSSPageSize: true,\r\n  }\r\n});\r\n```\r\n\r\n## Verification\r\n\r\nRun the release verification command from the app root:\r\n\r\n```bash\r\nnode ./node_modules/typescript/bin/tsc --outDir dist --rootDir src --module NodeNext --moduleResolution NodeNext --target ES2022 --jsx react-jsx --skipLibCheck && npm test\r\n```\r\n\r\nIf a local Twenty server and CLI script are available, also run:\r\n\r\n```bash\r\nyarn twenty dev --once --dry-run\r\n```\r\n",
+    "yarnLockChecksum": "ed412977455ce3e0e73ed943fd83341d",
+    "packageJsonChecksum": "0d3d48db9c8469cc54bc9c90d3cece22"
+  },
+  "objects": [
+    {
+      "universalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "nameSingular": "document",
+      "namePlural": "documents",
+      "labelSingular": "Document",
+      "labelPlural": "Documents",
+      "description": "Audit record for a document rendered from CRM data.",
+      "icon": "IconFileText",
+      "isSearchable": true,
+      "labelIdentifierFieldMetadataUniversalIdentifier": "85c2a7ea-7300-4a6a-80fd-6f57dca8914b",
+      "fields": [
+        {
+          "universalIdentifier": "85c2a7ea-7300-4a6a-80fd-6f57dca8914b",
+          "type": "TEXT",
+          "name": "name",
+          "label": "Name",
+          "description": "Document name",
+          "icon": "IconAbc"
+        },
+        {
+          "universalIdentifier": "ab859ed3-e237-42d8-942b-0d34e5bba737",
+          "type": "RELATION",
+          "name": "template",
+          "label": "DocumentTemplate",
+          "description": "Template used for generation",
+          "icon": "IconTemplate",
+          "relationTargetFieldMetadataUniversalIdentifier": "18a6f32c-d6ab-4c95-a5ab-a35670a2c574",
+          "relationTargetObjectMetadataUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+          "universalSettings": {
+            "relationType": "MANY_TO_ONE",
+            "onDelete": "SET_NULL",
+            "joinColumnName": "templateId"
+          },
+          "isNullable": true
+        },
+        {
+          "universalIdentifier": "84220294-eb6e-4e9b-bc00-fb055908372b",
+          "type": "TEXT",
+          "name": "primaryObjectType",
+          "label": "Primary Object Type",
+          "description": "Source object type such as company or person",
+          "icon": "IconDatabase",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "b75252e0-1993-4905-951d-3400e4a5fe6a",
+          "type": "TEXT",
+          "name": "primaryRecordId",
+          "label": "Primary Record ID",
+          "description": "Source record identifier",
+          "icon": "IconId",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "d4c14004-d87b-4feb-860f-e0c37ad703c6",
+          "type": "TEXT",
+          "name": "renderedHtml",
+          "label": "Rendered HTML",
+          "description": "Rendered HTML snapshot",
+          "icon": "IconCode",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "9f8ea9f3-3fdd-4aa9-b849-c61dfa5a8e14",
+          "type": "TEXT",
+          "name": "pdfUrl",
+          "label": "PDF URL",
+          "description": "Stored PDF URL",
+          "icon": "IconFileTypePdf",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "b92b494e-d314-4395-b699-c7535f290db6",
+          "type": "SELECT",
+          "name": "status",
+          "label": "Status",
+          "description": "Generation lifecycle state",
+          "icon": "IconStatusChange",
+          "defaultValue": "'RENDERED'",
+          "options": [
+            {
+              "value": "RENDERED",
+              "label": "Rendered",
+              "position": 0,
+              "color": "blue",
+              "id": "ceee4328-05c0-547f-ba2c-5aeb3941475a"
+            },
+            {
+              "value": "PDF_GENERATED",
+              "label": "PDF Generated",
+              "position": 1,
+              "color": "green",
+              "id": "d0cfb5d4-fb94-57b0-b1d5-e106d931a88b"
+            },
+            {
+              "value": "FAILED",
+              "label": "Failed",
+              "position": 3,
+              "color": "red",
+              "id": "d48394d5-d9c1-5fcf-868a-1b955457e45e"
+            }
+          ]
+        },
+        {
+          "universalIdentifier": "50e010d9-ac5c-488e-b04c-c6b9b886b89e",
+          "type": "TEXT",
+          "name": "errorMessage",
+          "label": "Error Message",
+          "description": "Failure reason",
+          "icon": "IconAlertTriangle",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "b7f7ad9f-085e-47fc-b7ba-ef0649ff17f3",
+          "type": "TEXT",
+          "name": "generatedBy",
+          "label": "Generated By",
+          "description": "User id or display name that generated it",
+          "icon": "IconUser",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "5697941d-e7a3-4a83-8e33-824e90bd21af",
+          "type": "DATE_TIME",
+          "name": "generatedAt",
+          "label": "Generated At",
+          "description": "Generation timestamp",
+          "icon": "IconCalendarTime",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "b4184cf7-a852-4735-ab8f-f7ea6e651394",
+          "type": "RAW_JSON",
+          "name": "metadata",
+          "label": "Metadata",
+          "description": "Audit metadata and warnings",
+          "icon": "IconJson",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "name": "id",
+          "label": "Id",
+          "description": "Id",
+          "icon": "Icon123",
+          "isNullable": false,
+          "defaultValue": "uuid",
+          "type": "UUID",
+          "universalIdentifier": "27d77ff0-79b4-5304-8a74-c6b5036bb14f"
+        },
+        {
+          "name": "createdAt",
+          "label": "Creation date",
+          "description": "Creation date",
+          "icon": "IconCalendar",
+          "isNullable": false,
+          "defaultValue": "now",
+          "type": "DATE_TIME",
+          "universalIdentifier": "c964b902-270b-5bc4-bc42-e38c6c1bfe16"
+        },
+        {
+          "name": "updatedAt",
+          "label": "Last update",
+          "description": "Last time the record was changed",
+          "icon": "IconCalendarClock",
+          "isNullable": false,
+          "defaultValue": "now",
+          "type": "DATE_TIME",
+          "universalIdentifier": "543f11c3-d719-536b-9378-85e6f1510e51"
+        },
+        {
+          "name": "deletedAt",
+          "label": "Deleted at",
+          "description": "Deletion date",
+          "icon": "IconCalendarClock",
+          "isNullable": true,
+          "defaultValue": null,
+          "type": "DATE_TIME",
+          "universalIdentifier": "bc5f0454-a034-5682-b9c4-d006bd50c0c5"
+        },
+        {
+          "name": "createdBy",
+          "label": "Created by",
+          "description": "The creator of the record",
+          "icon": "IconCreativeCommonsSa",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "551c9bd6-4b63-5aa3-9a52-75b8525cbfe4"
+        },
+        {
+          "name": "updatedBy",
+          "label": "Updated by",
+          "description": "The workspace member who last updated the record",
+          "icon": "IconUserCircle",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "2297f52c-3b22-5421-a05a-4ba1d5cdef32"
+        },
+        {
+          "name": "position",
+          "label": "Position",
+          "description": "Position",
+          "icon": "IconHierarchy2",
+          "isNullable": false,
+          "defaultValue": 0,
+          "type": "POSITION",
+          "universalIdentifier": "4772f25d-74f7-5c07-ba79-e3b4315d5ab6"
+        },
+        {
+          "name": "searchVector",
+          "label": "Search vector",
+          "icon": "IconSearch",
+          "description": "Search vector",
+          "isNullable": true,
+          "defaultValue": null,
+          "type": "TS_VECTOR",
+          "universalIdentifier": "25340642-8ff1-53fd-ae1a-2461444894cf"
+        },
+        {
+          "name": "timelineActivities",
+          "label": "Timeline Activities",
+          "description": "Documents tied to the Document",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "b3c727c4-d43b-5577-b93a-f0fd2d5d667d",
+          "relationTargetFieldMetadataUniversalIdentifier": "30042d2e-a2c0-526f-bfa3-84c33bd7d766",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5"
+        },
+        {
+          "name": "attachments",
+          "label": "Attachments",
+          "description": "Documents tied to the Document",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "b9210997-9cfd-5829-9ced-e1ddd495c6cc",
+          "relationTargetFieldMetadataUniversalIdentifier": "ac90ff76-ff25-5d72-8193-44208b471fe3",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a"
+        },
+        {
+          "name": "noteTargets",
+          "label": "Note Targets",
+          "description": "Documents tied to the Document",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "1b1376d0-c39c-56a4-a10e-3cb0abe64dab",
+          "relationTargetFieldMetadataUniversalIdentifier": "53ef534f-4151-559e-ba7f-51d18a8efca9",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400"
+        },
+        {
+          "name": "taskTargets",
+          "label": "Task Targets",
+          "description": "Documents tied to the Document",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "4fd1985a-ee9e-5fa7-bba6-ad2d917b9875",
+          "relationTargetFieldMetadataUniversalIdentifier": "8a990352-6fe3-55fa-8462-ac703fabbfef",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1"
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "nameSingular": "documentTemplate",
+      "namePlural": "documentTemplates",
+      "labelSingular": "DocumentTemplate",
+      "labelPlural": "Document Templates",
+      "description": "Code-first HTML/CSS template for document generation.",
+      "icon": "IconTemplate",
+      "isSearchable": true,
+      "labelIdentifierFieldMetadataUniversalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
+      "fields": [
+        {
+          "universalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
+          "type": "TEXT",
+          "name": "name",
+          "label": "Name",
+          "description": "Template name",
+          "icon": "IconAbc"
+        },
+        {
+          "universalIdentifier": "5ff44796-77ae-4479-a2af-5c6b71f4e0fb",
+          "type": "RICH_TEXT",
+          "name": "description",
+          "label": "Description",
+          "description": "Template description",
+          "icon": "IconNotes",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "a45b67ab-a09e-42e4-b288-5cc34b9339a2",
+          "type": "TEXT",
+          "name": "htmlSource",
+          "label": "HTML Source",
+          "description": "Handlebars HTML source",
+          "icon": "IconCode"
+        },
+        {
+          "universalIdentifier": "4f516d80-001b-4000-827c-a6c3811ac55f",
+          "type": "RAW_JSON",
+          "name": "previewData",
+          "label": "Preview Data",
+          "description": "JSON preview context",
+          "icon": "IconJson",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "3012ab43-b335-4e0a-b3e5-1739b6d08800",
+          "type": "TEXT",
+          "name": "boundObjectName",
+          "label": "Bound Object Name",
+          "description": "Twenty object (standard or custom) this template is bound to; validated at write-time against live metadata",
+          "icon": "IconPlug",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "59771ff1-ebb9-4b2f-8093-c2476a08fa0d",
+          "type": "ARRAY",
+          "name": "allowedOutputTypes",
+          "label": "Allowed Output Types",
+          "description": "Allowed document outputs such as HTML/PDF",
+          "icon": "IconFiles",
+          "defaultValue": [
+            "'PDF'"
+          ]
+        },
+        {
+          "universalIdentifier": "0d115bc2-2d5e-4e82-b933-62732dcba599",
+          "type": "SELECT",
+          "name": "status",
+          "label": "Status",
+          "description": "Template lifecycle status",
+          "icon": "IconStatusChange",
+          "defaultValue": "'ACTIVE'",
+          "options": [
+            {
+              "value": "ACTIVE",
+              "label": "Active",
+              "position": 0,
+              "color": "green",
+              "id": "f7398c57-9ed7-57a7-be7f-289d37c17484"
+            },
+            {
+              "value": "DRAFT",
+              "label": "Draft",
+              "position": 1,
+              "color": "gray",
+              "id": "24f66fc5-af78-50f9-9327-d8e422c0efb4"
+            },
+            {
+              "value": "ARCHIVED",
+              "label": "Archived",
+              "position": 2,
+              "color": "yellow",
+              "id": "76b59fc9-e453-53fa-8889-59fae7284fd4"
+            }
+          ]
+        },
+        {
+          "universalIdentifier": "d75a5707-d025-470f-88d4-cabd102781e0",
+          "type": "NUMBER",
+          "name": "version",
+          "label": "Version",
+          "description": "Current template version number",
+          "icon": "IconVersions",
+          "defaultValue": 1
+        },
+        {
+          "universalIdentifier": "77e05f84-ff18-45e8-b9d9-fd6a4d6aa74c",
+          "type": "RELATION",
+          "name": "versions",
+          "label": "TemplateVersion records",
+          "description": "TemplateVersion history for this DocumentTemplate",
+          "icon": "IconHistory",
+          "isNullable": true,
+          "relationTargetFieldMetadataUniversalIdentifier": "e6e55c2e-f7f8-4f33-8d0d-6beefb014e9c",
+          "relationTargetObjectMetadataUniversalIdentifier": "eff96117-492b-4e89-9b9f-66492786ad53",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          }
+        },
+        {
+          "universalIdentifier": "18a6f32c-d6ab-4c95-a5ab-a35670a2c574",
+          "type": "RELATION",
+          "name": "documents",
+          "label": "Document records",
+          "description": "Document history from this DocumentTemplate",
+          "icon": "IconFileText",
+          "isNullable": true,
+          "relationTargetFieldMetadataUniversalIdentifier": "ab859ed3-e237-42d8-942b-0d34e5bba737",
+          "relationTargetObjectMetadataUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          }
+        },
+        {
+          "name": "id",
+          "label": "Id",
+          "description": "Id",
+          "icon": "Icon123",
+          "isNullable": false,
+          "defaultValue": "uuid",
+          "type": "UUID",
+          "universalIdentifier": "f02d182b-f9c9-5040-ac39-0ee8a9d92548"
+        },
+        {
+          "name": "createdAt",
+          "label": "Creation date",
+          "description": "Creation date",
+          "icon": "IconCalendar",
+          "isNullable": false,
+          "defaultValue": "now",
+          "type": "DATE_TIME",
+          "universalIdentifier": "6898af69-a2dc-5471-840e-abb2aa874a5e"
+        },
+        {
+          "name": "updatedAt",
+          "label": "Last update",
+          "description": "Last time the record was changed",
+          "icon": "IconCalendarClock",
+          "isNullable": false,
+          "defaultValue": "now",
+          "type": "DATE_TIME",
+          "universalIdentifier": "20afd501-aaf8-5948-8c48-064ae9ad1544"
+        },
+        {
+          "name": "deletedAt",
+          "label": "Deleted at",
+          "description": "Deletion date",
+          "icon": "IconCalendarClock",
+          "isNullable": true,
+          "defaultValue": null,
+          "type": "DATE_TIME",
+          "universalIdentifier": "9d192835-b897-57e4-a64b-272744375850"
+        },
+        {
+          "name": "createdBy",
+          "label": "Created by",
+          "description": "The creator of the record",
+          "icon": "IconCreativeCommonsSa",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "4b3d787a-66f7-506d-9348-05efbcab84ed"
+        },
+        {
+          "name": "updatedBy",
+          "label": "Updated by",
+          "description": "The workspace member who last updated the record",
+          "icon": "IconUserCircle",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "b2309cde-21bc-576f-8f2e-b9bdb7aa7ace"
+        },
+        {
+          "name": "position",
+          "label": "Position",
+          "description": "Position",
+          "icon": "IconHierarchy2",
+          "isNullable": false,
+          "defaultValue": 0,
+          "type": "POSITION",
+          "universalIdentifier": "8244bb96-0ca3-5b76-be27-dd21e7974ab3"
+        },
+        {
+          "name": "searchVector",
+          "label": "Search vector",
+          "icon": "IconSearch",
+          "description": "Search vector",
+          "isNullable": true,
+          "defaultValue": null,
+          "type": "TS_VECTOR",
+          "universalIdentifier": "62c97330-ec33-58f1-acdb-02ee7b2dacf6"
+        },
+        {
+          "name": "timelineActivities",
+          "label": "Timeline Activities",
+          "description": "Document Templates tied to the DocumentTemplate",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "05efe460-214d-5a26-8eaf-b32fafe7b0a2",
+          "relationTargetFieldMetadataUniversalIdentifier": "0b38cabf-7f65-56ba-b604-b5e34823ea0a",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5"
+        },
+        {
+          "name": "attachments",
+          "label": "Attachments",
+          "description": "Document Templates tied to the DocumentTemplate",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "4b61b2f9-28ec-55b3-a5af-1005eb5d37b7",
+          "relationTargetFieldMetadataUniversalIdentifier": "7a37eec7-9413-5375-89a2-b669a5cafd36",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a"
+        },
+        {
+          "name": "noteTargets",
+          "label": "Note Targets",
+          "description": "Document Templates tied to the DocumentTemplate",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "395d0c30-599b-54bc-9c42-1883a134cd64",
+          "relationTargetFieldMetadataUniversalIdentifier": "dbc1d332-6b2a-56d9-bd80-fe367d7e6f54",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400"
+        },
+        {
+          "name": "taskTargets",
+          "label": "Task Targets",
+          "description": "Document Templates tied to the DocumentTemplate",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "a6441476-ce8f-54f1-98aa-a0e827f6d0c3",
+          "relationTargetFieldMetadataUniversalIdentifier": "31602d97-9cb7-51c8-bcb5-9b5a7b64230f",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1"
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "eff96117-492b-4e89-9b9f-66492786ad53",
+      "nameSingular": "templateVersion",
+      "namePlural": "templateVersions",
+      "labelSingular": "TemplateVersion",
+      "labelPlural": "Template Versions",
+      "description": "Version history entry for a DocumentTemplate.",
+      "icon": "IconHistory",
+      "labelIdentifierFieldMetadataUniversalIdentifier": "4e68836c-ed2d-4c48-a83a-81ef421ee0a3",
+      "fields": [
+        {
+          "universalIdentifier": "4e68836c-ed2d-4c48-a83a-81ef421ee0a3",
+          "type": "TEXT",
+          "name": "name",
+          "label": "Name",
+          "description": "Version label",
+          "icon": "IconAbc"
+        },
+        {
+          "universalIdentifier": "e6e55c2e-f7f8-4f33-8d0d-6beefb014e9c",
+          "type": "RELATION",
+          "name": "template",
+          "label": "DocumentTemplate",
+          "description": "Template owning this version",
+          "icon": "IconTemplate",
+          "relationTargetFieldMetadataUniversalIdentifier": "77e05f84-ff18-45e8-b9d9-fd6a4d6aa74c",
+          "relationTargetObjectMetadataUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+          "universalSettings": {
+            "relationType": "MANY_TO_ONE",
+            "onDelete": "CASCADE",
+            "joinColumnName": "templateId"
+          }
+        },
+        {
+          "universalIdentifier": "0500aaf7-efb7-4c4f-b7ff-8e3e5dd38d81",
+          "type": "NUMBER",
+          "name": "versionNumber",
+          "label": "Version Number",
+          "description": "Sequential version number",
+          "icon": "IconVersions",
+          "defaultValue": 1
+        },
+        {
+          "universalIdentifier": "4aed6acb-7e9f-45fa-b8b1-9509a4dc79c4",
+          "type": "TEXT",
+          "name": "htmlSource",
+          "label": "HTML Source",
+          "description": "Snapshot of HTML source",
+          "icon": "IconCode"
+        },
+        {
+          "universalIdentifier": "aa0373bf-33c8-429b-acba-e87028696850",
+          "type": "RAW_JSON",
+          "name": "diff",
+          "label": "Diff",
+          "description": "Structured diff metadata",
+          "icon": "IconGitCompare",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "universalIdentifier": "445d1e51-e925-4862-9089-c0f5a368535e",
+          "type": "TEXT",
+          "name": "versionCreatedBy",
+          "label": "Version Created By",
+          "description": "User id or display name that created the version",
+          "icon": "IconUser",
+          "isNullable": true,
+          "defaultValue": null
+        },
+        {
+          "name": "id",
+          "label": "Id",
+          "description": "Id",
+          "icon": "Icon123",
+          "isNullable": false,
+          "defaultValue": "uuid",
+          "type": "UUID",
+          "universalIdentifier": "754d5414-71f4-5cf2-9e25-1187356e38b1"
+        },
+        {
+          "name": "createdAt",
+          "label": "Creation date",
+          "description": "Creation date",
+          "icon": "IconCalendar",
+          "isNullable": false,
+          "defaultValue": "now",
+          "type": "DATE_TIME",
+          "universalIdentifier": "40e9db1d-a491-51bf-a4c7-ebe989fa2a37"
+        },
+        {
+          "name": "updatedAt",
+          "label": "Last update",
+          "description": "Last time the record was changed",
+          "icon": "IconCalendarClock",
+          "isNullable": false,
+          "defaultValue": "now",
+          "type": "DATE_TIME",
+          "universalIdentifier": "0bdc308e-fe36-5abc-ab4e-a1d145a4c6fd"
+        },
+        {
+          "name": "deletedAt",
+          "label": "Deleted at",
+          "description": "Deletion date",
+          "icon": "IconCalendarClock",
+          "isNullable": true,
+          "defaultValue": null,
+          "type": "DATE_TIME",
+          "universalIdentifier": "29aad57a-9a9d-5b72-aee0-cd928fb70ce3"
+        },
+        {
+          "name": "createdBy",
+          "label": "Created by",
+          "description": "The creator of the record",
+          "icon": "IconCreativeCommonsSa",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "84040a52-1fc8-5db8-bfe2-9e2b7ebd84a4"
+        },
+        {
+          "name": "updatedBy",
+          "label": "Updated by",
+          "description": "The workspace member who last updated the record",
+          "icon": "IconUserCircle",
+          "isNullable": false,
+          "defaultValue": {
+            "name": "''",
+            "source": "'MANUAL'"
+          },
+          "type": "ACTOR",
+          "universalIdentifier": "6f4f6240-fb75-542b-89d4-41feb871f52e"
+        },
+        {
+          "name": "position",
+          "label": "Position",
+          "description": "Position",
+          "icon": "IconHierarchy2",
+          "isNullable": false,
+          "defaultValue": 0,
+          "type": "POSITION",
+          "universalIdentifier": "0b7c2a02-510d-5d8e-af31-2f7adb91dac7"
+        },
+        {
+          "name": "searchVector",
+          "label": "Search vector",
+          "icon": "IconSearch",
+          "description": "Search vector",
+          "isNullable": true,
+          "defaultValue": null,
+          "type": "TS_VECTOR",
+          "universalIdentifier": "66e7c310-4f64-5149-9789-96926e8c6e48"
+        },
+        {
+          "name": "timelineActivities",
+          "label": "Timeline Activities",
+          "description": "Template Versions tied to the TemplateVersion",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "f841351d-ce57-52f5-b133-e8be5c8cf594",
+          "relationTargetFieldMetadataUniversalIdentifier": "8ca5e9df-61de-5f2c-bf1d-f9fdfd5f17ee",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5"
+        },
+        {
+          "name": "attachments",
+          "label": "Attachments",
+          "description": "Template Versions tied to the TemplateVersion",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "5aeac8c5-5512-5e2a-a190-bc845e0ba721",
+          "relationTargetFieldMetadataUniversalIdentifier": "cfdfac4c-5298-5c13-b129-2a131bbb2bb6",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a"
+        },
+        {
+          "name": "noteTargets",
+          "label": "Note Targets",
+          "description": "Template Versions tied to the TemplateVersion",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "6a7784ad-743f-5826-93ec-870438c8b3b3",
+          "relationTargetFieldMetadataUniversalIdentifier": "e0c4d601-2a2f-561d-aac5-6529858e83b9",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400"
+        },
+        {
+          "name": "taskTargets",
+          "label": "Task Targets",
+          "description": "Template Versions tied to the TemplateVersion",
+          "icon": "IconBuildingSkyscraper",
+          "isNullable": true,
+          "type": "RELATION",
+          "universalSettings": {
+            "relationType": "ONE_TO_MANY"
+          },
+          "universalIdentifier": "daa6476f-51ba-5831-80b4-b7968be6781d",
+          "relationTargetFieldMetadataUniversalIdentifier": "8fb2536e-dc4e-53e5-9816-d27bcd5a3e36",
+          "relationTargetObjectMetadataUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1"
+        }
+      ]
+    }
+  ],
+  "fields": [
+    {
+      "name": "targetDocumentTemplate",
+      "label": "DocumentTemplate",
+      "description": "DocumentTemplate DocumentTemplate",
+      "icon": "IconTimelineEvent",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentTemplateId"
+      },
+      "universalIdentifier": "0b38cabf-7f65-56ba-b604-b5e34823ea0a",
+      "objectUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5",
+      "relationTargetFieldMetadataUniversalIdentifier": "05efe460-214d-5a26-8eaf-b32fafe7b0a2",
+      "relationTargetObjectMetadataUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-9a2b-4c3d-a4e5-f6a7b8c9d0e1"
+    },
+    {
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
+      "icon": "IconTimelineEvent",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentId"
+      },
+      "universalIdentifier": "30042d2e-a2c0-526f-bfa3-84c33bd7d766",
+      "objectUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5",
+      "relationTargetFieldMetadataUniversalIdentifier": "b3c727c4-d43b-5577-b93a-f0fd2d5d667d",
+      "relationTargetObjectMetadataUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-9a2b-4c3d-a4e5-f6a7b8c9d0e1"
+    },
+    {
+      "name": "targetDocumentTemplate",
+      "label": "DocumentTemplate",
+      "description": "DocumentTemplate DocumentTemplate",
+      "icon": "IconCheckbox",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentTemplateId"
+      },
+      "universalIdentifier": "31602d97-9cb7-51c8-bcb5-9b5a7b64230f",
+      "objectUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1",
+      "relationTargetFieldMetadataUniversalIdentifier": "a6441476-ce8f-54f1-98aa-a0e827f6d0c3",
+      "relationTargetObjectMetadataUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f636-435d-ab8d-e1168b375c71"
+    },
+    {
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
+      "icon": "IconCheckbox",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentId"
+      },
+      "universalIdentifier": "53ef534f-4151-559e-ba7f-51d18a8efca9",
+      "objectUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400",
+      "relationTargetFieldMetadataUniversalIdentifier": "1b1376d0-c39c-56a4-a10e-3cb0abe64dab",
+      "relationTargetObjectMetadataUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f635-435d-ab8d-e1168b375c70"
+    },
+    {
+      "name": "targetDocumentTemplate",
+      "label": "DocumentTemplate",
+      "description": "DocumentTemplate DocumentTemplate",
+      "icon": "IconFileImport",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentTemplateId"
+      },
+      "universalIdentifier": "7a37eec7-9413-5375-89a2-b669a5cafd36",
+      "objectUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a",
+      "relationTargetFieldMetadataUniversalIdentifier": "4b61b2f9-28ec-55b3-a5af-1005eb5d37b7",
+      "relationTargetObjectMetadataUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f634-435d-ab8d-e1168b375c69"
+    },
+    {
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
+      "icon": "IconCheckbox",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentId"
+      },
+      "universalIdentifier": "8a990352-6fe3-55fa-8462-ac703fabbfef",
+      "objectUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1",
+      "relationTargetFieldMetadataUniversalIdentifier": "4fd1985a-ee9e-5fa7-bba6-ad2d917b9875",
+      "relationTargetObjectMetadataUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f636-435d-ab8d-e1168b375c71"
+    },
+    {
+      "name": "targetTemplateVersion",
+      "label": "TemplateVersion",
+      "description": "TemplateVersion TemplateVersion",
+      "icon": "IconTimelineEvent",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetTemplateVersionId"
+      },
+      "universalIdentifier": "8ca5e9df-61de-5f2c-bf1d-f9fdfd5f17ee",
+      "objectUniversalIdentifier": "20202020-6736-4337-b5c4-8b39fae325a5",
+      "relationTargetFieldMetadataUniversalIdentifier": "f841351d-ce57-52f5-b133-e8be5c8cf594",
+      "relationTargetObjectMetadataUniversalIdentifier": "eff96117-492b-4e89-9b9f-66492786ad53",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-9a2b-4c3d-a4e5-f6a7b8c9d0e1"
+    },
+    {
+      "name": "targetTemplateVersion",
+      "label": "TemplateVersion",
+      "description": "TemplateVersion TemplateVersion",
+      "icon": "IconCheckbox",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetTemplateVersionId"
+      },
+      "universalIdentifier": "8fb2536e-dc4e-53e5-9816-d27bcd5a3e36",
+      "objectUniversalIdentifier": "20202020-5a9a-44e8-95df-771cd06d0fb1",
+      "relationTargetFieldMetadataUniversalIdentifier": "daa6476f-51ba-5831-80b4-b7968be6781d",
+      "relationTargetObjectMetadataUniversalIdentifier": "eff96117-492b-4e89-9b9f-66492786ad53",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f636-435d-ab8d-e1168b375c71"
+    },
+    {
+      "name": "targetDocument",
+      "label": "Document",
+      "description": "Document Document",
+      "icon": "IconFileImport",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentId"
+      },
+      "universalIdentifier": "ac90ff76-ff25-5d72-8193-44208b471fe3",
+      "objectUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a",
+      "relationTargetFieldMetadataUniversalIdentifier": "b9210997-9cfd-5829-9ced-e1ddd495c6cc",
+      "relationTargetObjectMetadataUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f634-435d-ab8d-e1168b375c69"
+    },
+    {
+      "name": "targetTemplateVersion",
+      "label": "TemplateVersion",
+      "description": "TemplateVersion TemplateVersion",
+      "icon": "IconFileImport",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetTemplateVersionId"
+      },
+      "universalIdentifier": "cfdfac4c-5298-5c13-b129-2a131bbb2bb6",
+      "objectUniversalIdentifier": "20202020-bd3d-4c60-8dca-571c71d4447a",
+      "relationTargetFieldMetadataUniversalIdentifier": "5aeac8c5-5512-5e2a-a190-bc845e0ba721",
+      "relationTargetObjectMetadataUniversalIdentifier": "eff96117-492b-4e89-9b9f-66492786ad53",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f634-435d-ab8d-e1168b375c69"
+    },
+    {
+      "name": "targetDocumentTemplate",
+      "label": "DocumentTemplate",
+      "description": "DocumentTemplate DocumentTemplate",
+      "icon": "IconCheckbox",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetDocumentTemplateId"
+      },
+      "universalIdentifier": "dbc1d332-6b2a-56d9-bd80-fe367d7e6f54",
+      "objectUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400",
+      "relationTargetFieldMetadataUniversalIdentifier": "395d0c30-599b-54bc-9c42-1883a134cd64",
+      "relationTargetObjectMetadataUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f635-435d-ab8d-e1168b375c70"
+    },
+    {
+      "name": "targetTemplateVersion",
+      "label": "TemplateVersion",
+      "description": "TemplateVersion TemplateVersion",
+      "icon": "IconCheckbox",
+      "isNullable": true,
+      "universalSettings": {
+        "relationType": "MANY_TO_ONE",
+        "onDelete": "SET_NULL",
+        "joinColumnName": "targetTemplateVersionId"
+      },
+      "universalIdentifier": "e0c4d601-2a2f-561d-aac5-6529858e83b9",
+      "objectUniversalIdentifier": "20202020-fff0-4b44-be82-bda313884400",
+      "relationTargetFieldMetadataUniversalIdentifier": "6a7784ad-743f-5826-93ec-870438c8b3b3",
+      "relationTargetObjectMetadataUniversalIdentifier": "eff96117-492b-4e89-9b9f-66492786ad53",
+      "type": "MORPH_RELATION",
+      "morphId": "20202020-f635-435d-ab8d-e1168b375c70"
+    }
+  ],
+  "indexes": [],
+  "permissionFlags": [],
+  "roles": [
+    {
+      "universalIdentifier": "a2f3882b-4d9a-5b87-9f9d-0d0c70b17501",
+      "name": "Documents & Templates app role",
+      "label": "Documents & Templates app role",
+      "description": "Default role used by Documents & Templates app logic functions.",
+      "permissionFlags": [
+        {
+          "flag": "viewTemplates",
+          "value": true
+        },
+        {
+          "flag": "manageTemplates",
+          "value": true
+        },
+        {
+          "flag": "generateDocuments",
+          "value": true
+        },
+        {
+          "flag": "viewDocuments",
+          "value": true
+        },
+        {
+          "flag": "deleteDocuments",
+          "value": true
+        }
+      ],
+      "objectPermissions": [],
+      "fieldPermissions": [],
+      "rowLevelPermissionPredicateGroups": [],
+      "rowLevelPermissionPredicates": [],
+      "permissionFlagUniversalIdentifiers": []
+    }
+  ],
+  "skills": [],
+  "agents": [],
+  "connectionProviders": [],
+  "logicFunctions": [
+    {
+      "universalIdentifier": "1fcdb464-9f52-4904-81e4-bdadf3652237",
+      "name": "Render Template",
+      "description": "Render an active document template into HTML using a record context, context overrides, or preview data.",
+      "workflowActionTriggerSettings": {
+        "label": "Render Template",
+        "icon": "IconFileText",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "label": "Template ID"
+              },
+              "primaryObjectType": {
+                "type": "string",
+                "label": "Primary object type"
+              },
+              "primaryRecordId": {
+                "type": "string",
+                "label": "Primary record ID"
+              },
+              "contextOverrides": {
+                "type": "object",
+                "label": "Context overrides"
+              },
+              "previewData": {
+                "type": "object",
+                "label": "Preview data"
+              },
+              "strictMissingVariables": {
+                "type": "boolean",
+                "label": "Strict missing variables"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "html": {
+                "type": "string",
+                "label": "Rendered HTML"
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "label": "Warnings"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src\\logic-functions\\render-template.logic-function.ts",
+      "builtHandlerPath": "src\\logic-functions\\render-template.logic-function.mjs",
+      "builtHandlerChecksum": "ef2d7fb74cbcbcc9cf06a0ffee178190"
+    },
+    {
+      "universalIdentifier": "97e4bf7b-b731-45e1-9f0c-098d2cdbfc63",
+      "name": "Generate PDF",
+      "description": "Render HTML into a PDF, upload it to Twenty file storage, and attach it to the Document record.",
+      "workflowActionTriggerSettings": {
+        "label": "Generate PDF",
+        "icon": "IconFilePdf",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "html": {
+                "type": "string",
+                "multiline": true,
+                "label": "HTML"
+              },
+              "settings": {
+                "type": "object",
+                "label": "PDF settings"
+              },
+              "fileName": {
+                "type": "string",
+                "label": "File name"
+              },
+              "documentId": {
+                "type": "string",
+                "label": "Document ID"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "pdfUrl": {
+                "type": "string",
+                "label": "PDF URL"
+              },
+              "documentAttachmentId": {
+                "type": "string",
+                "label": "Document Attachment ID"
+              },
+              "status": {
+                "type": "string",
+                "label": "Status"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src\\logic-functions\\generate-pdf.logic-function.ts",
+      "builtHandlerPath": "src\\logic-functions\\generate-pdf.logic-function.mjs",
+      "builtHandlerChecksum": "dd3d27643690f3548a2dd41652738d50"
+    },
+    {
+      "universalIdentifier": "9c896b3e-cf3b-4007-b2d9-2c1cdfc0505e",
+      "name": "Save Document",
+      "description": "Persist rendered workflow output as a Document record, including the PDF URL and status.",
+      "workflowActionTriggerSettings": {
+        "label": "Save Document",
+        "icon": "IconDatabaseImport",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "templateId": {
+                "type": "string",
+                "label": "Template ID"
+              },
+              "primaryObjectType": {
+                "type": "string",
+                "label": "Primary object type"
+              },
+              "primaryRecordId": {
+                "type": "string",
+                "label": "Primary record ID"
+              },
+              "renderedHtml": {
+                "type": "string",
+                "multiline": true,
+                "label": "Rendered HTML"
+              },
+              "pdfUrl": {
+                "type": "string",
+                "label": "PDF URL"
+              },
+              "status": {
+                "type": "string",
+                "label": "Status"
+              },
+              "metadata": {
+                "type": "object",
+                "label": "Metadata"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "documentId": {
+                "type": "string",
+                "label": "Document ID"
+              },
+              "pdfUrl": {
+                "type": "string",
+                "label": "PDF URL"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src\\logic-functions\\save-document.logic-function.ts",
+      "builtHandlerPath": "src\\logic-functions\\save-document.logic-function.mjs",
+      "builtHandlerChecksum": "abd5273b4aa80e47d0d015c425d03df9"
+    },
+    {
+      "universalIdentifier": "a4e7c193-58d2-4b6f-9a31-d0f5e87b2c41",
+      "name": "Seed Starter Templates",
+      "description": "Create starter document templates if they do not already exist. Use force=true to re-create even when a template with the same name is present.",
+      "workflowActionTriggerSettings": {
+        "label": "Seed Starter Templates",
+        "icon": "IconSeedling",
+        "inputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "force": {
+                "type": "boolean",
+                "label": "Force re-create even if templates already exist"
+              }
+            }
+          }
+        ],
+        "outputSchema": [
+          {
+            "type": "object",
+            "properties": {
+              "created": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "label": "Created templates"
+              },
+              "skipped": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "label": "Skipped templates"
+              }
+            }
+          }
+        ]
+      },
+      "handlerName": "default.config.handler",
+      "sourceHandlerPath": "src\\logic-functions\\seed-starter-templates.logic-function.ts",
+      "builtHandlerPath": "src\\logic-functions\\seed-starter-templates.logic-function.mjs",
+      "builtHandlerChecksum": "916d5ee3e58f9a3ed89e536eb93f4bfc"
+    }
+  ],
+  "frontComponents": [
+    {
+      "universalIdentifier": "081e8445-bf9b-4c81-a20e-5d72c3290cad",
+      "name": "generate-document",
+      "description": "Record action to pick a template, preview the rendered document, optionally save it and generate a PDF.",
+      "componentName": "GenerateDocumentComponent",
+      "sourceComponentPath": "src\\front-components\\generate-document.front-component.tsx",
+      "builtComponentPath": "src\\front-components\\generate-document.front-component.mjs",
+      "builtComponentChecksum": "1e481654f65ab405b968abef31ab4b65",
+      "isHeadless": false,
+      "usesSdkClient": false
+    },
+    {
+      "universalIdentifier": "56f46af8-ff3b-4a70-875a-a0e8ac78a697",
+      "name": "document-shell",
+      "description": "Record shell showing document history for this record. Use the \"Generate Document\" command menu item to create a new one.",
+      "componentName": "DocumentShellComponent",
+      "sourceComponentPath": "src\\front-components\\document-shell.front-component.tsx",
+      "builtComponentPath": "src\\front-components\\document-shell.front-component.mjs",
+      "builtComponentChecksum": "a96baa2f15102b4f8c7f3b45b475c1c0",
+      "isHeadless": false,
+      "usesSdkClient": true
+    },
+    {
+      "universalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371",
+      "name": "template-preview",
+      "description": "Renders a live preview of the document template.",
+      "componentName": "TemplateEditorComponent",
+      "sourceComponentPath": "src\\front-components\\template-editor.front-component.tsx",
+      "builtComponentPath": "src\\front-components\\template-editor.front-component.mjs",
+      "builtComponentChecksum": "ae559092cc6d15b098afd19230fda32b",
+      "isHeadless": false,
+      "usesSdkClient": true
+    },
+    {
+      "universalIdentifier": "96de9527-dc9c-4ecf-912c-905e912e75e9",
+      "name": "tinymce-beta-editor",
+      "description": "TinyMCE WYSIWYG editor for document templates.",
+      "componentName": "TinymceBetaEditorComponent",
+      "sourceComponentPath": "src\\front-components\\tinymce-beta-editor.front-component.tsx",
+      "builtComponentPath": "src\\front-components\\tinymce-beta-editor.front-component.mjs",
+      "builtComponentChecksum": "1806342463b8f41c04d68427df3f1993",
+      "isHeadless": false,
+      "usesSdkClient": true
+    }
+  ],
+  "publicAssets": [
+    {
+      "filePath": "public\\tinymce\\bower.json",
+      "fileName": "bower.json",
+      "fileType": "json",
+      "checksum": "4444567e202f18e052fed9adfb2fb3d9"
+    },
+    {
+      "filePath": "public\\tinymce\\CHANGELOG.md",
+      "fileName": "CHANGELOG.md",
+      "fileType": "md",
+      "checksum": "0a5c7370dfee325b771487d6d4960567"
+    },
+    {
+      "filePath": "public\\tinymce\\composer.json",
+      "fileName": "composer.json",
+      "fileType": "json",
+      "checksum": "7e7f8ebfd38a95200744fbed391767bd"
+    },
+    {
+      "filePath": "public\\tinymce\\icons\\default\\icons.js",
+      "fileName": "icons.js",
+      "fileType": "js",
+      "checksum": "0ab11ce65d9f8863461eb2d0b6ab1f9a"
+    },
+    {
+      "filePath": "public\\tinymce\\icons\\default\\icons.min.js",
+      "fileName": "icons.min.js",
+      "fileType": "js",
+      "checksum": "5b2105adc864400a516d36b5d309f87d"
+    },
+    {
+      "filePath": "public\\tinymce\\icons\\default\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "9c5b7a740ca30e13e64b6a4de5b17c77"
+    },
+    {
+      "filePath": "public\\tinymce\\license.md",
+      "fileName": "license.md",
+      "fileType": "md",
+      "checksum": "63fbb9393bcad8322c94a866739dc3ee"
+    },
+    {
+      "filePath": "public\\tinymce\\models\\dom\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "0400e22acd7d9117cc36b06d26eacbe6"
+    },
+    {
+      "filePath": "public\\tinymce\\models\\dom\\model.js",
+      "fileName": "model.js",
+      "fileType": "js",
+      "checksum": "03bd7b1b004f41fcaa229a92eedc29c7"
+    },
+    {
+      "filePath": "public\\tinymce\\models\\dom\\model.min.js",
+      "fileName": "model.min.js",
+      "fileType": "js",
+      "checksum": "9a8a2801b123872f3eb0194c7b8f86ef"
+    },
+    {
+      "filePath": "public\\tinymce\\notices.txt",
+      "fileName": "notices.txt",
+      "fileType": "txt",
+      "checksum": "a7fe5f53948f93855593bc6f74b11ac5"
+    },
+    {
+      "filePath": "public\\tinymce\\package.json",
+      "fileName": "package.json",
+      "fileType": "json",
+      "checksum": "05566baf0e77b122ee510fb4d1d7e63a"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\accordion\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "3987030cfebaf6bf4f1864005d1ed61a"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\accordion\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "e609a0bcb9090db2575b58d4b8a2b69d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\accordion\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "27e08bb473a8e9cc5242e51f407ab9d7"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\advlist\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "344ca56d8dedfae33380a44b89dfdd1d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\advlist\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "6ea21687b9248275ca7432277a5c31a3"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\advlist\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "5dd0757a7e8c046613592db18f3a7f9e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\anchor\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "dd697e3891ed83de226860a7aa436b10"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\anchor\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "9f4a334ec7ac61da7c945a57e347a7a8"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\anchor\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "cdde8528d6118883251d472b1eadbf3d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autolink\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "fa84bd3bd42aeb01da94b784344d4d84"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autolink\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "d1a2c45c5f36ceb51fa2d5c3b9fb7ad5"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autolink\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "afb77d92b089c8e72a67db21556dff12"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autoresize\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "00116480a9865b9b84937b8c6ec471ed"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autoresize\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5f6bc9e2258da6bd65ea0b1221b03683"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autoresize\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "b39aaeaab0813123eb79a4c8ee248537"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autosave\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "8d9bb78be9ddbce43bfd7964b71678ae"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autosave\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "10f5261824e29282042888529952ccf2"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\autosave\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "bebf53ef6e64a8534adac2adc2386e8d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\charmap\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "18775f459a8bd073ba47b3ad3e2f6bdf"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\charmap\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "6a8bdc25dcb4f1bac65246bbc0d33062"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\charmap\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c885bd6a51cb86988e49e3198e1d4fd6"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\code\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "d2db687200588ab654afd39728df329f"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\code\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "42f03ed4035db8738655f15538786299"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\code\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f3ec3f322ab14eb3ee6fd07d88b0c0e6"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\codesample\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "23fdb57b1d401abe9ff929ab26ec394e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\codesample\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "e459c7a9b63c95e87cee7846a819ec92"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\codesample\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "669e02004063332195fcf8dd06b3b5b9"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\directionality\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "cd2c90f18e8c7d1215bc4ede4a2ed3ff"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\directionality\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "ff75f717ac8bf28380c9820aac8c81ef"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\directionality\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ba82ab392b627f86ddc51b52fdc41faf"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "57e489f4ab69ca17dc7c95aef7052d88"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\js\\emojiimages.js",
+      "fileName": "emojiimages.js",
+      "fileType": "js",
+      "checksum": "1ab2fd097df3919a141b411bb0b053b8"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\js\\emojiimages.min.js",
+      "fileName": "emojiimages.min.js",
+      "fileType": "js",
+      "checksum": "9347548e6783f39f57f9508d68166712"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\js\\emojis.js",
+      "fileName": "emojis.js",
+      "fileType": "js",
+      "checksum": "7fa1cc8fdcb750daad96da33821c5263"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\js\\emojis.min.js",
+      "fileName": "emojis.min.js",
+      "fileType": "js",
+      "checksum": "885f39c7b98f2a8d89aac899c23b84fe"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "81ab0902d24a2c5a23c1e9cf0504a7af"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\emoticons\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "751d70c1c52c5eff2d9d714613c5496b"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\fullscreen\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "2a071ce05b6865fc1a874f298b920e9e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\fullscreen\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5ce603b6e050986aa67d16764d40beb3"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\fullscreen\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f24d2dd9eb68144f913042e8fe94e471"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "b7c64e9d5f9003aacb929b6944987c2e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ar.js",
+      "fileName": "ar.js",
+      "fileType": "js",
+      "checksum": "f7e29866b870be64454712a0bfdceaef"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\bg_BG.js",
+      "fileName": "bg_BG.js",
+      "fileType": "js",
+      "checksum": "d5a41cf5453dbd6cc1ea8fbaf268f91b"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\bg-BG.js",
+      "fileName": "bg-BG.js",
+      "fileType": "js",
+      "checksum": "7dc722ede82918148b1d5530348483f1"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ca.js",
+      "fileName": "ca.js",
+      "fileType": "js",
+      "checksum": "33ae0c3e4ea58f276290c071547ef7cd"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\cs.js",
+      "fileName": "cs.js",
+      "fileType": "js",
+      "checksum": "e678796969274cafe7fa1877fcea40b5"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\da.js",
+      "fileName": "da.js",
+      "fileType": "js",
+      "checksum": "4d15a37a4ad69c26e17d5147f3e04aea"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\de.js",
+      "fileName": "de.js",
+      "fileType": "js",
+      "checksum": "83b3fee2666dc3b2caadcd8df5a117b1"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\el.js",
+      "fileName": "el.js",
+      "fileType": "js",
+      "checksum": "55845312d98877a651d9193538d5122b"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\en.js",
+      "fileName": "en.js",
+      "fileType": "js",
+      "checksum": "25ec53a8e7728a382679b18920afe7c4"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\es.js",
+      "fileName": "es.js",
+      "fileType": "js",
+      "checksum": "1e02d4c563993bc0dd2837c0adbf038c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\eu.js",
+      "fileName": "eu.js",
+      "fileType": "js",
+      "checksum": "bdad367473f9afeb4601b3754fc163dc"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\fa.js",
+      "fileName": "fa.js",
+      "fileType": "js",
+      "checksum": "b18b4db563fe6a3e36c7944ca6b93044"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\fi.js",
+      "fileName": "fi.js",
+      "fileType": "js",
+      "checksum": "53db866385b0b6779fe2ff0a0482070d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\fr_FR.js",
+      "fileName": "fr_FR.js",
+      "fileType": "js",
+      "checksum": "6d03416c1d7f9f953f9d4629144ed77c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\fr-FR.js",
+      "fileName": "fr-FR.js",
+      "fileType": "js",
+      "checksum": "4dfa6fc8d7168a26ad0dea4c4a79611e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\he_IL.js",
+      "fileName": "he_IL.js",
+      "fileType": "js",
+      "checksum": "e5a85e20c1d6af2008e99144c3a5be28"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\he-IL.js",
+      "fileName": "he-IL.js",
+      "fileType": "js",
+      "checksum": "5ba78e61c6fbe117b97fb229c2b2defb"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\hi.js",
+      "fileName": "hi.js",
+      "fileType": "js",
+      "checksum": "cfc6b2b198475abbcd91545d624bb103"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\hr.js",
+      "fileName": "hr.js",
+      "fileType": "js",
+      "checksum": "892358646252137ff5796b0840dff871"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\hu_HU.js",
+      "fileName": "hu_HU.js",
+      "fileType": "js",
+      "checksum": "f24ff1424a16811d035f32c668e05f4f"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\hu-HU.js",
+      "fileName": "hu-HU.js",
+      "fileType": "js",
+      "checksum": "8bc441a563620952c6ab3d6be86910cd"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\id.js",
+      "fileName": "id.js",
+      "fileType": "js",
+      "checksum": "4ef64cb3b406da4ab33571a184f6a8e8"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\it.js",
+      "fileName": "it.js",
+      "fileType": "js",
+      "checksum": "debbcf6b6f80ff78043ea4f762a1d86e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ja.js",
+      "fileName": "ja.js",
+      "fileType": "js",
+      "checksum": "c0ad4baefb952fe4c637db8264ef6f7e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\kk.js",
+      "fileName": "kk.js",
+      "fileType": "js",
+      "checksum": "8fc30ca83443a6fba267915108110f5c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ko_KR.js",
+      "fileName": "ko_KR.js",
+      "fileType": "js",
+      "checksum": "25a16f0f57a9c3943e2d0640e893b4ea"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ko-KR.js",
+      "fileName": "ko-KR.js",
+      "fileType": "js",
+      "checksum": "b7da2bfd39d39ef2844887b70cbebdd5"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ms.js",
+      "fileName": "ms.js",
+      "fileType": "js",
+      "checksum": "16da45ae14907721c36718fb3b30c451"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\nb_NO.js",
+      "fileName": "nb_NO.js",
+      "fileType": "js",
+      "checksum": "7e1e997155632ce31c76b2576d2672f9"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\nb-NO.js",
+      "fileName": "nb-NO.js",
+      "fileType": "js",
+      "checksum": "5829baf6953875d62be31f31777087d9"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\nl.js",
+      "fileName": "nl.js",
+      "fileType": "js",
+      "checksum": "20f677beac1ff5a29932ed7f265b3dee"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\pl.js",
+      "fileName": "pl.js",
+      "fileType": "js",
+      "checksum": "b0e51d9a267abb8d57ab112811f8cad2"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\pt_BR.js",
+      "fileName": "pt_BR.js",
+      "fileType": "js",
+      "checksum": "d31074c9a256a9cbc2a1160e14545d53"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\pt_PT.js",
+      "fileName": "pt_PT.js",
+      "fileType": "js",
+      "checksum": "213bd09ce1ddce6aa2c1eab391020393"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\pt-BR.js",
+      "fileName": "pt-BR.js",
+      "fileType": "js",
+      "checksum": "3dfea8cca48c3e912aba21421211aa8a"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\pt-PT.js",
+      "fileName": "pt-PT.js",
+      "fileType": "js",
+      "checksum": "5265fa8d4c25687e3d83e0beccce8997"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ro.js",
+      "fileName": "ro.js",
+      "fileType": "js",
+      "checksum": "59e9b92c87368b48cd2023d530672c28"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\ru.js",
+      "fileName": "ru.js",
+      "fileType": "js",
+      "checksum": "56bd96bcd4b31e5d8d16ed1c948827c5"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\sk.js",
+      "fileName": "sk.js",
+      "fileType": "js",
+      "checksum": "08eff7d8782df5326227924b9f582d1c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\sl_SI.js",
+      "fileName": "sl_SI.js",
+      "fileType": "js",
+      "checksum": "0d62175a1ba88969b6dfb1b94cda85c0"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\sl-SI.js",
+      "fileName": "sl-SI.js",
+      "fileType": "js",
+      "checksum": "52489f51c0854647bccfd5b0a295b5ea"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\sv_SE.js",
+      "fileName": "sv_SE.js",
+      "fileType": "js",
+      "checksum": "8021b2bf6035872c5140248689ce3e99"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\sv-SE.js",
+      "fileName": "sv-SE.js",
+      "fileType": "js",
+      "checksum": "00f85a56cb35b83d018e867d588a9390"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\th_TH.js",
+      "fileName": "th_TH.js",
+      "fileType": "js",
+      "checksum": "04413f1796c6b47d2ed732fe9bc81fb1"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\th-TH.js",
+      "fileName": "th-TH.js",
+      "fileType": "js",
+      "checksum": "b1d43458de02e555e3594d893a3aa8fa"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\tr.js",
+      "fileName": "tr.js",
+      "fileType": "js",
+      "checksum": "c555f22b01767c44883cc00dbaeec7ff"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\uk.js",
+      "fileName": "uk.js",
+      "fileType": "js",
+      "checksum": "849237baf50625f4b8c17039bec688e5"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\vi.js",
+      "fileName": "vi.js",
+      "fileType": "js",
+      "checksum": "354387db83ea8af6ee7bad101cf77dab"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\zh_CN.js",
+      "fileName": "zh_CN.js",
+      "fileType": "js",
+      "checksum": "778615758c4af74bfe1624fdbc8093f1"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\zh_TW.js",
+      "fileName": "zh_TW.js",
+      "fileType": "js",
+      "checksum": "1ce4b68afa621fcf36eec23254afebc9"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\zh-CN.js",
+      "fileName": "zh-CN.js",
+      "fileType": "js",
+      "checksum": "a884c03d1ab58df31362f0cd1df986de"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\js\\i18n\\keynav\\zh-TW.js",
+      "fileName": "zh-TW.js",
+      "fileType": "js",
+      "checksum": "7cdef7dd0621decf462477ed36e67c8f"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "a66f2a487015108ce287ab15762ba7f9"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\help\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "0b8191f1ac42377533039eafc75c9e87"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\image\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "27415d3d43098d4bdb48c6c45c15e08c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\image\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "c49f8bad0b559fb4b42b242064c8e730"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\image\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "367c9c489b5bce0c270bace013e28c76"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\importcss\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "2409fda93c2625fad2c9dfffe31b1473"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\importcss\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "0471b78da0de320d080d4dc09d14a6c3"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\importcss\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "438adb8a6aed8e3f9694db7409a05cbb"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\insertdatetime\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "4ece334f6233df3aa3e5becbfe1f9a8e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\insertdatetime\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "ccd3dadd42680ddbd028ad8ba85ee560"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\insertdatetime\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "32721828cee7da758b613591c5f61be7"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\link\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "5837f9d0ed7b2cc610dbffa6a7d7dafe"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\link\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "826f64b65070ef37b0e957bcc92db4c5"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\link\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "bee0568a6effb3d434caf427326c1dde"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\lists\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "959bf9c345e983ce032814178b94cb09"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\lists\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "7ca24651db330cc812ddf2ca4c880bdc"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\lists\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c6de148db9a9be062a1be8e277c1f9e1"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\media\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "22710d182e71e1bef50ee3838ac15b07"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\media\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "c30da1703a2b8966c1e935e0b76b7524"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\media\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "399d98c014f2637de8abea2179c0cc08"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\nonbreaking\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "851e4039437062e49d5729f1fe30cb40"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\nonbreaking\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "92c7dc9680dca887f9090e31c45d0a05"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\nonbreaking\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ad9ba7df3926675286d4d30657fb302f"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\pagebreak\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "b2ec3630c22897879bc089749ca3466e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\pagebreak\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "78b253f5e0111a106f2718818ffdd149"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\pagebreak\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "2bf6399b2b8a5ef3d83c24362514754f"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\preview\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "ac924715206330e49ae83f0ce0a41a7c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\preview\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "103b6b048451ab64c18721966924c85c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\preview\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "7adbaf81472640031c03ac69e88acc2a"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\quickbars\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "24942b053967586fefe96a215c44ae07"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\quickbars\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "131d195358d5d068f1049b8b6c7684bc"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\quickbars\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "d73f4ebceb7355baebab74e82b78d31e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\save\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "d2a87bcc64b326fc6dfa962fcbc662e8"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\save\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "bb429aeaf3112a5216531a6415e152a3"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\save\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "3b86c2bf6b21a11284fd6fd31b72948d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\searchreplace\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "027916795b63233ba94d3938bc15cc28"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\searchreplace\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "3c3df01de6f28c4b8bf87862b8943a8b"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\searchreplace\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "ec3fe56d6011437a2502029a8a8b147c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\table\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "dc0a57cf52e5c96e8886974820620f30"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\table\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "5910eda5d06be5e6a7482fd11e75de64"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\table\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "f31b252691db79f788850268813bef5e"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\visualblocks\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "1f348278fc3fa3ae9d560a2c6074537d"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\visualblocks\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "469131de0b8e1dbd9778317e3758eb08"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\visualblocks\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "98645a0d0ec00f0e47243800bc7c7ec4"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\visualchars\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "01e4394764848c643482a4e060c3c16c"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\visualchars\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "9b1f26648230145aefd3fb1f2fb3797f"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\visualchars\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "afc81b4af2a5ed5d85fb641beb0d45fe"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\wordcount\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "8702637f4301b2c60b0d036a74a57952"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\wordcount\\plugin.js",
+      "fileName": "plugin.js",
+      "fileType": "js",
+      "checksum": "fbebdeaa700c5376d1f7a0256735daf3"
+    },
+    {
+      "filePath": "public\\tinymce\\plugins\\wordcount\\plugin.min.js",
+      "fileName": "plugin.min.js",
+      "fileType": "js",
+      "checksum": "c5192c646724026085769412616ee0a7"
+    },
+    {
+      "filePath": "public\\tinymce\\README.md",
+      "fileName": "README.md",
+      "fileType": "md",
+      "checksum": "5bae37bb19d574304863ca68aec7fd00"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\dark\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "c8926691f2c46d55c7c120dbd96d0205"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\dark\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "970e2a4d9e3de16a6c52077be8d37625"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\dark\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "e113bd1ce328b22e0dd9953dc64a3036"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\dark\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\dark\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\default\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "a5bd35dad44d0b1d1de1c4157355f0d3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\default\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "42d862bdc12aed0769e56cd121e30d93"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\default\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f7768f573257c0a5a0be98f12d188680"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\default\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\default\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\document\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "be4dc4ed6080223fa73b91e3004d2f19"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\document\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "a90776f111fcadc0bfaf5fe1e8f4dc40"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\document\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f9f3192b8bb69c6f1d267a260ed720f7"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\document\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\document\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5-dark\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "268197bc0ca4807acc4f2e8d569ab86f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5-dark\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "a31bb9aaaf8bec9b47eec1a5933090ee"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5-dark\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "cfd182c830599643078b02f686f2293e"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5-dark\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5-dark\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "a5bd35dad44d0b1d1de1c4157355f0d3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "b60ac7772e222390bcc96586e8628ed1"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "f7768f573257c0a5a0be98f12d188680"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\tinymce-5\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\writer\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "8ca6e53fe576c03004dc7a2331770301"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\writer\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "8dc62f7a85a06508998dfb1b43da9173"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\writer\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "7529e0af92b96d2deb984d4799b887d7"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\writer\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\content\\writer\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "fee499c1a58bf1d73b58590a098115a9"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "c65755feb720322640901c7490edc8b1"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "cd1a61f757480d063b441776b201204f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "7f6978efc5da9beb4cb54c3ee549e8ae"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "e3e3f1a075129a502215ef28243631fa"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "f28512baaec9ec5dc2e9fcb7df6f8fe3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "854d6f59fbff26d5fcd5ec7bf64f6336"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "cc54b55d7d2c8f5cb91b6521d9ae9d57"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "ffffe15328072058562c98f1dc245133"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "6b6f55ca3aafd26349b6019ea95045c1"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "06df4886576c74c4dd32d995020dc002"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "e96d3c218f2b79f82e2c87b6f3f818bb"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide-dark\\skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "7a37bb270af0cbce1c8759bc2a41bfef"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "240b921f2247d4d51faeddc826d1ff3f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "726651b91a6fbfb8e1ea8eb446b90ad5"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "3dd08fc623d9ea2f7dbd0779000c69ed"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "91989d59571085e78e3042dc5fcab58f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "ac87c7a42523fdd332cde378cc7e52c1"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "9f01960a550bf2c8d80235909554d189"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "b9f167a05b1e23cd10fa40326faa5d6f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "06df4886576c74c4dd32d995020dc002"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "fb3cc71941cdc2e83de399ee39abe36d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\oxide\\skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "7a37bb270af0cbce1c8759bc2a41bfef"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "fb1dc6fd93ce8b7bad56f58f487d1494"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "d55e28fdb186dfd8d05279eb867abb84"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "235bf0e31e727469c3587324289cbaf7"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "144812164491d179300f6ffe624702be"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "f28512baaec9ec5dc2e9fcb7df6f8fe3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "854d6f59fbff26d5fcd5ec7bf64f6336"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "45e80848912838dfc79b1464eff5a3cf"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "1c50fb643c76986acf1935662bded1da"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "838f9ed41183ee442f2c33d0601afa57"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "9e0c739df1042ac0abeefc551754c779"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "eb127cec1c96aebc630b4f9f5efcbf7e"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5-dark\\skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "8281a5fb4a2999effb427cd1a6a68063"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.css",
+      "fileName": "content.css",
+      "fileType": "css",
+      "checksum": "240b921f2247d4d51faeddc826d1ff3f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.inline.css",
+      "fileName": "content.inline.css",
+      "fileType": "css",
+      "checksum": "d0c6bf5bdca76c6e16b759ddf2302adc"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.inline.js",
+      "fileName": "content.inline.js",
+      "fileType": "js",
+      "checksum": "a5844c90ad64a935a153cff6a1e34c08"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.inline.min.css",
+      "fileName": "content.inline.min.css",
+      "fileType": "css",
+      "checksum": "415a0c3899d9261ed60478f831a41150"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.inline.min.ts",
+      "fileName": "content.inline.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.inline.ts",
+      "fileName": "content.inline.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.js",
+      "fileName": "content.js",
+      "fileType": "js",
+      "checksum": "2a8c55df728fb4eae8823f4d2abd17c7"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.min.css",
+      "fileName": "content.min.css",
+      "fileType": "css",
+      "checksum": "91989d59571085e78e3042dc5fcab58f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.min.ts",
+      "fileName": "content.min.ts",
+      "fileType": "ts",
+      "checksum": "78fc84b3e763506c46a668b8e5e40811"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\content.ts",
+      "fileName": "content.ts",
+      "fileType": "ts",
+      "checksum": "ebd3c3df5819d59df06b9807514a519d"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.css",
+      "fileName": "skin.css",
+      "fileType": "css",
+      "checksum": "bc647b09ec1147ed61c244f27ba386e3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.js",
+      "fileName": "skin.js",
+      "fileType": "js",
+      "checksum": "f68a274cbbcf709a502be18af64d4772"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.min.css",
+      "fileName": "skin.min.css",
+      "fileType": "css",
+      "checksum": "3be039279c288e4b5477a90dd77e4eda"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.min.ts",
+      "fileName": "skin.min.ts",
+      "fileType": "ts",
+      "checksum": "9e0c739df1042ac0abeefc551754c779"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.shadowdom.css",
+      "fileName": "skin.shadowdom.css",
+      "fileType": "css",
+      "checksum": "31792aa3530bea8433b3b50c8c38529f"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.shadowdom.js",
+      "fileName": "skin.shadowdom.js",
+      "fileType": "js",
+      "checksum": "7d0e89599f3017f7e3941b47f71afee3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.shadowdom.min.css",
+      "fileName": "skin.shadowdom.min.css",
+      "fileType": "css",
+      "checksum": "1448b0502cbc52a71d7b2a5eaa9f3847"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.shadowdom.min.ts",
+      "fileName": "skin.shadowdom.min.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.shadowdom.ts",
+      "fileName": "skin.shadowdom.ts",
+      "fileType": "ts",
+      "checksum": "734a36f8f7ea09ae242a5e052b2399a3"
+    },
+    {
+      "filePath": "public\\tinymce\\skins\\ui\\tinymce-5\\skin.ts",
+      "fileName": "skin.ts",
+      "fileType": "ts",
+      "checksum": "8281a5fb4a2999effb427cd1a6a68063"
+    },
+    {
+      "filePath": "public\\tinymce\\themes\\silver\\index.js",
+      "fileName": "index.js",
+      "fileType": "js",
+      "checksum": "7281b0268319c90508a1a300a7c06d97"
+    },
+    {
+      "filePath": "public\\tinymce\\themes\\silver\\theme.js",
+      "fileName": "theme.js",
+      "fileType": "js",
+      "checksum": "c5be3c067eae899e4ccc1ca24a308b48"
+    },
+    {
+      "filePath": "public\\tinymce\\themes\\silver\\theme.min.js",
+      "fileName": "theme.min.js",
+      "fileType": "js",
+      "checksum": "b9eabf187e050a8068f72aa3b63873d8"
+    },
+    {
+      "filePath": "public\\tinymce\\tinymce.d.ts",
+      "fileName": "tinymce.d.ts",
+      "fileType": "ts",
+      "checksum": "d57c8f067a5b36451eed6d04ceda2ec8"
+    },
+    {
+      "filePath": "public\\tinymce\\tinymce.js",
+      "fileName": "tinymce.js",
+      "fileType": "js",
+      "checksum": "09cddae177798225605c14152a62578a"
+    },
+    {
+      "filePath": "public\\tinymce\\tinymce.min.js",
+      "fileName": "tinymce.min.js",
+      "fileType": "js",
+      "checksum": "95a36916596cbabd5cdc3ce04abe7075"
+    }
+  ],
+  "views": [
+    {
+      "universalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0",
+      "objectUniversalIdentifier": "6353463f-7540-4cf9-9898-85a4984d976c",
+      "name": "Recent Documents",
+      "type": "TABLE",
+      "visibility": "WORKSPACE",
+      "position": 41,
+      "fields": [
+        {
+          "universalIdentifier": "80c72d6c-ee68-45f2-9d89-0ebe07e57d29",
+          "fieldMetadataUniversalIdentifier": "85c2a7ea-7300-4a6a-80fd-6f57dca8914b",
+          "position": 0,
+          "size": 220
+        },
+        {
+          "universalIdentifier": "3b4a6c30-f07d-4189-819e-875f6d032490",
+          "fieldMetadataUniversalIdentifier": "ab859ed3-e237-42d8-942b-0d34e5bba737",
+          "position": 1,
+          "size": 180
+        },
+        {
+          "universalIdentifier": "4b3f4e1a-538b-452f-90c5-7f9d89e8ea94",
+          "fieldMetadataUniversalIdentifier": "84220294-eb6e-4e9b-bc00-fb055908372b",
+          "position": 2,
+          "size": 150
+        },
+        {
+          "universalIdentifier": "ad74f125-6b8b-41fa-9958-3b9b4f0815ac",
+          "fieldMetadataUniversalIdentifier": "b92b494e-d314-4395-b699-c7535f290db6",
+          "position": 3,
+          "size": 130
+        },
+        {
+          "universalIdentifier": "98c353d7-a7e6-4d42-9915-895c372f8576",
+          "fieldMetadataUniversalIdentifier": "9f8ea9f3-3fdd-4aa9-b849-c61dfa5a8e14",
+          "position": 4,
+          "size": 220
+        },
+        {
+          "universalIdentifier": "36dafadc-f391-412c-aa4b-9c9dc0f14337",
+          "fieldMetadataUniversalIdentifier": "5697941d-e7a3-4a83-8e33-824e90bd21af",
+          "position": 5,
+          "size": 160
+        }
+      ],
+      "sorts": [
+        {
+          "universalIdentifier": "16826903-a498-4f46-86c1-a1349c515fed",
+          "fieldMetadataUniversalIdentifier": "5697941d-e7a3-4a83-8e33-824e90bd21af",
+          "direction": "DESC"
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a",
+      "objectUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04",
+      "name": "Templates",
+      "type": "TABLE",
+      "visibility": "WORKSPACE",
+      "position": 40,
+      "fields": [
+        {
+          "universalIdentifier": "e3ee63a7-2bf8-42f4-9ba0-6eddbca4f6e1",
+          "fieldMetadataUniversalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
+          "position": 0,
+          "size": 180
+        },
+        {
+          "universalIdentifier": "ac0a7bb6-f9a2-4fa7-9149-d59c6e14f085",
+          "fieldMetadataUniversalIdentifier": "0d115bc2-2d5e-4e82-b933-62732dcba599",
+          "position": 1,
+          "size": 120
+        },
+        {
+          "universalIdentifier": "9169b0b1-2e9d-4275-a5df-8f278b7c5ea1",
+          "fieldMetadataUniversalIdentifier": "d75a5707-d025-470f-88d4-cabd102781e0",
+          "position": 2,
+          "size": 90
+        },
+        {
+          "universalIdentifier": "a7573e8d-c5cb-44b0-a74a-9d9730cf9293",
+          "fieldMetadataUniversalIdentifier": "3012ab43-b335-4e0a-b3e5-1739b6d08800",
+          "position": 3,
+          "size": 120
+        }
+      ],
+      "sorts": [
+        {
+          "universalIdentifier": "95699ab7-f04d-4913-9c89-ec81055423bd",
+          "fieldMetadataUniversalIdentifier": "050309a3-5437-429f-addd-804010aff4db",
+          "direction": "DESC"
+        }
+      ]
+    }
+  ],
+  "viewFields": [],
+  "navigationMenuItems": [
+    {
+      "universalIdentifier": "411a0e2b-ee1d-4fa2-8292-a88eaac39af2",
+      "type": "VIEW",
+      "name": "Documents",
+      "icon": "IconFileText",
+      "position": 0,
+      "folderUniversalIdentifier": "6a7ab786-6ab7-4443-8379-6b9bac687ae4",
+      "viewUniversalIdentifier": "5086fb8e-ac58-4f97-84da-c2cc08970bc0"
+    },
+    {
+      "universalIdentifier": "588cfc4f-41bc-41df-a199-40a998ec5b71",
+      "type": "VIEW",
+      "name": "Templates",
+      "icon": "IconTemplate",
+      "position": 1,
+      "folderUniversalIdentifier": "6a7ab786-6ab7-4443-8379-6b9bac687ae4",
+      "viewUniversalIdentifier": "86b7d128-f3f4-4761-8b04-83adc835659a"
+    },
+    {
+      "universalIdentifier": "6a7ab786-6ab7-4443-8379-6b9bac687ae4",
+      "type": "FOLDER",
+      "name": "Documents & Templates",
+      "icon": "IconFileText",
+      "position": 40
+    }
+  ],
+  "pageLayouts": [
+    {
+      "universalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "name": "Document Template",
+      "objectUniversalIdentifier": "7adbea9b-edc1-4e1e-b259-f7f6c985fa04"
+    }
+  ],
+  "pageLayoutTabs": [
+    {
+      "universalIdentifier": "0951a49e-d410-44d8-8b8b-3c450c665d48",
+      "pageLayoutUniversalIdentifier": "20202020-a103-4003-8003-0aa0b1ca1003",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "45436271-3b58-449f-8f7b-0fb4ca866401",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "0cabbf97-f800-4d3d-b3b3-3cf1f41c26e2",
+      "pageLayoutUniversalIdentifier": "20202020-a104-4004-8004-a0be5a11a004",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "fa34fa4b-42fd-408d-a107-e5aad39dd7eb",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "2b248e42-d90b-4aa1-ad0e-e23a2361811e",
+      "pageLayoutUniversalIdentifier": "20202020-a101-4001-8001-c0aba11c0001",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "f1563bac-ce95-40dc-9239-5f9a6c3f033c",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "4e58fbf6-8cf9-42b7-84bc-292de581c825",
+      "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "title": "Editor (Beta)",
+      "icon": "IconEdit",
+      "position": 2,
+      "layoutMode": "CANVAS",
+      "widgets": [
+        {
+          "universalIdentifier": "61bb8148-5221-4f9e-be9e-6dae41dc1c8a",
+          "title": "TinyMCE Editor",
+          "type": "FRONT_COMPONENT",
+          "configuration": {
+            "configurationType": "FRONT_COMPONENT",
+            "frontComponentUniversalIdentifier": "96de9527-dc9c-4ecf-912c-905e912e75e9"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "54b1de8e-28ff-4eac-af93-3a3f88b999ef",
+      "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "title": "Preview",
+      "icon": "IconCode",
+      "position": 1,
+      "layoutMode": "CANVAS",
+      "widgets": [
+        {
+          "universalIdentifier": "8633de86-2484-4bdf-823b-adc0e4b35d30",
+          "title": "Preview",
+          "type": "FRONT_COMPONENT",
+          "configuration": {
+            "configurationType": "FRONT_COMPONENT",
+            "frontComponentUniversalIdentifier": "77a547b5-20b6-474f-9029-6662fa0fb371"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "55ae5ffb-8c69-473c-9eb9-55c3b6d3cfe3",
+      "pageLayoutUniversalIdentifier": "1dd196b8-de1d-4cc7-8be0-a1e365ad6c81",
+      "title": "Fields",
+      "icon": "IconList",
+      "position": 0,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "cd671d7d-f73d-4f47-9194-6bfc3d3a8007",
+          "title": "Fields",
+          "type": "FIELDS",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "FIELDS"
+          }
+        },
+        {
+          "universalIdentifier": "72483c22-ef12-416b-9dab-7185a043079c",
+          "title": "HTML Source",
+          "type": "FIELD",
+          "gridPosition": {
+            "row": 4,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "FIELD",
+            "fieldMetadataId": "a45b67ab-a09e-42e4-b288-5cc34b9339a2",
+            "fieldDisplayMode": "EDITOR"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "596b907d-db12-437e-a76c-6e4a598a34ab",
+      "pageLayoutUniversalIdentifier": "20202020-a102-4002-8002-ae0a1ea11002",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "9dc0b870-8baf-46ab-9bd8-099183f06901",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "c6e58054-e52d-4fb7-8125-bc4aa53b04dd",
+      "pageLayoutUniversalIdentifier": "b9b10e40-9ce2-4704-8ac6-c6e92e2563c1",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "f76c9512-ffb0-477a-b110-db6803dd69c1",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    },
+    {
+      "universalIdentifier": "fd4f49ed-2456-4a73-a21b-bb82b6d8156c",
+      "pageLayoutUniversalIdentifier": "20202020-a105-4005-8005-ba5ca11a1005",
+      "title": "Documents",
+      "icon": "IconFileText",
+      "position": 60,
+      "layoutMode": "GRID",
+      "widgets": [
+        {
+          "universalIdentifier": "ab0107fc-d7cc-4109-8331-452f5f4e9d9b",
+          "title": "Document Activity",
+          "type": "TIMELINE",
+          "gridPosition": {
+            "row": 0,
+            "column": 0,
+            "rowSpan": 4,
+            "columnSpan": 4
+          },
+          "configuration": {
+            "configurationType": "TIMELINE"
+          }
+        }
+      ]
+    }
+  ],
+  "commandMenuItems": [
+    {
+      "universalIdentifier": "d141afd3-e12e-4c33-9ffe-ca36e366b3bb",
+      "label": "Generate Document",
+      "shortLabel": "Generate",
+      "availabilityType": "RECORD_SELECTION",
+      "frontComponentUniversalIdentifier": "081e8445-bf9b-4c81-a20e-5d72c3290cad"
+    }
+  ]
+}

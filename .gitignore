@@ -4,5 +4,6 @@ dist/
 .codex/
 *.log
 .twenty/output/src/
+twenty-docs/
 .pnp.cjs
 .pnp.loader.mjs

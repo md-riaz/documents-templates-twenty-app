@@ -45,7 +45,6 @@ const {
 } = await import('../dist/front-components/generate-document.front-component.js');
 const {
   renderTemplateEditorMarkup,
-  createTemplateEditorState,
 } = await import('../dist/front-components/template-editor.front-component.js');
 
 const generatorPrincipal = { permissionScopes: ['viewTemplates', 'manageTemplates', 'generateDocuments', 'viewDocuments'] };
@@ -107,13 +106,7 @@ test('acceptance scenarios cover install, permissions, template preview, generat
 });
 
 test('modal and editor controls expose keyboard-friendly labels, dialog roles, live regions, and responsive stack hints', () => {
-  const editorMarkup = renderTemplateEditorMarkup(createTemplateEditorState({
-    template: {
-      name: 'Accessible',
-      htmlSource: '<h1>{{person.name}}</h1>',
-      variables: [{ path: 'person.name', label: 'Person name', required: true }],
-    },
-  }));
+  const editorMarkup = renderTemplateEditorMarkup();
   assert.match(editorMarkup, /aria-label="Template preview"/);
 
   const generateMarkup = renderGenerateDocumentModalMarkup(createGenerateDocumentState({
