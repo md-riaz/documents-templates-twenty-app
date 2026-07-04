@@ -33,7 +33,7 @@ export default definePageLayoutTab({
       configuration: {
         configurationType: 'FIELD',
         fieldMetadataId: DOCUMENT_TEMPLATE_FIELDS.htmlSource,
-        fieldDisplayMode: 'EDITOR',
+        fieldDisplayMode: 'FIELD',
       },
     },
   ],
